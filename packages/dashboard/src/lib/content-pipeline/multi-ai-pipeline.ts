@@ -8,6 +8,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 import { PIPELINE_CONFIG, type PipelineInput, type PipelineOutput } from './config';
+import { ARCVEST_KNOWLEDGE, ARCVEST_KNOWLEDGE_CONDENSED } from '../arcvest-knowledge';
 
 export class MultiAIPipeline {
   private anthropic: Anthropic;
@@ -94,27 +95,32 @@ export class MultiAIPipeline {
     const topicsOfInterest = PIPELINE_CONFIG.TOPICS_OF_INTEREST.join(', ');
     const topicsToAvoid = PIPELINE_CONFIG.TOPICS_TO_AVOID.join(', ');
 
-    const prompt = `You are writing a blog post for ArcVest, a fee-only fiduciary financial planning firm.
+    const prompt = `You are writing a blog post for ArcVest. Study this knowledge base carefully and write in the ArcVest voice:
 
-SOURCE CONTENT:
+${ARCVEST_KNOWLEDGE}
+
+---
+
+SOURCE CONTENT TO WRITE ABOUT:
 ${input.content}
 
 ${input.focusAngle ? `FOCUS ANGLE: ${input.focusAngle}` : ''}
 ${input.targetKeywords?.length ? `TARGET KEYWORDS: ${input.targetKeywords.join(', ')}` : ''}
 
-TOPICS WE FOCUS ON: ${topicsOfInterest}
+ADDITIONAL TOPICS WE COVER: ${topicsOfInterest}
 TOPICS TO AVOID: ${topicsToAvoid}
-
-${PIPELINE_CONFIG.BRAND_VOICE}
 
 TASK:
 1. Write a blog post (${PIPELINE_CONFIG.OUTPUT_REQUIREMENTS.target_word_count.min}-${PIPELINE_CONFIG.OUTPUT_REQUIREMENTS.target_word_count.max} words) based on the source content
-2. Write in ArcVest's professional but approachable voice
-3. Make it educational and valuable for our target audience
-4. Include appropriate disclaimers where needed
-5. Do NOT make specific stock recommendations or guarantee returns
+2. Write in ArcVest's voice: authoritative but accessible, evidence-based, honest and direct
+3. Lead with the insight, use specific numbers, use our frameworks where relevant
+4. Make it educational and valuable for high-net-worth individuals considering evidence-based investing
+5. Include appropriate disclaimers naturally (don't lead with them)
+6. Do NOT make specific stock recommendations or guarantee returns
+7. Use "we" when speaking as ArcVest
+8. No exclamation points, no hedge words like "might" or "perhaps"
 
-Write the blog post in markdown format with a compelling title (H1), clear sections (H2), and engaging content.`;
+Write the blog post in markdown format with a compelling title (H1), clear sections (H2), and engaging prose-forward content.`;
 
     const response = await this.anthropic.messages.create({
       model: 'claude-opus-4-5-20251101',
@@ -179,7 +185,11 @@ Respond in JSON format only:
     compliance: { passed: boolean; issues: string[]; suggestions: string[] },
     input: PipelineInput
   ): Promise<{ draft: string; improvements: string[]; tokens: number }> {
-    const prompt = `You are an expert editor improving a financial planning blog post.
+    const prompt = `You are an expert editor improving a blog post for ArcVest. Maintain their voice throughout your edits:
+
+${ARCVEST_KNOWLEDGE_CONDENSED}
+
+---
 
 CURRENT DRAFT:
 ${draft}
@@ -190,16 +200,13 @@ ${compliance.issues.length > 0 ? compliance.issues.map(i => `- ${i}`).join('\n')
 COMPLIANCE SUGGESTIONS:
 ${compliance.suggestions.length > 0 ? compliance.suggestions.map(s => `- ${s}`).join('\n') : 'None'}
 
-ORIGINAL SOURCE (for context):
-${input.content.substring(0, 1000)}...
-
 YOUR TASK:
 1. Fix any compliance issues identified above
 2. Tighten the writing - remove fluff and redundancy
-3. Improve clarity and readability
-4. Ensure the tone is professional but approachable
-5. Make sure it provides genuine value to readers
-6. Keep it between ${PIPELINE_CONFIG.OUTPUT_REQUIREMENTS.target_word_count.min}-${PIPELINE_CONFIG.OUTPUT_REQUIREMENTS.target_word_count.max} words
+3. MAINTAIN the ArcVest voice: authoritative, evidence-based, direct, no hedge words
+4. Ensure it provides genuine value to high-net-worth readers
+5. Keep it between ${PIPELINE_CONFIG.OUTPUT_REQUIREMENTS.target_word_count.min}-${PIPELINE_CONFIG.OUTPUT_REQUIREMENTS.target_word_count.max} words
+6. No exclamation points, use "we" for ArcVest, lead with insights
 
 Provide your improved version in markdown format.
 
@@ -243,9 +250,13 @@ After the blog post, add a section titled "## IMPROVEMENTS MADE" with a bullet l
    */
   private async step3Gemini(
     draft: string,
-    input: PipelineInput
+    _input: PipelineInput
   ): Promise<{ draft: string; edits: string[]; tokens: number }> {
-    const prompt = `You are a senior editor doing a final review of a financial planning blog post.
+    const prompt = `You are a senior editor doing a final review of a blog post for ArcVest. Preserve their distinctive voice:
+
+${ARCVEST_KNOWLEDGE_CONDENSED}
+
+---
 
 CURRENT DRAFT:
 ${draft}
@@ -253,10 +264,12 @@ ${draft}
 YOUR TASK:
 1. Polish the writing for maximum clarity and impact
 2. Ensure smooth transitions between sections
-3. Verify the opening hook is compelling
+3. Verify the opening hook leads with the insight (not background)
 4. Check that the conclusion has a clear takeaway
 5. Ensure regulatory compliance language is present but not overwhelming
-6. Make any final improvements to make this publication-ready
+6. PRESERVE the ArcVest voice: authoritative, direct, evidence-based
+7. No exclamation points, no hedge words, use "we" for ArcVest
+8. Make any final improvements to make this publication-ready
 
 Provide your polished version in markdown format.
 

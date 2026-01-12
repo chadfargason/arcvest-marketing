@@ -5,6 +5,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { NewsArticle } from './news-fetcher';
 import { RELEVANT_TOPICS, TOPICS_TO_AVOID } from './news-sources';
+import { ARCVEST_KNOWLEDGE_CONDENSED } from '../arcvest-knowledge';
 
 export interface ScoredArticle extends NewsArticle {
   relevanceScore: number; // 0-100
@@ -44,21 +45,19 @@ export async function scoreArticles(
     .map((a, i) => `[${i + 1}] "${a.title}" - ${a.sourceName}\n${a.description?.substring(0, 200) || 'No description'}`)
     .join('\n\n');
 
-  const prompt = `You are a content strategist for ArcVest, a fee-only fiduciary financial planning firm.
+  const prompt = `You are a content strategist for ArcVest. Use this knowledge to score articles:
+
+${ARCVEST_KNOWLEDGE_CONDENSED}
+
+---
 
 Review these news articles and score each one for relevance to ArcVest's content strategy.
 
-TOPICS WE WANT TO COVER:
+ADDITIONAL TOPICS WE COVER:
 ${RELEVANT_TOPICS.join(', ')}
 
 TOPICS TO AVOID:
 ${TOPICS_TO_AVOID.join(', ')}
-
-TARGET AUDIENCE:
-- Individuals and families planning for retirement
-- Business owners seeking exit planning
-- High-net-worth individuals needing comprehensive planning
-- People seeking objective, unbiased financial advice
 
 ARTICLES TO SCORE:
 ${articlesSummary}
@@ -161,7 +160,9 @@ export async function scoreSingleArticle(article: NewsArticle): Promise<ScoredAr
 
   const anthropic = new Anthropic({ apiKey });
 
-  const prompt = `You are a content strategist for ArcVest, a fee-only fiduciary financial planning firm.
+  const prompt = `You are a content strategist for ArcVest. Use this knowledge to score:
+
+${ARCVEST_KNOWLEDGE_CONDENSED}
 
 Score this news article for relevance to ArcVest's content strategy:
 
@@ -169,7 +170,7 @@ TITLE: ${article.title}
 SOURCE: ${article.sourceName}
 DESCRIPTION: ${article.description}
 
-TOPICS WE WANT: ${RELEVANT_TOPICS.slice(0, 10).join(', ')}
+ADDITIONAL TOPICS: ${RELEVANT_TOPICS.slice(0, 10).join(', ')}
 TOPICS TO AVOID: ${TOPICS_TO_AVOID.join(', ')}
 
 Respond with JSON only:
