@@ -60,9 +60,11 @@ export async function GET(request: NextRequest) {
     console.log('[Bloomberg Scan] Bloomberg emails:', bloombergEmails.length);
 
     return NextResponse.json({
+      version: 'v3-direct-gmail',
       scanTime: new Date().toISOString(),
       emailsFound: bloombergEmails.length,
-      articlesExtracted: 0, // TODO: Add extraction
+      messagesFromGmail: messages.length,
+      articlesExtracted: 0,
       articlesQueued: 0,
       errors: [],
       articles: bloombergEmails.map(e => ({
