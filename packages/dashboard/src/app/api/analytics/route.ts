@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getGA4Client } from '@/lib/google/ga4-client';
 
 // GET /api/analytics - Get marketing analytics data
 export async function GET(request: NextRequest) {
@@ -8,11 +9,35 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const days = parseInt(searchParams.get('days') || '30');
 
+    const endDate = new Date();
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
-    const startDateStr = startDate.toISOString().split('T')[0];
 
-    // Get campaign performance summary
+    const startDateStr = startDate.toISOString().split('T')[0];
+    const endDateStr = endDate.toISOString().split('T')[0];
+
+    // Fetch GA4 data if configured
+    let ga4Data = null;
+    try {
+      const ga4 = getGA4Client();
+      const [overview, dailyTraffic, trafficSources, topPages] = await Promise.all([
+        ga4.getOverviewMetrics(startDateStr, endDateStr),
+        ga4.getDailyMetrics(startDateStr, endDateStr),
+        ga4.getTrafficBySource(startDateStr, endDateStr),
+        ga4.getTopPages(startDateStr, endDateStr, 10),
+      ]);
+
+      ga4Data = {
+        overview,
+        dailyTraffic,
+        trafficSources: trafficSources.slice(0, 10),
+        topPages,
+      };
+    } catch (ga4Error) {
+      console.warn('GA4 data fetch failed (may not be configured):', ga4Error);
+    }
+
+    // Get campaign performance summary from database
     const { data: campaignSummary } = await supabase
       .from('campaign_performance_summary')
       .select('*');
@@ -125,7 +150,7 @@ export async function GET(request: NextRequest) {
       period: {
         days,
         startDate: startDateStr,
-        endDate: new Date().toISOString().split('T')[0],
+        endDate: endDateStr,
       },
       overview: {
         totalSpend: totals.cost.toFixed(2),
@@ -140,6 +165,18 @@ export async function GET(request: NextRequest) {
         costPerLead,
         conversionRate,
       },
+      // GA4 website traffic data
+      websiteTraffic: ga4Data ? {
+        sessions: ga4Data.overview.sessions,
+        users: ga4Data.overview.users,
+        pageviews: ga4Data.overview.pageviews,
+        bounceRate: (ga4Data.overview.bounceRate * 100).toFixed(1),
+        avgSessionDuration: Math.round(ga4Data.overview.avgSessionDuration),
+        newUsers: ga4Data.overview.newUsers,
+        dailyTraffic: ga4Data.dailyTraffic,
+        trafficSources: ga4Data.trafficSources,
+        topPages: ga4Data.topPages,
+      } : null,
       campaigns: campaignSummary || [],
       dailyMetrics: aggregatedDailyMetrics,
       leadsByDate: leadsByDateAggregated,
