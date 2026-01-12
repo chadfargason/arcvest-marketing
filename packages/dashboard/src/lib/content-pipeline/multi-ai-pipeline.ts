@@ -117,7 +117,7 @@ TASK:
 Write the blog post in markdown format with a compelling title (H1), clear sections (H2), and engaging content.`;
 
     const response = await this.anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-opus-4-5-20251101',
       max_tokens: 4096,
       temperature: 0.7,
       messages: [{ role: 'user', content: prompt }],
@@ -145,7 +145,7 @@ Respond in JSON format only:
 {"passed": true/false, "issues": ["issue1", "issue2"], "suggestions": ["fix1", "fix2"]}`;
 
     const complianceResponse = await this.anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-opus-4-5-20251101',
       max_tokens: 1024,
       temperature: 0.3,
       messages: [{ role: 'user', content: compliancePrompt }],
@@ -258,7 +258,7 @@ After the blog post, add a section titled "## EDITS MADE" with a bullet list of 
 
     // Call Gemini API
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.geminiApiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${this.geminiApiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -338,7 +338,7 @@ REQUIREMENTS:
 - Illustration prompt should be detailed enough for AI image generation`;
 
     const response = await this.anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-opus-4-5-20251101',
       max_tokens: 8192,
       temperature: 0.5,
       messages: [{ role: 'user', content: prompt }],
