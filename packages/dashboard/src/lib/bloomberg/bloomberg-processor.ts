@@ -391,14 +391,11 @@ export class BloombergProcessor {
     // Create content calendar entry
     const { error: calendarError } = await this.supabase.from('content_calendar').insert({
       title: article.headline,
-      type: 'blog',
+      content_type: 'blog_post',
       status: 'idea',
-      scheduled_for: null,
-      notes: `Source: Bloomberg ${article.newsletterType}
-Author: ${article.author || 'Unknown'}
-URL: ${article.url || 'N/A'}
-
-Focus Angle: ${article.focusAngle || 'To be determined'}
+      scheduled_date: null,
+      topic: `Source: Bloomberg ${article.newsletterType} | Author: ${article.author || 'Unknown'}`,
+      outline: `Focus Angle: ${article.focusAngle || 'To be determined'}
 
 Original Summary:
 ${article.summary}
@@ -423,18 +420,17 @@ ${article.content.substring(0, 5000)}`,
     await this.supabase.from('approval_queue').insert({
       type: 'content_idea',
       title: `Bloomberg Story: ${article.headline}`,
-      description: `New content idea from Bloomberg ${article.newsletterType}.
-
-${article.focusAngle ? `Suggested Angle: ${article.focusAngle}` : ''}
-
-Summary: ${article.summary}`,
+      summary: `New content idea from Bloomberg ${article.newsletterType}. ${article.focusAngle ? `Suggested Angle: ${article.focusAngle}` : ''} Summary: ${article.summary}`,
       status: 'pending',
       priority: 'medium',
-      data: {
+      created_by: 'bloomberg_agent',
+      content: {
         source: 'bloomberg',
         headline: article.headline,
         url: article.url,
         focus_angle: article.focusAngle,
+        newsletter_type: article.newsletterType,
+        full_summary: article.summary,
       },
     });
 
