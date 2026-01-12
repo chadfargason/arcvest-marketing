@@ -9,15 +9,9 @@ import { GmailService, type GmailMessage } from '@arcvest/services';
 import { createClient } from '@supabase/supabase-js';
 import Anthropic from '@anthropic-ai/sdk';
 
-// Bloomberg sender patterns
-const BLOOMBERG_SENDERS = [
-  '@bloomberg.com',
-  '@mail.bloomberg.com',
-  '@newsletters.bloomberg.com',
-  'Bloomberg <',
-  'Bloomberg News',
-  'Bloomberg Markets',
-  'Bloomberg Businessweek',
+// Bloomberg sender domain patterns
+const BLOOMBERG_DOMAINS = [
+  'bloomberg.com',
 ];
 
 // Newsletter types we want to process
@@ -57,13 +51,7 @@ export interface BloombergScanResult {
  */
 function isBloombergEmail(message: GmailMessage): boolean {
   const fromEmail = message.from.email.toLowerCase();
-  const fromName = message.from.name?.toLowerCase() || '';
-
-  return BLOOMBERG_SENDERS.some(
-    (pattern) =>
-      fromEmail.includes(pattern.toLowerCase()) ||
-      fromName.includes(pattern.toLowerCase())
-  );
+  return BLOOMBERG_DOMAINS.some((domain) => fromEmail.includes(domain));
 }
 
 /**

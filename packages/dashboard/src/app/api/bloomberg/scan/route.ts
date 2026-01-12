@@ -58,22 +58,14 @@ export async function GET(request: NextRequest) {
     console.log('[Bloomberg Scan] Bloomberg emails:', bloombergEmails.length);
 
     return NextResponse.json({
-      version: 'v5-fixed-filter',
       scanTime: new Date().toISOString(),
       emailsFound: bloombergEmails.length,
-      messagesFromGmail: messages.length,
       articlesExtracted: 0,
       articlesQueued: 0,
       errors: [],
-      // Debug: show all senders from Gmail
-      rawSenders: messages.slice(0, 10).map(m => ({
-        email: m.from.email,
-        name: m.from.name,
-      })),
       articles: bloombergEmails.map(e => ({
         headline: e.subject,
-        from: e.from.email,
-        fromName: e.from.name,
+        newsletterType: e.from.name,
         date: e.date,
       })),
     });
