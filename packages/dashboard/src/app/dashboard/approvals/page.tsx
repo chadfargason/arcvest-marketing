@@ -1,87 +1,33 @@
+'use client';
+
+import { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import {
-  Check,
-  X,
-  Eye,
-  MessageSquare,
-  FileText,
-  Megaphone,
-  Clock,
-} from 'lucide-react';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Check, X, Eye, FileText, Megaphone, MessageSquare, Clock, RefreshCw, AlertCircle } from 'lucide-react';
 
-// Placeholder data - will be fetched from API
-const pendingApprovals = [
-  {
-    id: '1',
-    type: 'blog_post',
-    title: 'Understanding Required Minimum Distributions',
-    summary: 'Educational blog post about RMD rules and strategies for retirees',
-    created_by: 'content_agent',
-    created_at: '2024-01-11T08:30:00Z',
-    priority: 'medium',
-    hours_pending: 4,
-  },
-  {
-    id: '2',
-    type: 'ad_copy',
-    title: 'Google RSA Headlines - Retirement Planning',
-    summary: '15 headlines and 4 descriptions for retirement planning campaign',
-    created_by: 'creative_agent',
-    created_at: '2024-01-10T15:20:00Z',
-    priority: 'high',
-    hours_pending: 21,
-  },
-  {
-    id: '3',
-    type: 'linkedin_post',
-    title: 'Weekly Market Commentary',
-    summary: 'LinkedIn post discussing Q4 market performance and outlook',
-    created_by: 'content_agent',
-    created_at: '2024-01-11T10:15:00Z',
-    priority: 'medium',
-    hours_pending: 2,
-  },
-  {
-    id: '4',
-    type: 'email_sequence',
-    title: 'Post-Consultation Follow-Up - Step 2',
-    summary: 'Second email in the consultation follow-up sequence',
-    created_by: 'content_agent',
-    created_at: '2024-01-09T14:00:00Z',
-    priority: 'low',
-    hours_pending: 46,
-  },
-];
-
-const recentApprovals = [
-  {
-    id: '5',
-    type: 'blog_post',
-    title: 'Social Security Optimization Strategies',
-    status: 'approved',
-    reviewed_by: 'chad',
-    reviewed_at: '2024-01-10T11:30:00Z',
-  },
-  {
-    id: '6',
-    type: 'ad_copy',
-    title: 'Google Display Ad - Fiduciary Message',
-    status: 'rejected',
-    reviewed_by: 'erik',
-    reviewed_at: '2024-01-09T16:45:00Z',
-    feedback: 'Needs to remove performance claims per SEC guidelines',
-  },
-  {
-    id: '7',
-    type: 'newsletter',
-    title: 'January Monthly Newsletter',
-    status: 'approved',
-    reviewed_by: 'chad',
-    reviewed_at: '2024-01-08T09:15:00Z',
-  },
-];
+interface Approval {
+  id: string;
+  type: string;
+  title: string;
+  content: unknown;
+  status: string;
+  priority: string;
+  created_at: string;
+  created_by: string;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+  feedback: string | null;
+}
 
 function getTypeConfig(type: string) {
   const config: Record<string, { label: string; icon: typeof FileText; color: string }> = {
@@ -91,7 +37,6 @@ function getTypeConfig(type: string) {
     email_sequence: { label: 'Email', icon: MessageSquare, color: 'text-green-600' },
     newsletter: { label: 'Newsletter', icon: FileText, color: 'text-orange-600' },
   };
-
   return config[type] || { label: type, icon: FileText, color: 'text-gray-600' };
 }
 
@@ -101,183 +46,199 @@ function getPriorityBadge(priority: string) {
     medium: { label: 'Medium', variant: 'warning' },
     low: { label: 'Low', variant: 'secondary' },
   };
-
   const c = config[priority] || config.medium;
   return <Badge variant={c.variant}>{c.label}</Badge>;
 }
 
-function getUrgencyStatus(hours: number) {
-  if (hours > 48) {
-    return { text: 'Needs attention', variant: 'destructive' as const };
-  } else if (hours > 24) {
-    return { text: 'Pending', variant: 'warning' as const };
-  }
-  return { text: 'Recent', variant: 'secondary' as const };
+function getHoursPending(createdAt: string) {
+  const created = new Date(createdAt);
+  const now = new Date();
+  return Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60));
 }
 
 export default function ApprovalsPage() {
+  const [approvals, setApprovals] = useState<Approval[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedApproval, setSelectedApproval] = useState<Approval | null>(null);
+  const [feedback, setFeedback] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const fetchApprovals = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/approvals?status=all');
+      if (!response.ok) throw new Error('Failed to fetch approvals');
+      const data = await response.json();
+      setApprovals(data.data || []);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load approvals');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchApprovals();
+  }, [fetchApprovals]);
+
+  const handleAction = async (id: string, action: 'approve' | 'reject' | 'request_revision') => {
+    setIsSubmitting(true);
+    try {
+      const response = await fetch(`/api/approvals/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, feedback: feedback || undefined }),
+      });
+      if (!response.ok) throw new Error('Failed to update approval');
+      setSelectedApproval(null);
+      setFeedback('');
+      fetchApprovals();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to update approval');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const pendingApprovals = approvals.filter(a => a.status === 'pending');
+  const recentApprovals = approvals.filter(a => a.status !== 'pending').slice(0, 10);
+
+  if (error && !loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 space-y-4">
+        <AlertCircle className="h-12 w-12 text-destructive" />
+        <p className="text-destructive">{error}</p>
+        <Button onClick={fetchApprovals}>Try Again</Button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-2xl font-bold">Approvals</h1>
-        <p className="text-muted-foreground">
-          Review and approve content generated by marketing agents
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Approvals</h1>
+          <p className="text-muted-foreground">Review and approve content generated by marketing agents</p>
+        </div>
+        <Button variant="outline" onClick={fetchApprovals}>
+          <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />Refresh
+        </Button>
       </div>
 
-      {/* Stats */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold">{pendingApprovals.length}</div>
-            <p className="text-sm text-muted-foreground">Pending Review</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-red-600">
-              {pendingApprovals.filter(a => a.hours_pending > 48).length}
-            </div>
-            <p className="text-sm text-muted-foreground">Needs Attention</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-yellow-600">
-              {pendingApprovals.filter(a => a.priority === 'high').length}
-            </div>
-            <p className="text-sm text-muted-foreground">High Priority</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-green-600">
-              {recentApprovals.filter(a => a.status === 'approved').length}
-            </div>
-            <p className="text-sm text-muted-foreground">Approved This Week</p>
-          </CardContent>
-        </Card>
+        <Card><CardContent className="p-4"><div className="text-2xl font-bold">{pendingApprovals.length}</div><p className="text-sm text-muted-foreground">Pending Review</p></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-2xl font-bold text-red-600">{pendingApprovals.filter(a => getHoursPending(a.created_at) > 48).length}</div><p className="text-sm text-muted-foreground">Needs Attention</p></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-2xl font-bold text-yellow-600">{pendingApprovals.filter(a => a.priority === 'high').length}</div><p className="text-sm text-muted-foreground">High Priority</p></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-2xl font-bold text-green-600">{approvals.filter(a => a.status === 'approved').length}</div><p className="text-sm text-muted-foreground">Approved</p></CardContent></Card>
       </div>
 
-      {/* Pending Approvals */}
       <Card>
         <CardHeader>
           <CardTitle>Pending Approvals</CardTitle>
-          <CardDescription>
-            Content awaiting your review and approval
-          </CardDescription>
+          <CardDescription>Content awaiting your review and approval</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {pendingApprovals.map((item) => {
-              const typeConfig = getTypeConfig(item.type);
-              const urgency = getUrgencyStatus(item.hours_pending);
+          {loading && pendingApprovals.length === 0 ? (
+            <div className="flex items-center justify-center h-32"><RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" /></div>
+          ) : pendingApprovals.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground"><p>No pending approvals.</p></div>
+          ) : (
+            <div className="space-y-4">
+              {pendingApprovals.map((item) => {
+                const typeConfig = getTypeConfig(item.type);
+                const hours = getHoursPending(item.created_at);
+                const urgency = hours > 48 ? 'destructive' : hours > 24 ? 'warning' : 'secondary';
 
-              return (
-                <div
-                  key={item.id}
-                  className="flex items-start gap-4 rounded-lg border p-4"
-                >
-                  <div className={`mt-1 ${typeConfig.color}`}>
-                    <typeConfig.icon className="h-5 w-5" />
-                  </div>
-
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-medium">{item.title}</h3>
-                      {getPriorityBadge(item.priority)}
-                      <Badge variant={urgency.variant}>{urgency.text}</Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {item.summary}
-                    </p>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <span>
+                return (
+                  <div key={item.id} className="flex items-start gap-4 rounded-lg border p-4">
+                    <div className={`mt-1 ${typeConfig.color}`}><typeConfig.icon className="h-5 w-5" /></div>
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-medium">{item.title}</h3>
+                        {getPriorityBadge(item.priority)}
+                        <Badge variant={urgency as 'destructive' | 'warning' | 'secondary'}>{hours}h ago</Badge>
+                      </div>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
                         <Badge variant="outline">{typeConfig.label}</Badge>
-                      </span>
-                      <span>
-                        Created by {item.created_by.replace('_', ' ')}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {item.hours_pending}h ago
-                      </span>
+                        <span>Created by {item.created_by?.replace('_', ' ') || 'system'}</span>
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm">
-                      <Eye className="mr-1 h-4 w-4" />
-                      Preview
-                    </Button>
-                    <Button variant="outline" size="sm" className="text-green-600 hover:text-green-700">
-                      <Check className="mr-1 h-4 w-4" />
-                      Approve
-                    </Button>
-                    <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                      <X className="mr-1 h-4 w-4" />
-                      Reject
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Recent Activity */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
-          <CardDescription>
-            Previously reviewed items
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {recentApprovals.map((item) => {
-              const typeConfig = getTypeConfig(item.type);
-
-              return (
-                <div
-                  key={item.id}
-                  className={`flex items-center gap-4 rounded-lg border p-3 ${
-                    item.status === 'approved' ? 'border-green-100 bg-green-50' : 'border-red-100 bg-red-50'
-                  }`}
-                >
-                  <div className={`${item.status === 'approved' ? 'text-green-600' : 'text-red-600'}`}>
-                    {item.status === 'approved' ? (
-                      <Check className="h-5 w-5" />
-                    ) : (
-                      <X className="h-5 w-5" />
-                    )}
-                  </div>
-                  <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <p className={`font-medium ${
-                        item.status === 'approved' ? 'text-green-800' : 'text-red-800'
-                      }`}>
-                        {item.title}
-                      </p>
-                      <Badge variant="outline">{typeConfig.label}</Badge>
+                      <Button variant="outline" size="sm" onClick={() => setSelectedApproval(item)}>
+                        <Eye className="mr-1 h-4 w-4" />Review
+                      </Button>
                     </div>
-                    {item.feedback && (
-                      <p className="text-sm text-red-700 mt-1">
-                        Feedback: {item.feedback}
-                      </p>
-                    )}
                   </div>
-                  <div className="text-right text-sm text-muted-foreground">
-                    <p className="capitalize">{item.reviewed_by}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {recentApprovals.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Activity</CardTitle>
+            <CardDescription>Previously reviewed items</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {recentApprovals.map((item) => {
+                const typeConfig = getTypeConfig(item.type);
+                return (
+                  <div key={item.id} className={`flex items-center gap-4 rounded-lg border p-3 ${item.status === 'approved' ? 'border-green-100 bg-green-50' : 'border-red-100 bg-red-50'}`}>
+                    <div className={item.status === 'approved' ? 'text-green-600' : 'text-red-600'}>
+                      {item.status === 'approved' ? <Check className="h-5 w-5" /> : <X className="h-5 w-5" />}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className={`font-medium ${item.status === 'approved' ? 'text-green-800' : 'text-red-800'}`}>{item.title}</p>
+                        <Badge variant="outline">{typeConfig.label}</Badge>
+                      </div>
+                      {item.feedback && <p className="text-sm text-red-700 mt-1">Feedback: {item.feedback}</p>}
+                    </div>
+                    <div className="text-right text-sm text-muted-foreground capitalize">{item.reviewed_by}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <Dialog open={!!selectedApproval} onOpenChange={() => { setSelectedApproval(null); setFeedback(''); }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Review: {selectedApproval?.title}</DialogTitle>
+            <DialogDescription>
+              {getTypeConfig(selectedApproval?.type || '').label} created by {selectedApproval?.created_by?.replace('_', ' ')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="rounded-lg border p-4 bg-muted/50 max-h-64 overflow-auto">
+              <pre className="whitespace-pre-wrap text-sm">{JSON.stringify(selectedApproval?.content, null, 2)}</pre>
+            </div>
+            <div className="mt-4 space-y-2">
+              <label className="text-sm font-medium">Feedback (optional)</label>
+              <Textarea value={feedback} onChange={(e) => setFeedback(e.target.value)} placeholder="Add feedback for revision requests or rejections..." rows={3} />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => selectedApproval && handleAction(selectedApproval.id, 'request_revision')} disabled={isSubmitting}>
+              <Clock className="mr-1 h-4 w-4" />Request Revision
+            </Button>
+            <Button variant="outline" className="text-red-600" onClick={() => selectedApproval && handleAction(selectedApproval.id, 'reject')} disabled={isSubmitting}>
+              <X className="mr-1 h-4 w-4" />Reject
+            </Button>
+            <Button className="bg-green-600 hover:bg-green-700" onClick={() => selectedApproval && handleAction(selectedApproval.id, 'approve')} disabled={isSubmitting}>
+              <Check className="mr-1 h-4 w-4" />Approve
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
