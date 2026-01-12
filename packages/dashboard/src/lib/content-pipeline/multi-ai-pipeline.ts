@@ -308,6 +308,7 @@ After the blog post, add a section titled "## EDITS MADE" with a bullet list of 
 
   /**
    * Step 4: Claude - Create final WordPress-ready package
+   * Uses separate calls for reliability instead of one big JSON
    */
   private async step4ClaudeFinal(
     draft: string,
@@ -321,62 +322,100 @@ After the blog post, add a section titled "## EDITS MADE" with a bullet list of 
     };
     tokens: number;
   }> {
-    const prompt = `You are preparing a blog post for WordPress publication.
+    let totalTokens = 0;
 
-FINAL DRAFT:
+    // Step 4a: Convert Markdown to WordPress HTML
+    const htmlPrompt = `Convert this blog post from Markdown to clean WordPress HTML.
+
+MARKDOWN CONTENT:
 ${draft}
 
-${input.targetKeywords?.length ? `TARGET KEYWORDS: ${input.targetKeywords.join(', ')}` : ''}
-
-Create the following outputs. Respond in JSON format:
-
-{
-  "wordpressPost": "The full blog post in HTML format suitable for WordPress (use <h2>, <h3>, <p>, <ul>, <li>, <strong>, <em> tags)",
-  "excerpt": "A compelling excerpt of 50 words or less that summarizes the post and encourages reading",
-  "seoTags": ["tag1", "tag2", ...up to 14 relevant SEO tags],
-  "illustrationPrompt": "A detailed prompt for generating an illustration that would complement this blog post. Describe the style, mood, and specific visual elements that would work well."
-}
-
 REQUIREMENTS:
-- WordPress post should be clean HTML, ready to paste
-- Excerpt must be 50 words or fewer
-- Provide up to 14 SEO tags (single words or short phrases)
-- Illustration prompt should be detailed enough for AI image generation`;
+- Convert all Markdown to proper HTML tags
+- Use <h2> for ## headings, <h3> for ### headings
+- Use <p> for paragraphs
+- Use <ul><li> for bullet lists, <ol><li> for numbered lists
+- Use <strong> for **bold** and <em> for *italic*
+- Use <hr> for --- horizontal rules
+- Use <blockquote> for quotes
+- Remove any Markdown syntax completely
+- Output ONLY the HTML, no explanation or wrapper
 
-    const response = await this.anthropic.messages.create({
+OUTPUT THE HTML ONLY:`;
+
+    const htmlResponse = await this.anthropic.messages.create({
       model: 'claude-opus-4-5-20251101',
       max_tokens: 8192,
-      temperature: 0.5,
-      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.3,
+      messages: [{ role: 'user', content: htmlPrompt }],
     });
 
-    const responseText = response.content.find(c => c.type === 'text')?.text || '';
-    const tokens = response.usage.input_tokens + response.usage.output_tokens;
+    const wordpressPost = htmlResponse.content.find(c => c.type === 'text')?.text || draft;
+    totalTokens += htmlResponse.usage.input_tokens + htmlResponse.usage.output_tokens;
 
-    // Parse JSON response
-    let output = {
-      wordpressPost: draft,
-      excerpt: '',
-      seoTags: [] as string[],
-      illustrationPrompt: '',
+    // Step 4b: Generate excerpt
+    const excerptPrompt = `Write a compelling excerpt (50 words or fewer) for this blog post that summarizes it and encourages reading:
+
+${draft.substring(0, 2000)}
+
+OUTPUT ONLY THE EXCERPT TEXT (no quotes, no labels):`;
+
+    const excerptResponse = await this.anthropic.messages.create({
+      model: 'claude-opus-4-5-20251101',
+      max_tokens: 100,
+      temperature: 0.5,
+      messages: [{ role: 'user', content: excerptPrompt }],
+    });
+
+    const excerpt = excerptResponse.content.find(c => c.type === 'text')?.text?.trim() || '';
+    totalTokens += excerptResponse.usage.input_tokens + excerptResponse.usage.output_tokens;
+
+    // Step 4c: Generate SEO tags
+    const tagsPrompt = `Generate up to 14 SEO tags for this blog post. Output as comma-separated values only:
+
+${draft.substring(0, 1500)}
+
+${input.targetKeywords?.length ? `Include these keywords: ${input.targetKeywords.join(', ')}` : ''}
+
+OUTPUT ONLY COMMA-SEPARATED TAGS:`;
+
+    const tagsResponse = await this.anthropic.messages.create({
+      model: 'claude-opus-4-5-20251101',
+      max_tokens: 200,
+      temperature: 0.3,
+      messages: [{ role: 'user', content: tagsPrompt }],
+    });
+
+    const tagsText = tagsResponse.content.find(c => c.type === 'text')?.text || '';
+    const seoTags = tagsText.split(',').map(t => t.trim()).filter(Boolean).slice(0, 14);
+    totalTokens += tagsResponse.usage.input_tokens + tagsResponse.usage.output_tokens;
+
+    // Step 4d: Generate illustration prompt
+    const illustrationPrompt = `Create a detailed AI image generation prompt for an illustration to accompany this blog post:
+
+${draft.substring(0, 1500)}
+
+Describe the style, mood, colors, and specific visual elements. Output only the prompt:`;
+
+    const illustrationResponse = await this.anthropic.messages.create({
+      model: 'claude-opus-4-5-20251101',
+      max_tokens: 300,
+      temperature: 0.7,
+      messages: [{ role: 'user', content: illustrationPrompt }],
+    });
+
+    const illustrationText = illustrationResponse.content.find(c => c.type === 'text')?.text?.trim() || '';
+    totalTokens += illustrationResponse.usage.input_tokens + illustrationResponse.usage.output_tokens;
+
+    return {
+      output: {
+        wordpressPost,
+        excerpt,
+        seoTags,
+        illustrationPrompt: illustrationText,
+      },
+      tokens: totalTokens,
     };
-
-    try {
-      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        output = {
-          wordpressPost: parsed.wordpressPost || draft,
-          excerpt: parsed.excerpt || '',
-          seoTags: Array.isArray(parsed.seoTags) ? parsed.seoTags.slice(0, 14) : [],
-          illustrationPrompt: parsed.illustrationPrompt || '',
-        };
-      }
-    } catch (e) {
-      console.error('Failed to parse Step 4 JSON:', e);
-    }
-
-    return { output, tokens };
   }
 }
 
