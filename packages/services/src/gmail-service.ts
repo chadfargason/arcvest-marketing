@@ -296,22 +296,35 @@ export class GmailService {
   /**
    * Fetch new messages since last sync.
    */
-  async fetchNewMessages(maxResults: number = 50): Promise<GmailMessage[]> {
-    logger.info('Fetching new Gmail messages');
+  async fetchNewMessages(
+    maxResults: number = 50,
+    options?: { includeTrash?: boolean; hoursBack?: number }
+  ): Promise<GmailMessage[]> {
+    const { includeTrash = false, hoursBack } = options || {};
+    logger.info('Fetching new Gmail messages', { includeTrash, hoursBack });
 
-    // Get last sync timestamp
-    const { data: syncState } = await this.supabase
-      .from('system_state')
-      .select('value')
-      .eq('key', 'gmail_last_sync')
-      .single();
+    let lastSyncTime: Date;
 
-    const lastSyncTime = syncState?.value
-      ? new Date(syncState.value)
-      : new Date(Date.now() - 24 * 60 * 60 * 1000); // Default to 24 hours ago
+    if (hoursBack) {
+      // Use explicit hours back instead of last sync time
+      lastSyncTime = new Date(Date.now() - hoursBack * 60 * 60 * 1000);
+    } else {
+      // Get last sync timestamp
+      const { data: syncState } = await this.supabase
+        .from('system_state')
+        .select('value')
+        .eq('key', 'gmail_last_sync')
+        .single();
+
+      lastSyncTime = syncState?.value
+        ? new Date(syncState.value)
+        : new Date(Date.now() - 24 * 60 * 60 * 1000); // Default to 24 hours ago
+    }
 
     // Query for messages after last sync
-    const query = `after:${Math.floor(lastSyncTime.getTime() / 1000)}`;
+    // Use in:anywhere to include trash if requested
+    const locationFilter = includeTrash ? 'in:anywhere' : '';
+    const query = `${locationFilter} after:${Math.floor(lastSyncTime.getTime() / 1000)}`.trim();
 
     const listResponse = await this.gmailRequest<{
       messages?: { id: string; threadId: string }[];

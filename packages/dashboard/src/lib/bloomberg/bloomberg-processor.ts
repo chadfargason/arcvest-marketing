@@ -279,15 +279,17 @@ export class BloombergProcessor {
     minScore?: number;
     maxArticles?: number;
     autoQueue?: boolean;
+    includeTrash?: boolean;
   }): Promise<BloombergScanResult> {
     const {
       hoursBack = 24,
       minScore = 60,
       maxArticles = 5,
       autoQueue = false,
+      includeTrash = true, // Default to including trash
     } = options || {};
 
-    console.log('[Bloomberg] Starting email scan...');
+    console.log('[Bloomberg] Starting email scan...', { hoursBack, includeTrash });
 
     const result: BloombergScanResult = {
       scanTime: new Date().toISOString(),
@@ -306,29 +308,26 @@ export class BloombergProcessor {
         return result;
       }
 
-      // Fetch recent emails
-      const messages = await this.gmailService.fetchNewMessages(100);
+      // Fetch recent emails (including trash by default)
+      const messages = await this.gmailService.fetchNewMessages(100, {
+        includeTrash,
+        hoursBack,
+      });
 
       // Filter Bloomberg emails
       const bloombergEmails = messages.filter(isBloombergEmail);
       result.emailsFound = bloombergEmails.length;
 
-      console.log(`[Bloomberg] Found ${bloombergEmails.length} Bloomberg emails`);
+      console.log(`[Bloomberg] Found ${bloombergEmails.length} Bloomberg emails out of ${messages.length} total`);
 
       if (bloombergEmails.length === 0) {
         return result;
       }
 
-      // Filter by time
-      const cutoffTime = new Date(Date.now() - hoursBack * 60 * 60 * 1000);
-      const recentEmails = bloombergEmails.filter(
-        (email) => email.date >= cutoffTime
-      );
-
-      // Extract articles from each email
+      // Extract articles from each email (time filtering already done in fetchNewMessages)
       const allArticles: BloombergArticle[] = [];
 
-      for (const email of recentEmails) {
+      for (const email of bloombergEmails) {
         try {
           const articles = await extractArticleContent(email, this.anthropic);
           allArticles.push(...articles);
