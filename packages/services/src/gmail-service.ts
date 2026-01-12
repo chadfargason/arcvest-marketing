@@ -82,17 +82,18 @@ export class GmailService {
   private interactionService: InteractionService;
 
   constructor(config?: Partial<GmailConfig>) {
+    // Use GMAIL_* env vars (separate from GOOGLE_ADS_* credentials)
     this.config = {
-      clientId: config?.clientId || process.env['GOOGLE_CLIENT_ID'] || '',
-      clientSecret: config?.clientSecret || process.env['GOOGLE_CLIENT_SECRET'] || '',
-      redirectUri: config?.redirectUri || process.env['GOOGLE_REDIRECT_URI'] || '',
+      clientId: config?.clientId || process.env['GMAIL_CLIENT_ID'] || '',
+      clientSecret: config?.clientSecret || process.env['GMAIL_CLIENT_SECRET'] || '',
+      redirectUri: config?.redirectUri || process.env['GMAIL_REDIRECT_URI'] || '',
     };
 
     this.contactService = new ContactService();
     this.interactionService = new InteractionService();
 
     if (!this.config.clientId || !this.config.clientSecret) {
-      logger.warn('Gmail API credentials not configured');
+      logger.warn('Gmail API credentials not configured (GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET)');
     }
   }
 
