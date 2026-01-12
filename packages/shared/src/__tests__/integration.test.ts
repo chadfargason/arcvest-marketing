@@ -118,9 +118,10 @@ describe('Asset Ranges Configuration', () => {
   it('should have non-overlapping ranges', () => {
     const ranges = assetRangesConfig.ranges.sort((a, b) => a.min - b.min);
     for (let i = 0; i < ranges.length - 1; i++) {
-      const currentMax = ranges[i].max;
-      if (currentMax !== null) {
-        expect(currentMax).toBeLessThanOrEqual(ranges[i + 1].min);
+      const currentRange = ranges[i];
+      const nextRange = ranges[i + 1];
+      if (currentRange && nextRange && currentRange.max !== null) {
+        expect(currentRange.max).toBeLessThanOrEqual(nextRange.min);
       }
     }
   });
