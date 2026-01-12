@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
         last_name: contact.last_name.trim(),
         email: contact.email.trim().toLowerCase(),
         phone: contact.phone?.trim() || null,
-        source: contact.source?.trim() || 'csv_import',
+        // Don't set source - it's a foreign key that requires valid lead_sources entries
         status: 'new_lead',
         lead_score: 0,
         assigned_to: assigned,
