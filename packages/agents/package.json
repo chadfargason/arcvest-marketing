@@ -11,7 +11,7 @@
     "start": "node dist/runner.js",
     "start:dev": "tsx src/runner.ts",
     "lint": "eslint src/",
-    "test": "vitest",
+    "test": "vitest run",
     "test:run": "vitest run",
     "typecheck": "tsc --noEmit"
   },
