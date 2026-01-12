@@ -420,14 +420,14 @@ export default function ContactsPage() {
                           <div key={field} className="space-y-1">
                             <Label className="text-xs capitalize">{field.replace('_', ' ')}</Label>
                             <Select
-                              value={columnMapping[field] || ''}
-                              onValueChange={(value) => setColumnMapping({ ...columnMapping, [field]: value })}
+                              value={columnMapping[field] || '__none__'}
+                              onValueChange={(value) => setColumnMapping({ ...columnMapping, [field]: value === '__none__' ? '' : value })}
                             >
                               <SelectTrigger className="h-8">
                                 <SelectValue placeholder="Select column" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="">Not mapped</SelectItem>
+                                <SelectItem value="__none__">Not mapped</SelectItem>
                                 {csvData.headers.map((header) => (
                                   <SelectItem key={header} value={header}>
                                     {header}
