@@ -19,10 +19,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Gmail not connected' }, { status: 400 });
     }
 
-    // Fetch emails with trash included
+    // Fetch Bloomberg emails directly using Gmail search
     const messages = await gmailService.fetchNewMessages(50, {
       includeTrash: true,
       hoursBack,
+      fromFilter: 'from:bloomberg.com',
     });
 
     // Return summary of senders
