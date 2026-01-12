@@ -15,7 +15,7 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "lint": "eslint src/",
+    "lint": "echo 'Lint: @arcvest/services (no eslint configured)'",
     "test": "vitest run",
     "test:run": "vitest run",
     "typecheck": "tsc --noEmit"

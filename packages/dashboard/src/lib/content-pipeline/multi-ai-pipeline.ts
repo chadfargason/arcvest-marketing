@@ -183,7 +183,7 @@ Respond in JSON format only:
   private async step2ChatGPT(
     draft: string,
     compliance: { passed: boolean; issues: string[]; suggestions: string[] },
-    input: PipelineInput
+    _input: PipelineInput
   ): Promise<{ draft: string; improvements: string[]; tokens: number }> {
     const prompt = `You are an expert editor improving a blog post for ArcVest. Maintain their voice throughout your edits:
 

@@ -15,7 +15,7 @@ export { scoreArticles, scoreSingleArticle } from './story-selector';
 export type { ScoredArticle, SelectionResult } from './story-selector';
 
 import { fetchAllNews, fetchHighPriorityNews } from './news-fetcher';
-import { scoreArticles, type ScoredArticle, type SelectionResult } from './story-selector';
+import { scoreArticles, type ScoredArticle } from './story-selector';
 
 export interface NewsScanResult {
   scanTime: string;

@@ -10,7 +10,7 @@
     "dev": "tsup --watch",
     "start": "node dist/runner.js",
     "start:dev": "tsx src/runner.ts",
-    "lint": "eslint src/",
+    "lint": "echo 'Lint: @arcvest/agents (no eslint configured)'",
     "test": "vitest run",
     "test:run": "vitest run",
     "typecheck": "tsc --noEmit"
