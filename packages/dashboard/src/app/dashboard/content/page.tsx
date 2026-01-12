@@ -38,6 +38,10 @@ import {
   Edit,
   Trash2,
   ExternalLink,
+  Sparkles,
+  Wand2,
+  CheckCircle,
+  AlertTriangle,
 } from 'lucide-react';
 
 interface ContentItem {
@@ -100,6 +104,15 @@ export default function ContentPage() {
   const [showNewDialog, setShowNewDialog] = useState(false);
   const [selectedContent, setSelectedContent] = useState<ContentItem | null>(null);
   const [saving, setSaving] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [generatedContent, setGeneratedContent] = useState<string | null>(null);
+  const [complianceResult, setComplianceResult] = useState<{
+    passed: boolean;
+    issues: string[];
+    suggestions: string[];
+  } | null>(null);
+  const [showGenerateDialog, setShowGenerateDialog] = useState(false);
+  const [generateType, setGenerateType] = useState<'outline' | 'blog_post' | 'linkedin_post' | 'newsletter'>('blog_post');
 
   // Form state
   const [formData, setFormData] = useState({
@@ -200,6 +213,76 @@ export default function ContentPage() {
     } catch (error) {
       console.error('Error deleting content:', error);
     }
+  };
+
+  const handleGenerate = async () => {
+    if (!formData.topic && !formData.title) {
+      alert('Please enter a topic or title first');
+      return;
+    }
+
+    setGenerating(true);
+    setGeneratedContent(null);
+    setComplianceResult(null);
+
+    try {
+      const response = await fetch('/api/content/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: generateType,
+          topic: formData.topic || formData.title,
+          targetKeyword: formData.target_keyword,
+          outline: formData.outline,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate content');
+      }
+
+      setGeneratedContent(data.content);
+
+      // Auto-run compliance check
+      const complianceResponse = await fetch('/api/content/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'compliance_check',
+          content: data.content,
+        }),
+      });
+
+      const complianceData = await complianceResponse.json();
+      if (complianceData.compliance) {
+        setComplianceResult(complianceData.compliance);
+      }
+    } catch (error) {
+      console.error('Error generating content:', error);
+      alert(error instanceof Error ? error.message : 'Failed to generate content');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const applyGeneratedContent = () => {
+    if (!generatedContent) return;
+
+    if (generateType === 'outline') {
+      setFormData({ ...formData, outline: generatedContent, status: 'outline' });
+    } else {
+      setFormData({
+        ...formData,
+        outline: formData.outline || generatedContent.substring(0, 500),
+        status: complianceResult?.passed ? 'draft' : 'review',
+      });
+    }
+
+    setShowGenerateDialog(false);
+    setGeneratedContent(null);
+    setComplianceResult(null);
   };
 
   const openEditDialog = (item: ContentItem) => {
@@ -310,6 +393,17 @@ export default function ContentPage() {
           <Button variant="outline" onClick={fetchContent}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setShowGenerateDialog(true);
+              setGeneratedContent(null);
+              setComplianceResult(null);
+            }}
+          >
+            <Sparkles className="h-4 w-4 mr-2" />
+            Generate with AI
           </Button>
           <Dialog open={showNewDialog} onOpenChange={setShowNewDialog}>
             <DialogTrigger asChild>
@@ -657,6 +751,166 @@ export default function ContentPage() {
             <Button onClick={handleUpdate} disabled={saving}>
               {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Save Changes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Generation Dialog */}
+      <Dialog open={showGenerateDialog} onOpenChange={setShowGenerateDialog}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-purple-500" />
+              Generate Content with AI
+            </DialogTitle>
+            <DialogDescription>
+              Use Claude AI to generate compliant marketing content
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Generation Type */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Content Type</Label>
+                <Select
+                  value={generateType}
+                  onValueChange={(v) => setGenerateType(v as typeof generateType)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="outline">Blog Outline</SelectItem>
+                    <SelectItem value="blog_post">Full Blog Post</SelectItem>
+                    <SelectItem value="linkedin_post">LinkedIn Post</SelectItem>
+                    <SelectItem value="newsletter">Newsletter</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Topic / Title</Label>
+                <Input
+                  value={formData.topic || formData.title}
+                  onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
+                  placeholder="What should this content be about?"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Target Keyword (optional)</Label>
+              <Input
+                value={formData.target_keyword}
+                onChange={(e) => setFormData({ ...formData, target_keyword: e.target.value })}
+                placeholder="Primary SEO keyword to include"
+              />
+            </div>
+
+            {generateType === 'blog_post' && (
+              <div className="space-y-2">
+                <Label>Outline (optional - will generate more focused content)</Label>
+                <Textarea
+                  value={formData.outline}
+                  onChange={(e) => setFormData({ ...formData, outline: e.target.value })}
+                  placeholder="Paste an outline here, or leave blank to generate from scratch"
+                  rows={3}
+                />
+              </div>
+            )}
+
+            {/* Generate Button */}
+            <Button
+              onClick={handleGenerate}
+              disabled={generating || (!formData.topic && !formData.title)}
+              className="w-full"
+            >
+              {generating ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Wand2 className="h-4 w-4 mr-2" />
+                  Generate {generateType.replace('_', ' ')}
+                </>
+              )}
+            </Button>
+
+            {/* Generated Content Preview */}
+            {generatedContent && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label>Generated Content</Label>
+                  {complianceResult && (
+                    <div className={`flex items-center gap-1 text-sm ${
+                      complianceResult.passed ? 'text-green-600' : 'text-yellow-600'
+                    }`}>
+                      {complianceResult.passed ? (
+                        <>
+                          <CheckCircle className="h-4 w-4" />
+                          Compliance Passed
+                        </>
+                      ) : (
+                        <>
+                          <AlertTriangle className="h-4 w-4" />
+                          Needs Review ({complianceResult.issues.length} issues)
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="border rounded-md p-4 bg-gray-50 max-h-64 overflow-y-auto">
+                  <pre className="whitespace-pre-wrap text-sm font-mono">
+                    {generatedContent}
+                  </pre>
+                </div>
+
+                {/* Compliance Issues */}
+                {complianceResult && !complianceResult.passed && (
+                  <div className="border border-yellow-200 rounded-md p-3 bg-yellow-50">
+                    <p className="font-medium text-yellow-800 mb-2">Compliance Issues:</p>
+                    <ul className="list-disc list-inside text-sm text-yellow-700 space-y-1">
+                      {complianceResult.issues.map((issue, i) => (
+                        <li key={i}>{issue}</li>
+                      ))}
+                    </ul>
+                    {complianceResult.suggestions.length > 0 && (
+                      <>
+                        <p className="font-medium text-yellow-800 mt-3 mb-2">Suggestions:</p>
+                        <ul className="list-disc list-inside text-sm text-yellow-700 space-y-1">
+                          {complianceResult.suggestions.map((suggestion, i) => (
+                            <li key={i}>{suggestion}</li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setGeneratedContent(null)} className="flex-1">
+                    Discard
+                  </Button>
+                  <Button onClick={handleGenerate} variant="outline" className="flex-1">
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Regenerate
+                  </Button>
+                  <Button onClick={applyGeneratedContent} className="flex-1">
+                    Use This Content
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end">
+            <Button variant="outline" onClick={() => setShowGenerateDialog(false)}>
+              Close
             </Button>
           </div>
         </DialogContent>
