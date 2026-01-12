@@ -7,7 +7,6 @@ interface ContactRow {
   email: string;
   phone?: string;
   source?: string;
-  notes?: string;
 }
 
 // POST /api/contacts/upload - Bulk create contacts from CSV data
@@ -56,22 +55,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get current assignment state for round-robin
-    const { data: systemState } = await supabase
-      .from('system_state')
-      .select('value')
-      .eq('key', 'last_assigned_to')
-      .single();
-
-    let lastAssigned = systemState?.value || 'erik';
+    // Simple round-robin assignment
     const teamMembers = ['chad', 'erik'];
+    let assignmentIndex = 0;
 
-    // Prepare contacts for insertion
+    // Prepare contacts for insertion (only include columns that definitely exist)
     const contactsToInsert = validContacts.map((contact) => {
-      // Round-robin assignment
-      const currentIndex = teamMembers.indexOf(lastAssigned);
-      const nextIndex = (currentIndex + 1) % teamMembers.length;
-      lastAssigned = teamMembers[nextIndex];
+      const assigned = teamMembers[assignmentIndex % teamMembers.length];
+      assignmentIndex++;
 
       return {
         first_name: contact.first_name.trim(),
@@ -79,10 +70,9 @@ export async function POST(request: NextRequest) {
         email: contact.email.trim().toLowerCase(),
         phone: contact.phone?.trim() || null,
         source: contact.source?.trim() || 'csv_import',
-        notes: contact.notes?.trim() || null,
         status: 'new_lead',
         lead_score: 0,
-        assigned_to: lastAssigned,
+        assigned_to: assigned,
       };
     });
 
@@ -116,37 +106,37 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error('Error inserting contacts:', error);
       return NextResponse.json(
-        { error: 'Failed to import contacts', details: error.message },
+        { error: `Failed to import contacts: ${error.message}` },
         { status: 500 }
       );
     }
 
-    // Update last assigned state
-    await supabase
-      .from('system_state')
-      .upsert({ key: 'last_assigned_to', value: lastAssigned });
-
-    // Log activity for each imported contact
-    const activityLogs = data.map((contact) => ({
-      contact_id: contact.id,
-      action: 'contact_created',
-      description: 'Contact imported via CSV upload',
-      metadata: { source: 'csv_import' },
-    }));
-
-    await supabase.from('activity_log').insert(activityLogs);
+    // Try to log activity (non-blocking - don't fail if this errors)
+    try {
+      if (data && data.length > 0) {
+        const activityLogs = data.map((contact) => ({
+          contact_id: contact.id,
+          action: 'contact_created',
+          description: 'Contact imported via CSV upload',
+        }));
+        await supabase.from('activity_log').insert(activityLogs);
+      }
+    } catch (activityError) {
+      // Ignore activity log errors - the contacts were still imported
+      console.error('Failed to log activity (non-critical):', activityError);
+    }
 
     return NextResponse.json({
       success: true,
-      imported: data.length,
+      imported: data?.length || 0,
       skipped: skippedCount,
       errors: errors.length > 0 ? errors : undefined,
-      message: `Successfully imported ${data.length} contact${data.length !== 1 ? 's' : ''}${skippedCount > 0 ? `, skipped ${skippedCount} duplicate${skippedCount !== 1 ? 's' : ''}` : ''}`,
+      message: `Successfully imported ${data?.length || 0} contact${(data?.length || 0) !== 1 ? 's' : ''}${skippedCount > 0 ? `, skipped ${skippedCount} duplicate${skippedCount !== 1 ? 's' : ''}` : ''}`,
     });
   } catch (error) {
     console.error('Error in POST /api/contacts/upload:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: error instanceof Error ? error.message : 'Internal server error' },
       { status: 500 }
     );
   }
