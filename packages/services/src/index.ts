@@ -24,6 +24,27 @@ export {
   type SendEmailParams,
   type GmailSyncResult,
 } from './gmail-service';
+export {
+  GoogleAdsService,
+  getGoogleAdsService,
+  type GoogleAdsConfig,
+  type CampaignData,
+  type CampaignMetrics,
+} from './google-ads-service';
+export {
+  GoogleAnalyticsService,
+  getGoogleAnalyticsService,
+  type GA4Config,
+  type DailyMetrics,
+  type TrafficSource,
+} from './google-analytics-service';
+export {
+  WordPressService,
+  getWordPressService,
+  type WordPressConfig,
+  type WordPressPost,
+  type WordPressCategory,
+} from './wordpress-service';
 
 // Re-export types from shared for convenience
 export type {
