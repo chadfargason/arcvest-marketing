@@ -42,6 +42,9 @@ import {
   Wand2,
   CheckCircle,
   AlertTriangle,
+  Zap,
+  Copy,
+  Download,
 } from 'lucide-react';
 
 interface ContentItem {
@@ -113,6 +116,24 @@ export default function ContentPage() {
   } | null>(null);
   const [showGenerateDialog, setShowGenerateDialog] = useState(false);
   const [generateType, setGenerateType] = useState<'outline' | 'blog_post' | 'linkedin_post' | 'newsletter'>('blog_post');
+
+  // Pipeline state
+  const [showPipelineDialog, setShowPipelineDialog] = useState(false);
+  const [pipelineRunning, setPipelineRunning] = useState(false);
+  const [pipelineInput, setPipelineInput] = useState({
+    content: '',
+    focusAngle: '',
+    targetKeywords: '',
+  });
+  const [pipelineResult, setPipelineResult] = useState<{
+    originalInput: string;
+    claudeDraft: { content: string; complianceCheck: { passed: boolean; issues: string[]; suggestions: string[] } };
+    chatgptDraft: { content: string; improvements: string[] };
+    geminiDraft: { content: string; edits: string[] };
+    finalOutput: { wordpressPost: string; excerpt: string; seoTags: string[]; illustrationPrompt: string };
+    metadata: { processedAt: string; totalTokensUsed: number; processingTimeMs: number };
+  } | null>(null);
+  const [pipelineStep, setPipelineStep] = useState<'input' | 'running' | 'results'>('input');
 
   // Form state
   const [formData, setFormData] = useState({
@@ -285,6 +306,60 @@ export default function ContentPage() {
     setComplianceResult(null);
   };
 
+  // Pipeline handler
+  const handleRunPipeline = async () => {
+    if (!pipelineInput.content.trim()) {
+      alert('Please enter source content (news article or topic prompt)');
+      return;
+    }
+
+    setPipelineRunning(true);
+    setPipelineStep('running');
+    setPipelineResult(null);
+
+    try {
+      const response = await fetch('/api/content/pipeline', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: pipelineInput.content,
+          inputType: 'raw_text',
+          focusAngle: pipelineInput.focusAngle || undefined,
+          targetKeywords: pipelineInput.targetKeywords
+            ? pipelineInput.targetKeywords.split(',').map((k) => k.trim()).filter(Boolean)
+            : undefined,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Pipeline failed');
+      }
+
+      setPipelineResult(data.result);
+      setPipelineStep('results');
+      // Refresh content list as pipeline saves to content_calendar
+      fetchContent();
+    } catch (error) {
+      console.error('Pipeline error:', error);
+      alert(error instanceof Error ? error.message : 'Pipeline failed');
+      setPipelineStep('input');
+    } finally {
+      setPipelineRunning(false);
+    }
+  };
+
+  const resetPipeline = () => {
+    setPipelineInput({ content: '', focusAngle: '', targetKeywords: '' });
+    setPipelineResult(null);
+    setPipelineStep('input');
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+  };
+
   const openEditDialog = (item: ContentItem) => {
     setSelectedContent(item);
     setFormData({
@@ -404,6 +479,15 @@ export default function ContentPage() {
           >
             <Sparkles className="h-4 w-4 mr-2" />
             Generate with AI
+          </Button>
+          <Button
+            onClick={() => {
+              setShowPipelineDialog(true);
+              resetPipeline();
+            }}
+          >
+            <Zap className="h-4 w-4 mr-2" />
+            Run Full Pipeline
           </Button>
           <Dialog open={showNewDialog} onOpenChange={setShowNewDialog}>
             <DialogTrigger asChild>
@@ -910,6 +994,266 @@ export default function ContentPage() {
 
           <div className="flex justify-end">
             <Button variant="outline" onClick={() => setShowGenerateDialog(false)}>
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Full Pipeline Dialog */}
+      <Dialog open={showPipelineDialog} onOpenChange={setShowPipelineDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Zap className="h-5 w-5 text-yellow-500" />
+              4-AI Content Pipeline
+            </DialogTitle>
+            <DialogDescription>
+              Claude → ChatGPT → Gemini → Claude: Transform any input into a polished, compliant blog post
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Input Step */}
+          {pipelineStep === 'input' && (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Source Content *</Label>
+                <Textarea
+                  value={pipelineInput.content}
+                  onChange={(e) => setPipelineInput({ ...pipelineInput, content: e.target.value })}
+                  placeholder="Paste a news article, enter a topic prompt, or describe what you want to write about..."
+                  rows={8}
+                  className="font-mono text-sm"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Enter any text: news article, topic idea, rough notes, or a detailed prompt
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Focus Angle (optional)</Label>
+                  <Input
+                    value={pipelineInput.focusAngle}
+                    onChange={(e) => setPipelineInput({ ...pipelineInput, focusAngle: e.target.value })}
+                    placeholder="e.g., retirement planning perspective"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Target Keywords (optional)</Label>
+                  <Input
+                    value={pipelineInput.targetKeywords}
+                    onChange={(e) => setPipelineInput({ ...pipelineInput, targetKeywords: e.target.value })}
+                    placeholder="Comma-separated keywords for SEO"
+                  />
+                </div>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                <p className="text-sm text-blue-800">
+                  <strong>Pipeline Process:</strong>
+                </p>
+                <ol className="text-sm text-blue-700 mt-2 space-y-1 list-decimal list-inside">
+                  <li>Claude creates initial draft + compliance check</li>
+                  <li>ChatGPT improves and tightens the writing</li>
+                  <li>Gemini polishes for clarity and impact</li>
+                  <li>Claude packages for WordPress with SEO tags</li>
+                </ol>
+              </div>
+
+              <Button
+                onClick={handleRunPipeline}
+                disabled={!pipelineInput.content.trim()}
+                className="w-full"
+                size="lg"
+              >
+                <Zap className="h-4 w-4 mr-2" />
+                Run Full Pipeline
+              </Button>
+            </div>
+          )}
+
+          {/* Running Step */}
+          {pipelineStep === 'running' && (
+            <div className="py-12 flex flex-col items-center justify-center space-y-4">
+              <Loader2 className="h-12 w-12 animate-spin text-primary" />
+              <p className="text-lg font-medium">Running 4-AI Pipeline...</p>
+              <p className="text-sm text-muted-foreground">
+                This typically takes 30-60 seconds as content passes through all 4 AI models
+              </p>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span className="animate-pulse">Claude</span>
+                <span>→</span>
+                <span className="animate-pulse delay-100">ChatGPT</span>
+                <span>→</span>
+                <span className="animate-pulse delay-200">Gemini</span>
+                <span>→</span>
+                <span className="animate-pulse delay-300">Claude</span>
+              </div>
+            </div>
+          )}
+
+          {/* Results Step */}
+          {pipelineStep === 'results' && pipelineResult && (
+            <div className="space-y-4 py-4">
+              {/* Metadata */}
+              <div className="flex items-center justify-between bg-gray-50 rounded-md p-3">
+                <div className="flex items-center gap-4">
+                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    Complete
+                  </Badge>
+                  <span className="text-sm text-muted-foreground">
+                    {(pipelineResult.metadata.processingTimeMs / 1000).toFixed(1)}s
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {pipelineResult.metadata.totalTokensUsed.toLocaleString()} tokens
+                  </span>
+                </div>
+                <Button variant="outline" size="sm" onClick={resetPipeline}>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Run Again
+                </Button>
+              </div>
+
+              {/* Compliance Status */}
+              <div className={`rounded-md p-3 ${
+                pipelineResult.claudeDraft.complianceCheck.passed
+                  ? 'bg-green-50 border border-green-200'
+                  : 'bg-yellow-50 border border-yellow-200'
+              }`}>
+                <div className="flex items-center gap-2">
+                  {pipelineResult.claudeDraft.complianceCheck.passed ? (
+                    <>
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <span className="font-medium text-green-800">Compliance Passed</span>
+                    </>
+                  ) : (
+                    <>
+                      <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                      <span className="font-medium text-yellow-800">
+                        Compliance Issues ({pipelineResult.claudeDraft.complianceCheck.issues.length})
+                      </span>
+                    </>
+                  )}
+                </div>
+                {!pipelineResult.claudeDraft.complianceCheck.passed && (
+                  <ul className="mt-2 text-sm text-yellow-700 list-disc list-inside">
+                    {pipelineResult.claudeDraft.complianceCheck.issues.map((issue, i) => (
+                      <li key={i}>{issue}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              {/* WordPress Post */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-base font-semibold">WordPress-Ready HTML</Label>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => copyToClipboard(pipelineResult.finalOutput.wordpressPost)}
+                  >
+                    <Copy className="h-4 w-4 mr-1" />
+                    Copy
+                  </Button>
+                </div>
+                <div className="border rounded-md p-4 bg-gray-50 max-h-64 overflow-y-auto">
+                  <div
+                    className="prose prose-sm max-w-none"
+                    dangerouslySetInnerHTML={{ __html: pipelineResult.finalOutput.wordpressPost }}
+                  />
+                </div>
+              </div>
+
+              {/* Excerpt */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Excerpt</Label>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => copyToClipboard(pipelineResult.finalOutput.excerpt)}
+                  >
+                    <Copy className="h-4 w-4 mr-1" />
+                    Copy
+                  </Button>
+                </div>
+                <div className="border rounded-md p-3 bg-gray-50">
+                  <p className="text-sm">{pipelineResult.finalOutput.excerpt}</p>
+                </div>
+              </div>
+
+              {/* SEO Tags */}
+              <div className="space-y-2">
+                <Label>SEO Tags ({pipelineResult.finalOutput.seoTags.length})</Label>
+                <div className="flex flex-wrap gap-2">
+                  {pipelineResult.finalOutput.seoTags.map((tag, i) => (
+                    <Badge key={i} variant="secondary">{tag}</Badge>
+                  ))}
+                </div>
+              </div>
+
+              {/* Illustration Prompt */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Illustration Prompt</Label>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => copyToClipboard(pipelineResult.finalOutput.illustrationPrompt)}
+                  >
+                    <Copy className="h-4 w-4 mr-1" />
+                    Copy
+                  </Button>
+                </div>
+                <div className="border rounded-md p-3 bg-gray-50">
+                  <p className="text-sm text-muted-foreground">
+                    {pipelineResult.finalOutput.illustrationPrompt}
+                  </p>
+                </div>
+              </div>
+
+              {/* Pipeline Steps Details (Collapsible) */}
+              <details className="border rounded-md">
+                <summary className="p-3 cursor-pointer font-medium hover:bg-gray-50">
+                  View Pipeline Steps (Claude → ChatGPT → Gemini improvements)
+                </summary>
+                <div className="p-3 border-t space-y-4">
+                  {/* ChatGPT Improvements */}
+                  {pipelineResult.chatgptDraft.improvements.length > 0 && (
+                    <div>
+                      <p className="font-medium text-sm mb-2">ChatGPT Improvements:</p>
+                      <ul className="text-sm text-muted-foreground list-disc list-inside">
+                        {pipelineResult.chatgptDraft.improvements.map((imp, i) => (
+                          <li key={i}>{imp}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {/* Gemini Edits */}
+                  {pipelineResult.geminiDraft.edits.length > 0 && (
+                    <div>
+                      <p className="font-medium text-sm mb-2">Gemini Edits:</p>
+                      <ul className="text-sm text-muted-foreground list-disc list-inside">
+                        {pipelineResult.geminiDraft.edits.map((edit, i) => (
+                          <li key={i}>{edit}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </details>
+
+              <p className="text-xs text-muted-foreground text-center">
+                Content saved to Content Calendar and Approval Queue for review
+              </p>
+            </div>
+          )}
+
+          <div className="flex justify-end">
+            <Button variant="outline" onClick={() => setShowPipelineDialog(false)}>
               Close
             </Button>
           </div>
