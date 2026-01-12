@@ -8,11 +8,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GmailService } from '@arcvest/services';
 
-// Bloomberg sender patterns
-const BLOOMBERG_SENDERS = [
-  '@bloomberg.com',
-  '@mail.bloomberg.com',
-  '@newsletters.bloomberg.com',
+// Bloomberg sender patterns (domain patterns without @)
+const BLOOMBERG_DOMAINS = [
+  'bloomberg.com',
 ];
 
 /**
@@ -54,13 +52,13 @@ export async function GET(request: NextRequest) {
     // Filter for actual Bloomberg emails
     const bloombergEmails = messages.filter(msg => {
       const fromEmail = msg.from.email.toLowerCase();
-      return BLOOMBERG_SENDERS.some(pattern => fromEmail.includes(pattern.toLowerCase()));
+      return BLOOMBERG_DOMAINS.some(domain => fromEmail.includes(domain));
     });
 
     console.log('[Bloomberg Scan] Bloomberg emails:', bloombergEmails.length);
 
     return NextResponse.json({
-      version: 'v4-debug-senders',
+      version: 'v5-fixed-filter',
       scanTime: new Date().toISOString(),
       emailsFound: bloombergEmails.length,
       messagesFromGmail: messages.length,
@@ -125,7 +123,7 @@ export async function POST(request: NextRequest) {
     // Filter for actual Bloomberg emails
     const bloombergEmails = messages.filter(msg => {
       const fromEmail = msg.from.email.toLowerCase();
-      return BLOOMBERG_SENDERS.some(pattern => fromEmail.includes(pattern.toLowerCase()));
+      return BLOOMBERG_DOMAINS.some(domain => fromEmail.includes(domain));
     });
 
     return NextResponse.json({
