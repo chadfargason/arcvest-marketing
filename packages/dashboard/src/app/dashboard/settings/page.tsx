@@ -34,6 +34,8 @@ interface SystemSettings {
     daily_digest: boolean;
   };
   integrations: {
+    gmail_connected: boolean;
+    gmail_email?: string;
     google_ads_connected: boolean;
     google_analytics_connected: boolean;
     wordpress_connected: boolean;
@@ -87,12 +89,52 @@ export default function SettingsPage() {
         daily_digest: true,
       },
       integrations: {
+        gmail_connected: false,
         google_ads_connected: false,
         google_analytics_connected: false,
         wordpress_connected: false,
       },
     };
   }
+
+  // Fetch Gmail connection status separately
+  const fetchGmailStatus = useCallback(async () => {
+    try {
+      const response = await fetch('/api/gmail');
+      if (response.ok) {
+        const data = await response.json();
+        setSettings(prev => prev ? {
+          ...prev,
+          integrations: {
+            ...prev.integrations,
+            gmail_connected: data.connected,
+            gmail_email: data.profile?.email,
+          }
+        } : prev);
+      }
+    } catch (err) {
+      console.error('Failed to fetch Gmail status:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchGmailStatus();
+  }, [fetchGmailStatus]);
+
+  const handleConnectGmail = () => {
+    window.location.href = '/api/auth/google';
+  };
+
+  const handleDisconnectGmail = async () => {
+    try {
+      const response = await fetch('/api/gmail', { method: 'DELETE' });
+      if (response.ok) {
+        await fetchGmailStatus();
+      }
+    } catch (err) {
+      console.error('Failed to disconnect Gmail:', err);
+    }
+  };
 
   const handleSave = async () => {
     if (!settings) return;
@@ -348,6 +390,23 @@ export default function SettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="flex items-center justify-between py-2 border-b">
+                <div>
+                  <p className="font-medium">Gmail</p>
+                  <p className="text-sm text-muted-foreground">
+                    {settings.integrations.gmail_connected
+                      ? `Connected: ${settings.integrations.gmail_email}`
+                      : 'Not connected - Required for Bloomberg email scanning'}
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={settings.integrations.gmail_connected ? handleDisconnectGmail : handleConnectGmail}
+                >
+                  {settings.integrations.gmail_connected ? 'Disconnect' : 'Connect'}
+                </Button>
+              </div>
               <div className="flex items-center justify-between py-2 border-b">
                 <div>
                   <p className="font-medium">Google Ads</p>
