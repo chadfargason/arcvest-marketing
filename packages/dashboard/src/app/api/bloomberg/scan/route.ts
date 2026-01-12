@@ -6,7 +6,14 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { BloombergProcessor } from '@/lib/bloomberg';
+import { GmailService } from '@arcvest/services';
+
+// Bloomberg sender patterns
+const BLOOMBERG_SENDERS = [
+  '@bloomberg.com',
+  '@mail.bloomberg.com',
+  '@newsletters.bloomberg.com',
+];
 
 /**
  * GET /api/bloomberg/scan
@@ -17,16 +24,54 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const hoursBack = parseInt(searchParams.get('hoursBack') || '24');
 
-    const processor = new BloombergProcessor();
-    const result = await processor.scan({
+    console.log('[Bloomberg Scan] Starting with hoursBack:', hoursBack);
+
+    const gmailService = new GmailService();
+
+    const isConnected = await gmailService.isConnected();
+    console.log('[Bloomberg Scan] Gmail connected:', isConnected);
+
+    if (!isConnected) {
+      return NextResponse.json({
+        scanTime: new Date().toISOString(),
+        emailsFound: 0,
+        articlesExtracted: 0,
+        articlesQueued: 0,
+        errors: ['Gmail not connected'],
+        articles: [],
+      });
+    }
+
+    // Fetch Bloomberg emails directly
+    const messages = await gmailService.fetchNewMessages(50, {
+      includeTrash: true,
       hoursBack,
-      minScore: 60,
-      maxArticles: 5,
-      autoQueue: false, // Don't auto-queue on manual scan
-      includeTrash: true, // Include trashed emails
+      fromFilter: 'from:bloomberg.com',
     });
 
-    return NextResponse.json(result);
+    console.log('[Bloomberg Scan] Got messages:', messages.length);
+
+    // Filter for actual Bloomberg emails
+    const bloombergEmails = messages.filter(msg => {
+      const fromEmail = msg.from.email.toLowerCase();
+      return BLOOMBERG_SENDERS.some(pattern => fromEmail.includes(pattern.toLowerCase()));
+    });
+
+    console.log('[Bloomberg Scan] Bloomberg emails:', bloombergEmails.length);
+
+    return NextResponse.json({
+      scanTime: new Date().toISOString(),
+      emailsFound: bloombergEmails.length,
+      articlesExtracted: 0, // TODO: Add extraction
+      articlesQueued: 0,
+      errors: [],
+      articles: bloombergEmails.map(e => ({
+        headline: e.subject,
+        from: e.from.email,
+        fromName: e.from.name,
+        date: e.date,
+      })),
+    });
   } catch (error) {
     console.error('[Bloomberg API] Scan failed:', error);
     return NextResponse.json(
