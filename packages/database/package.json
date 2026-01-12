@@ -1,0 +1,14 @@
+{
+  "name": "@arcvest/database",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ArcVest Marketing Automation - Database Schema and Migrations",
+  "scripts": {
+    "migrate": "echo 'Run migrations via Supabase CLI or dashboard'",
+    "seed": "echo 'Run seeds via Supabase CLI or dashboard'",
+    "generate-types": "supabase gen types typescript --local > ../shared/src/types/supabase.ts"
+  },
+  "devDependencies": {
+    "supabase": "^1.200.0"
+  }
+}

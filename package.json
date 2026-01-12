@@ -1,0 +1,30 @@
+{
+  "name": "arcvest-marketing",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ArcVest Marketing Automation System",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check",
+    "test": "turbo run test",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "db:migrate": "npm run migrate --workspace=@arcvest/database",
+    "db:seed": "npm run seed --workspace=@arcvest/database",
+    "agents:start": "npm run start --workspace=@arcvest/agents",
+    "dashboard:dev": "npm run dev --workspace=@arcvest/dashboard",
+    "dashboard:build": "npm run build --workspace=@arcvest/dashboard"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.0",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "packageManager": "npm@10.0.0"
+}
