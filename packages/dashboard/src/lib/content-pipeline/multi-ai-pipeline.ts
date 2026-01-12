@@ -205,14 +205,21 @@ Provide your improved version in markdown format.
 
 After the blog post, add a section titled "## IMPROVEMENTS MADE" with a bullet list of what you changed.`;
 
-    const response = await this.openai.chat.completions.create({
-      model: 'gpt-4o',
+    // Using GPT-5.2 with reasoning capabilities
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = await (this.openai.chat.completions.create as any)({
+      model: 'gpt-5.2',
       max_tokens: 4096,
-      temperature: 0.7,
+      reasoning: {
+        effort: 'medium',
+      },
+      text: {
+        verbosity: 'medium',
+      },
       messages: [{ role: 'user', content: prompt }],
     });
 
-    const fullResponse = response.choices[0]?.message?.content || draft;
+    const fullResponse = response.choices?.[0]?.message?.content || draft;
     const tokens = response.usage?.total_tokens || 0;
 
     // Parse out improvements list
@@ -221,8 +228,8 @@ After the blog post, add a section titled "## IMPROVEMENTS MADE" with a bullet l
     const improvements: string[] = [];
 
     if (parts[1]) {
-      const improvementLines = parts[1].split('\n').filter(line => line.trim().startsWith('-') || line.trim().startsWith('*'));
-      improvements.push(...improvementLines.map(line => line.replace(/^[-*]\s*/, '').trim()));
+      const improvementLines = parts[1].split('\n').filter((line: string) => line.trim().startsWith('-') || line.trim().startsWith('*'));
+      improvements.push(...improvementLines.map((line: string) => line.replace(/^[-*]\s*/, '').trim()));
     }
 
     return {
