@@ -205,21 +205,20 @@ Provide your improved version in markdown format.
 
 After the blog post, add a section titled "## IMPROVEMENTS MADE" with a bullet list of what you changed.`;
 
-    // Using GPT-5.2 with reasoning capabilities
+    // Using GPT-5.2 with Responses API (not Chat Completions)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response = await (this.openai.chat.completions.create as any)({
+    const response = await (this.openai.responses as any).create({
       model: 'gpt-5.2',
-      max_tokens: 4096,
+      input: prompt,
       reasoning: {
         effort: 'medium',
       },
       text: {
         verbosity: 'medium',
       },
-      messages: [{ role: 'user', content: prompt }],
     });
 
-    const fullResponse = response.choices?.[0]?.message?.content || draft;
+    const fullResponse = response.output_text || draft;
     const tokens = response.usage?.total_tokens || 0;
 
     // Parse out improvements list

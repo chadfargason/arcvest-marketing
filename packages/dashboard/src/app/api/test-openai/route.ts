@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
-// GET /api/test-openai - Test GPT-5.2 with reasoning parameters
+// GET /api/test-openai - Test GPT-5.2 with Responses API
 export async function GET() {
   const startTime = Date.now();
 
@@ -17,23 +17,17 @@ export async function GET() {
 
     const openai = new OpenAI({ apiKey });
 
-    // Test GPT-5.2 with reasoning and text parameters
+    // GPT-5.2 uses the Responses API, not Chat Completions
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response = await (openai.chat.completions.create as any)({
+    const response = await (openai.responses as any).create({
       model: 'gpt-5.2',
-      max_tokens: 256,
+      input: 'What is 2+2? Explain your reasoning briefly.',
       reasoning: {
         effort: 'medium',
       },
       text: {
         verbosity: 'medium',
       },
-      messages: [
-        {
-          role: 'user',
-          content: 'What is 2+2? Explain your reasoning briefly.',
-        },
-      ],
     });
 
     const elapsed = Date.now() - startTime;
@@ -46,7 +40,7 @@ export async function GET() {
         text: { verbosity: 'medium' },
       },
       response: {
-        content: response.choices?.[0]?.message?.content,
+        output_text: response.output_text,
         usage: response.usage,
         model: response.model,
       },
