@@ -298,10 +298,10 @@ export class GmailService {
    */
   async fetchNewMessages(
     maxResults: number = 50,
-    options?: { includeTrash?: boolean; hoursBack?: number }
+    options?: { includeTrash?: boolean; hoursBack?: number; fromFilter?: string }
   ): Promise<GmailMessage[]> {
-    const { includeTrash = false, hoursBack } = options || {};
-    logger.info('Fetching new Gmail messages', { includeTrash, hoursBack });
+    const { includeTrash = false, hoursBack, fromFilter } = options || {};
+    logger.info('Fetching new Gmail messages', { includeTrash, hoursBack, fromFilter });
 
     let lastSyncTime: Date;
 
@@ -321,10 +321,23 @@ export class GmailService {
         : new Date(Date.now() - 24 * 60 * 60 * 1000); // Default to 24 hours ago
     }
 
-    // Query for messages after last sync
+    // Build Gmail query
+    const queryParts: string[] = [];
+
     // Use in:anywhere to include trash if requested
-    const locationFilter = includeTrash ? 'in:anywhere' : '';
-    const query = `${locationFilter} after:${Math.floor(lastSyncTime.getTime() / 1000)}`.trim();
+    if (includeTrash) {
+      queryParts.push('in:anywhere');
+    }
+
+    // Add from filter if specified (e.g., "from:bloomberg.com")
+    if (fromFilter) {
+      queryParts.push(fromFilter);
+    }
+
+    // Add time filter
+    queryParts.push(`after:${Math.floor(lastSyncTime.getTime() / 1000)}`);
+
+    const query = queryParts.join(' ');
 
     const listResponse = await this.gmailRequest<{
       messages?: { id: string; threadId: string }[];
