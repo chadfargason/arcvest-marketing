@@ -310,17 +310,21 @@ export class BloombergProcessor {
 
       // Fetch Bloomberg emails directly using Gmail search (much more efficient)
       // Search for emails from bloomberg.com domain
+      console.log(`[Bloomberg] Fetching emails with options:`, { includeTrash, hoursBack, fromFilter: 'from:bloomberg.com' });
+
       const messages = await this.gmailService.fetchNewMessages(50, {
         includeTrash,
         hoursBack,
         fromFilter: 'from:bloomberg.com',
       });
 
+      console.log(`[Bloomberg] Gmail returned ${messages.length} messages`);
+
       // Double-check they're actually Bloomberg emails (the Gmail filter should handle this)
       const bloombergEmails = messages.filter(isBloombergEmail);
       result.emailsFound = bloombergEmails.length;
 
-      console.log(`[Bloomberg] Found ${bloombergEmails.length} Bloomberg emails (fetched ${messages.length} from Gmail query)`);
+      console.log(`[Bloomberg] After filter: ${bloombergEmails.length} Bloomberg emails`);
 
       if (bloombergEmails.length === 0) {
         return result;

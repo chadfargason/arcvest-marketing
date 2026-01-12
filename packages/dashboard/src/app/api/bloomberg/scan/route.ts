@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
       minScore: 60,
       maxArticles: 5,
       autoQueue: false, // Don't auto-queue on manual scan
+      includeTrash: true, // Include trashed emails
     });
 
     return NextResponse.json(result);
@@ -57,6 +58,7 @@ export async function POST(request: NextRequest) {
       minScore,
       maxArticles,
       autoQueue,
+      includeTrash: true, // Include trashed emails
     });
 
     return NextResponse.json(result);
