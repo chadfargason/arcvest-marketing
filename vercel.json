@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "turbo run build --filter=@arcvest/dashboard",
+  "outputDirectory": "packages/dashboard/.next",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "ignoreCommand": "npx turbo-ignore"
+}
