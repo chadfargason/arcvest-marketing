@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getBloombergProcessor } from '@/lib/bloomberg';
+import { BloombergProcessor } from '@/lib/bloomberg';
 
 /**
  * GET /api/bloomberg/scan
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const hoursBack = parseInt(searchParams.get('hoursBack') || '24');
 
-    const processor = getBloombergProcessor();
+    const processor = new BloombergProcessor();
     const result = await processor.scan({
       hoursBack,
       minScore: 60,
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       autoQueue = false,
     } = body;
 
-    const processor = getBloombergProcessor();
+    const processor = new BloombergProcessor();
     const result = await processor.scan({
       hoursBack,
       minScore,
