@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/cron/bloomberg-scan",
-      "schedule": "0 13 * * *"
+      "schedule": "35 12 * * *"
     },
     {
       "path": "/api/cron/analytics-sync",
@@ -22,19 +22,23 @@
     },
     {
       "path": "/api/cron/email-scan",
-      "schedule": "0 12 * * *"
+      "schedule": "30 12 * * *"
     },
     {
       "path": "/api/cron/score-ideas",
-      "schedule": "30 13 * * *"
+      "schedule": "45 12 * * *"
     },
     {
       "path": "/api/cron/select-daily",
-      "schedule": "0 14 * * *"
+      "schedule": "50 12 * * *"
     },
     {
       "path": "/api/cron/process-pipeline",
-      "schedule": "30 14,15,16,17,18,19,20,21 * * *"
+      "schedule": "55 12 * * *"
+    },
+    {
+      "path": "/api/cron/process-pipeline",
+      "schedule": "0,5,10,15,20,25,30 13 * * *"
     }
   ]
 }
