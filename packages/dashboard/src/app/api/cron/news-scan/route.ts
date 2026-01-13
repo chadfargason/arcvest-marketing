@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
         },
         status: 'pending',
         priority: 'medium',
-        submitted_by: 'news_scanner_cron',
+        created_by: "news_scanner_cron",
       });
     }
 
