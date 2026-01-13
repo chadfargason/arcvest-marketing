@@ -29,7 +29,7 @@
       "schedule": "45 12 * * *"
     },
     {
-      "path": "/api/cron/select-daily",
+      "path": "/api/cron/select-daily?count=6",
       "schedule": "50 12 * * *"
     },
     {
@@ -38,7 +38,27 @@
     },
     {
       "path": "/api/cron/process-pipeline",
-      "schedule": "0,5,10,15,20,25,30 13 * * *"
+      "schedule": "0,5,10,15,20,25 13 * * *"
+    },
+    {
+      "path": "/api/cron/email-scan",
+      "schedule": "30 23 * * *"
+    },
+    {
+      "path": "/api/cron/score-ideas",
+      "schedule": "45 23 * * *"
+    },
+    {
+      "path": "/api/cron/select-daily?count=2",
+      "schedule": "50 23 * * *"
+    },
+    {
+      "path": "/api/cron/process-pipeline",
+      "schedule": "55 23 * * *"
+    },
+    {
+      "path": "/api/cron/process-pipeline",
+      "schedule": "0 0 * * *"
     }
   ]
 }

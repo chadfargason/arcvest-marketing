@@ -48,25 +48,14 @@ export class DailySelectionService {
     const dateStr = date.toISOString().split('T')[0] || '';
 
     try {
-      // Check if selection already done for this date
+      // Get existing run if any (for tracking purposes, but don't block)
       const { data: existingRun } = await this.supabase
         .from('selection_runs')
         .select('id, ideas_selected')
         .eq('run_date', dateStr)
         .single();
 
-      if (existingRun && existingRun.ideas_selected > 0) {
-        logger.info(`Selection already completed for ${dateStr}`);
-        return {
-          success: true,
-          selectedCount: existingRun.ideas_selected,
-          selectedIdeas: [],
-          sourceBreakdown: {},
-          error: `Selection already done for ${dateStr}. Found ${existingRun.ideas_selected} ideas.`,
-        };
-      }
-
-      // Create or update selection run record
+      // Create or update selection run record (allow multiple runs per day)
       const runId = existingRun?.id || undefined;
 
       // Start selection

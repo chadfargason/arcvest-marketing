@@ -1,10 +1,10 @@
 /**
  * Cron Job: Daily Selection
  *
- * GET /api/cron/select-daily
+ * GET /api/cron/select-daily?count=6
  *
- * Selects top 8 ideas for the content pipeline.
- * Scheduled: Daily at 2:00 PM UTC
+ * Selects top N ideas for the content pipeline.
+ * Use count parameter to specify how many (default: 6 for morning, 2 for evening)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -19,15 +19,18 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const url = new URL(request.url);
+  const targetCount = parseInt(url.searchParams.get('count') || '6', 10);
+
   const startTime = Date.now();
-  console.log('[Cron] Starting daily selection...');
+  console.log(`[Cron] Starting selection for ${targetCount} ideas...`);
 
   try {
     const selector = getDailySelectionService();
     const result = await selector.selectDaily({
-      targetCount: 8,
+      targetCount,
       minScore: 55,
-      maxPerSource: 2,
+      maxPerSource: 3,
     });
 
     const duration = Date.now() - startTime;
