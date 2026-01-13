@@ -46,6 +46,35 @@ export {
   type WordPressCategory,
 } from './wordpress-service';
 
+// Source Adapters
+export {
+  SourceRegistry,
+  getSourceRegistry,
+  resetSourceRegistry,
+  initializeAdapters,
+  BloombergAdapter,
+  AbnormalReturnsAdapter,
+  LarrySwedroeAdapter,
+  MichaelGreenAdapter,
+  GeneralInboxAdapter,
+  RSSAdapter,
+  generateContentHash,
+  ideaToRecord,
+} from './source-adapters';
+
+export type {
+  SourceType,
+  IdeaStatus,
+  SourceAdapterConfig,
+  IdeaCandidate,
+  FetchResult,
+  SourceAdapter,
+  EmailSourceConfig,
+  RSSSourceConfig,
+  IdeaQueueRecord,
+  SourceStats,
+} from './source-adapters';
+
 // Re-export types from shared for convenience
 export type {
   Contact,
