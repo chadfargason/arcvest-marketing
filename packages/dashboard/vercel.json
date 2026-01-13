@@ -7,6 +7,18 @@
     {
       "path": "/api/cron/bloomberg-scan",
       "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/cron/analytics-sync",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/ads-sync",
+      "schedule": "0 */4 * * *"
+    },
+    {
+      "path": "/api/cron/ads-optimize",
+      "schedule": "0 12 * * *"
     }
   ]
 }

@@ -22,9 +22,11 @@
   },
   "dependencies": {
     "@arcvest/shared": "*",
+    "@google-analytics/data": "^5.2.1",
     "@supabase/supabase-js": "^2.39.0",
     "date-fns": "^3.3.0",
-    "eventemitter3": "^5.0.1"
+    "eventemitter3": "^5.0.1",
+    "google-ads-api": "^22.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
