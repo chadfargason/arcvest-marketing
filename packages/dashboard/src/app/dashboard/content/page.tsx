@@ -45,6 +45,7 @@ import {
   Zap,
   Copy,
   Download,
+  Eye,
 } from 'lucide-react';
 
 interface ContentItem {
@@ -57,6 +58,9 @@ interface ContentItem {
   target_keyword: string | null;
   outline: string | null;
   draft: string | null;
+  final_content: string | null;
+  meta_description: string | null;
+  keywords: string[] | null;
   published_url: string | null;
   published_at: string | null;
   views: number;
@@ -134,6 +138,9 @@ export default function ContentPage() {
     metadata: { processedAt: string; totalTokensUsed: number; processingTimeMs: number };
   } | null>(null);
   const [pipelineStep, setPipelineStep] = useState<'input' | 'running' | 'results'>('input');
+
+  // Preview state
+  const [previewContent, setPreviewContent] = useState<ContentItem | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -707,6 +714,16 @@ export default function ContentPage() {
                         </td>
                         <td className="p-3 text-right">
                           <div className="flex justify-end gap-1">
+                            {item.final_content && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setPreviewContent(item)}
+                                title="View generated content"
+                              >
+                                <Eye className="h-4 w-4 text-blue-500" />
+                              </Button>
+                            )}
                             {item.published_url && (
                               <Button
                                 variant="ghost"
@@ -1254,6 +1271,92 @@ export default function ContentPage() {
 
           <div className="flex justify-end">
             <Button variant="outline" onClick={() => setShowPipelineDialog(false)}>
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Content Preview Dialog */}
+      <Dialog open={!!previewContent} onOpenChange={(open) => !open && setPreviewContent(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{previewContent?.title || 'Content Preview'}</DialogTitle>
+            <DialogDescription>
+              Generated blog post ready for review
+            </DialogDescription>
+          </DialogHeader>
+
+          {previewContent && (
+            <div className="space-y-4 py-4">
+              {/* Meta Description */}
+              {previewContent.meta_description && (
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                  <p className="text-sm font-medium text-blue-800 mb-1">Meta Description:</p>
+                  <p className="text-sm text-blue-700">{previewContent.meta_description}</p>
+                </div>
+              )}
+
+              {/* Keywords */}
+              {previewContent.keywords && previewContent.keywords.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">SEO Keywords:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {previewContent.keywords.map((keyword, i) => (
+                      <Badge key={i} variant="secondary">{keyword}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Full Content */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium">Full Content (HTML):</p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      const content = previewContent.final_content || '';
+                      // Remove markdown code fence if present
+                      const cleanContent = content.replace(/^```html\n?/, '').replace(/\n?```$/, '');
+                      navigator.clipboard.writeText(cleanContent);
+                    }}
+                  >
+                    <Copy className="h-4 w-4 mr-1" />
+                    Copy HTML
+                  </Button>
+                </div>
+                <div className="border rounded-md p-4 bg-white max-h-[50vh] overflow-y-auto">
+                  <div
+                    className="prose prose-sm max-w-none"
+                    dangerouslySetInnerHTML={{
+                      __html: (previewContent.final_content || '')
+                        .replace(/^```html\n?/, '')
+                        .replace(/\n?```$/, '')
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Raw HTML Toggle */}
+              <details className="border rounded-md">
+                <summary className="p-3 cursor-pointer font-medium hover:bg-gray-50">
+                  View Raw HTML Source
+                </summary>
+                <div className="p-3 border-t bg-gray-50">
+                  <pre className="text-xs whitespace-pre-wrap overflow-x-auto">
+                    {(previewContent.final_content || '')
+                      .replace(/^```html\n?/, '')
+                      .replace(/\n?```$/, '')}
+                  </pre>
+                </div>
+              </details>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setPreviewContent(null)}>
               Close
             </Button>
           </div>
