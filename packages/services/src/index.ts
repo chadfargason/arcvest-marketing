@@ -62,6 +62,12 @@ export {
   ideaToRecord,
 } from './source-adapters';
 
+// Scoring
+export { IdeaScorer, getIdeaScorer } from './scoring';
+
+// Selection
+export { DailySelectionService, getDailySelectionService } from './selection';
+
 export type {
   SourceType,
   IdeaStatus,
