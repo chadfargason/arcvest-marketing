@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
       minScore: 60, // Minimum relevance score
       maxArticles: 5, // Top 5 articles
       autoQueue: true, // Auto-queue to content calendar
+      includeTrash: true, // Include trashed emails (Bloomberg often gets trashed)
     });
 
     console.log('[Bloomberg Cron] Scan complete:', {
