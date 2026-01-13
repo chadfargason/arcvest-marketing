@@ -22,19 +22,19 @@
     },
     {
       "path": "/api/cron/email-scan",
-      "schedule": "0 17 * * *"
+      "schedule": "0 12 * * *"
     },
     {
       "path": "/api/cron/score-ideas",
-      "schedule": "30 17 * * *"
+      "schedule": "30 13 * * *"
     },
     {
       "path": "/api/cron/select-daily",
-      "schedule": "0 18 * * *"
+      "schedule": "0 14 * * *"
     },
     {
       "path": "/api/cron/process-pipeline",
-      "schedule": "30 18 * * *"
+      "schedule": "30 14,15,16,17,18,19,20,21 * * *"
     }
   ]
 }

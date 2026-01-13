@@ -27,14 +27,14 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    // Get selected ideas for today
+    // Get ONE selected idea for today (process one at a time to avoid timeout)
     const { data: selectedIdeas, error: fetchError } = await supabase
       .from('idea_queue')
       .select('id, title, source_name, full_content, suggested_angle, relevance_score, selection_rank')
       .eq('status', 'selected')
       .eq('selected_for_date', dateStr)
       .order('selection_rank', { ascending: true })
-      .limit(8);
+      .limit(1);
 
     if (fetchError) {
       throw fetchError;
