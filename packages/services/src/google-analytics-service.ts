@@ -65,8 +65,8 @@ export class GoogleAnalyticsService {
    * Initialize GA4 client from environment variables
    */
   private initializeFromEnv(): void {
-    const propertyId = process.env.GA4_PROPERTY_ID;
-    const serviceAccountKey = process.env.GA4_SERVICE_ACCOUNT_KEY;
+    const propertyId = process.env['GA4_PROPERTY_ID'];
+    const serviceAccountKey = process.env['GA4_SERVICE_ACCOUNT_KEY'];
 
     if (!propertyId || !serviceAccountKey) {
       console.log('[GA4] Missing configuration - GA4_PROPERTY_ID or GA4_SERVICE_ACCOUNT_KEY not set');
