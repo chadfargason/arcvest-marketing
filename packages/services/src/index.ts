@@ -68,6 +68,17 @@ export { IdeaScorer, getIdeaScorer } from './scoring';
 // Selection
 export { DailySelectionService, getDailySelectionService } from './selection';
 
+// Job Queue
+export {
+  JobQueueService,
+  jobQueueService,
+  type Job,
+  type JobType,
+  type JobStatus,
+  type EnqueueOptions,
+  type JobResult,
+} from './job-queue-service';
+
 export type {
   SourceType,
   IdeaStatus,
