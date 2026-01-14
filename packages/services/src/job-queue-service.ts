@@ -9,7 +9,8 @@
  * - Retry logic with exponential backoff
  */
 
-import { createLogger, getSupabaseClient } from '@arcvest/shared';
+import { createLogger } from '@arcvest/shared';
+import { getSupabase } from './supabase';
 
 const logger = createLogger('job-queue-service');
 
@@ -64,7 +65,7 @@ export interface JobResult {
  * Job Queue Service class
  */
 export class JobQueueService {
-  private supabase = getSupabaseClient();
+  private supabase = getSupabase();
 
   /**
    * Enqueue a new job
@@ -137,7 +138,7 @@ export class JobQueueService {
       throw new Error(`Failed to enqueue batch: ${error.message}`);
     }
 
-    const ids = data.map(d => d.id);
+    const ids = data.map((d: { id: string }) => d.id);
     logger.info('Batch enqueued', { count: ids.length });
     return ids;
   }

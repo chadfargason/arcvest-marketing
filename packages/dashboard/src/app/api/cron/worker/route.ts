@@ -276,7 +276,7 @@ async function processBloombergScan(): Promise<JobResult> {
   try {
     initializeAdapters();
     const registry = getSourceRegistry();
-    const result = await registry.fetchBySource('email-bloomberg');
+    const result = await registry.fetchSource('email-bloomberg');
 
     return {
       success: result.success,
@@ -377,8 +377,7 @@ async function processPipeline(
       .update({ status: 'processing', updated_at: new Date().toISOString() })
       .eq('id', idea.id);
 
-    // Run the pipeline (with checkpoint recovery)
-    const pipelineData = idea.pipeline_data || {};
+    // Run the 4-AI pipeline
     const pipeline = getMultiAIPipeline();
 
     // Build input
@@ -389,31 +388,12 @@ async function processPipeline(
       idea.suggested_angle ? `\nSUGGESTED ANGLE: ${idea.suggested_angle}` : '',
     ].filter(Boolean).join('\n');
 
-    // Check if we can resume from checkpoint
-    let pipelineResult;
-    if (pipelineData.checkpoint) {
-      // Resume from checkpoint
-      console.log(`[Pipeline] Resuming from checkpoint: ${pipelineData.checkpoint}`);
-      pipelineResult = await pipeline.resumeFrom(pipelineData.checkpoint, pipelineData);
-    } else {
-      // Start fresh
-      pipelineResult = await pipeline.run({
-        content: inputContent,
-        inputType: 'raw_text',
-        focusAngle: idea.suggested_angle || undefined,
-        onCheckpoint: async (step: string, data: Record<string, unknown>) => {
-          // Save checkpoint
-          await supabase
-            .from('idea_queue')
-            .update({
-              pipeline_step: step,
-              pipeline_data: { ...pipelineData, checkpoint: step, ...data },
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', idea.id);
-        }
-      });
-    }
+    // Run pipeline
+    const pipelineResult = await pipeline.run({
+      content: inputContent,
+      inputType: 'raw_text',
+      focusAngle: idea.suggested_angle || undefined,
+    });
 
     // Extract title
     const h1Match = pipelineResult.finalOutput.wordpressPost.match(/<h1[^>]*>(.*?)<\/h1>/i);
@@ -427,7 +407,7 @@ async function processPipeline(
         content_type: 'blog_post',
         status: 'review',
         topic: idea.title,
-        draft: pipelineResult.geminiDraft?.content || pipelineResult.gptDraft?.content,
+        draft: pipelineResult.geminiDraft.content,
         final_content: pipelineResult.finalOutput.wordpressPost,
         meta_description: pipelineResult.finalOutput.excerpt,
         keywords: pipelineResult.finalOutput.seoTags,
