@@ -4,5 +4,67 @@
   "outputDirectory": "packages/dashboard/.next",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "ignoreCommand": "npx turbo-ignore"
+  "ignoreCommand": "npx turbo-ignore",
+  "crons": [
+    {
+      "path": "/api/cron/news-scan",
+      "schedule": "30 12 * * *"
+    },
+    {
+      "path": "/api/cron/bloomberg-scan",
+      "schedule": "35 12 * * *"
+    },
+    {
+      "path": "/api/cron/analytics-sync",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/ads-sync",
+      "schedule": "0 */4 * * *"
+    },
+    {
+      "path": "/api/cron/ads-optimize",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/email-scan",
+      "schedule": "30 12 * * *"
+    },
+    {
+      "path": "/api/cron/score-ideas",
+      "schedule": "45 12 * * *"
+    },
+    {
+      "path": "/api/cron/select-daily?count=6",
+      "schedule": "50 12 * * *"
+    },
+    {
+      "path": "/api/cron/process-pipeline",
+      "schedule": "55 12 * * *"
+    },
+    {
+      "path": "/api/cron/process-pipeline",
+      "schedule": "0,5,10,15,20,25 13 * * *"
+    },
+    {
+      "path": "/api/cron/email-scan",
+      "schedule": "30 23 * * *"
+    },
+    {
+      "path": "/api/cron/score-ideas",
+      "schedule": "45 23 * * *"
+    },
+    {
+      "path": "/api/cron/select-daily?count=2",
+      "schedule": "50 23 * * *"
+    },
+    {
+      "path": "/api/cron/process-pipeline",
+      "schedule": "55 23 * * *"
+    },
+    {
+      "path": "/api/cron/process-pipeline",
+      "schedule": "0 0 * * *"
+    }
+  ]
 }
