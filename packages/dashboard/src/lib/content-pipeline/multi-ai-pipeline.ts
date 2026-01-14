@@ -10,6 +10,59 @@ import OpenAI from 'openai';
 import { PIPELINE_CONFIG, type PipelineInput, type PipelineOutput } from './config';
 import { ARCVEST_KNOWLEDGE, ARCVEST_KNOWLEDGE_CONDENSED } from '../arcvest-knowledge';
 
+/**
+ * Pipeline checkpoint data - stores intermediate results
+ */
+export interface PipelineCheckpoint {
+  step1_claude?: {
+    draft: string;
+    compliance: { passed: boolean; issues: string[]; suggestions: string[] };
+    tokens: number;
+  };
+  step2_chatgpt?: {
+    draft: string;
+    improvements: string[];
+    tokens: number;
+  };
+  step3_gemini?: {
+    draft: string;
+    edits: string[];
+    tokens: number;
+  };
+  step4a_html?: {
+    wordpressPost: string;
+    tokens: number;
+  };
+  step4b_excerpt?: {
+    excerpt: string;
+    tokens: number;
+  };
+  step4c_tags?: {
+    seoTags: string[];
+    tokens: number;
+  };
+  step4d_illustration?: {
+    illustrationPrompt: string;
+    tokens: number;
+  };
+  completed?: boolean;
+}
+
+export type PipelineStep =
+  | 'step1_claude'
+  | 'step2_chatgpt'
+  | 'step3_gemini'
+  | 'step4a_html'
+  | 'step4b_excerpt'
+  | 'step4c_tags'
+  | 'step4d_illustration'
+  | 'completed';
+
+/**
+ * Callback to save checkpoint after each step
+ */
+export type CheckpointCallback = (step: PipelineStep, data: PipelineCheckpoint) => Promise<void>;
+
 export class MultiAIPipeline {
   private anthropic: Anthropic;
   private openai: OpenAI;
@@ -76,6 +129,150 @@ export class MultiAIPipeline {
         edits: step3.edits,
       },
       finalOutput: step4.output,
+      metadata: {
+        processedAt: new Date().toISOString(),
+        totalTokensUsed: totalTokens,
+        processingTimeMs: processingTime,
+      },
+    };
+  }
+
+  /**
+   * Run the pipeline with checkpointing support
+   * Can resume from a previous checkpoint if provided
+   */
+  async runWithCheckpoints(
+    input: PipelineInput,
+    existingCheckpoint: PipelineCheckpoint = {},
+    onCheckpoint: CheckpointCallback
+  ): Promise<PipelineOutput> {
+    const startTime = Date.now();
+    let totalTokens = 0;
+    const checkpoint: PipelineCheckpoint = { ...existingCheckpoint };
+
+    console.log('[Pipeline] Starting 4-step AI pipeline with checkpointing...');
+    if (Object.keys(existingCheckpoint).length > 0) {
+      console.log('[Pipeline] Resuming from checkpoint:', Object.keys(existingCheckpoint).filter(k => k !== 'completed'));
+    }
+
+    // Step 1: Claude - Initial draft + compliance check
+    let step1 = checkpoint.step1_claude;
+    if (!step1) {
+      console.log('[Pipeline] Step 1: Claude initial draft...');
+      step1 = await this.step1Claude(input);
+      checkpoint.step1_claude = step1;
+      await onCheckpoint('step1_claude', checkpoint);
+      console.log('[Pipeline] Step 1 checkpointed');
+    } else {
+      console.log('[Pipeline] Step 1: Using cached result');
+    }
+    totalTokens += step1.tokens;
+
+    // Step 2: ChatGPT - Improve and tighten
+    let step2 = checkpoint.step2_chatgpt;
+    if (!step2) {
+      console.log('[Pipeline] Step 2: ChatGPT improvements...');
+      step2 = await this.step2ChatGPT(step1.draft, step1.compliance, input);
+      checkpoint.step2_chatgpt = step2;
+      await onCheckpoint('step2_chatgpt', checkpoint);
+      console.log('[Pipeline] Step 2 checkpointed');
+    } else {
+      console.log('[Pipeline] Step 2: Using cached result');
+    }
+    totalTokens += step2.tokens;
+
+    // Step 3: Gemini - Final review and polish
+    let step3 = checkpoint.step3_gemini;
+    if (!step3) {
+      console.log('[Pipeline] Step 3: Gemini polish...');
+      step3 = await this.step3Gemini(step2.draft, input);
+      checkpoint.step3_gemini = step3;
+      await onCheckpoint('step3_gemini', checkpoint);
+      console.log('[Pipeline] Step 3 checkpointed');
+    } else {
+      console.log('[Pipeline] Step 3: Using cached result');
+    }
+    totalTokens += step3.tokens;
+
+    // Step 4a: Convert to WordPress HTML
+    let step4a = checkpoint.step4a_html;
+    if (!step4a) {
+      console.log('[Pipeline] Step 4a: WordPress HTML conversion...');
+      step4a = await this.step4aWordPressHtml(step3.draft);
+      checkpoint.step4a_html = step4a;
+      await onCheckpoint('step4a_html', checkpoint);
+      console.log('[Pipeline] Step 4a checkpointed');
+    } else {
+      console.log('[Pipeline] Step 4a: Using cached result');
+    }
+    totalTokens += step4a.tokens;
+
+    // Step 4b: Generate excerpt
+    let step4b = checkpoint.step4b_excerpt;
+    if (!step4b) {
+      console.log('[Pipeline] Step 4b: Generating excerpt...');
+      step4b = await this.step4bExcerpt(step3.draft);
+      checkpoint.step4b_excerpt = step4b;
+      await onCheckpoint('step4b_excerpt', checkpoint);
+      console.log('[Pipeline] Step 4b checkpointed');
+    } else {
+      console.log('[Pipeline] Step 4b: Using cached result');
+    }
+    totalTokens += step4b.tokens;
+
+    // Step 4c: Generate SEO tags
+    let step4c = checkpoint.step4c_tags;
+    if (!step4c) {
+      console.log('[Pipeline] Step 4c: Generating SEO tags...');
+      step4c = await this.step4cSeoTags(step3.draft, input);
+      checkpoint.step4c_tags = step4c;
+      await onCheckpoint('step4c_tags', checkpoint);
+      console.log('[Pipeline] Step 4c checkpointed');
+    } else {
+      console.log('[Pipeline] Step 4c: Using cached result');
+    }
+    totalTokens += step4c.tokens;
+
+    // Step 4d: Generate illustration prompt
+    let step4d = checkpoint.step4d_illustration;
+    if (!step4d) {
+      console.log('[Pipeline] Step 4d: Generating illustration prompt...');
+      step4d = await this.step4dIllustration(step3.draft);
+      checkpoint.step4d_illustration = step4d;
+      await onCheckpoint('step4d_illustration', checkpoint);
+      console.log('[Pipeline] Step 4d checkpointed');
+    } else {
+      console.log('[Pipeline] Step 4d: Using cached result');
+    }
+    totalTokens += step4d.tokens;
+
+    // Mark as completed
+    checkpoint.completed = true;
+    await onCheckpoint('completed', checkpoint);
+
+    const processingTime = Date.now() - startTime;
+    console.log(`[Pipeline] Complete in ${processingTime}ms, ${totalTokens} tokens used`);
+
+    return {
+      originalInput: input.content,
+      claudeDraft: {
+        content: step1.draft,
+        complianceCheck: step1.compliance,
+      },
+      chatgptDraft: {
+        content: step2.draft,
+        improvements: step2.improvements,
+      },
+      geminiDraft: {
+        content: step3.draft,
+        edits: step3.edits,
+      },
+      finalOutput: {
+        wordpressPost: step4a.wordpressPost,
+        excerpt: step4b.excerpt,
+        seoTags: step4c.seoTags,
+        illustrationPrompt: step4d.illustrationPrompt,
+      },
       metadata: {
         processedAt: new Date().toISOString(),
         totalTokensUsed: totalTokens,
@@ -429,6 +626,113 @@ Describe the style, mood, colors, and specific visual elements. Output only the 
       },
       tokens: totalTokens,
     };
+  }
+
+  /**
+   * Step 4a: Convert Markdown to WordPress HTML (checkpointable)
+   */
+  private async step4aWordPressHtml(draft: string): Promise<{ wordpressPost: string; tokens: number }> {
+    const htmlPrompt = `Convert this blog post from Markdown to clean WordPress HTML.
+
+MARKDOWN CONTENT:
+${draft}
+
+REQUIREMENTS:
+- Convert all Markdown to proper HTML tags
+- Use <h2> for ## headings, <h3> for ### headings
+- Use <p> for paragraphs
+- Use <ul><li> for bullet lists, <ol><li> for numbered lists
+- Use <strong> for **bold** and <em> for *italic*
+- Use <hr> for --- horizontal rules
+- Use <blockquote> for quotes
+- Remove any Markdown syntax completely
+- Output ONLY the HTML, no explanation or wrapper
+
+OUTPUT THE HTML ONLY:`;
+
+    const response = await this.anthropic.messages.create({
+      model: 'claude-opus-4-5-20251101',
+      max_tokens: 8192,
+      temperature: 0.3,
+      messages: [{ role: 'user', content: htmlPrompt }],
+    });
+
+    const wordpressPost = response.content.find(c => c.type === 'text')?.text || draft;
+    const tokens = response.usage.input_tokens + response.usage.output_tokens;
+
+    return { wordpressPost, tokens };
+  }
+
+  /**
+   * Step 4b: Generate excerpt (checkpointable)
+   */
+  private async step4bExcerpt(draft: string): Promise<{ excerpt: string; tokens: number }> {
+    const excerptPrompt = `Write a compelling excerpt (50 words or fewer) for this blog post that summarizes it and encourages reading:
+
+${draft.substring(0, 2000)}
+
+OUTPUT ONLY THE EXCERPT TEXT (no quotes, no labels):`;
+
+    const response = await this.anthropic.messages.create({
+      model: 'claude-opus-4-5-20251101',
+      max_tokens: 100,
+      temperature: 0.5,
+      messages: [{ role: 'user', content: excerptPrompt }],
+    });
+
+    const excerpt = response.content.find(c => c.type === 'text')?.text?.trim() || '';
+    const tokens = response.usage.input_tokens + response.usage.output_tokens;
+
+    return { excerpt, tokens };
+  }
+
+  /**
+   * Step 4c: Generate SEO tags (checkpointable)
+   */
+  private async step4cSeoTags(draft: string, input: PipelineInput): Promise<{ seoTags: string[]; tokens: number }> {
+    const tagsPrompt = `Generate up to 14 SEO tags for this blog post. Output as comma-separated values only:
+
+${draft.substring(0, 1500)}
+
+${input.targetKeywords?.length ? `Include these keywords: ${input.targetKeywords.join(', ')}` : ''}
+
+OUTPUT ONLY COMMA-SEPARATED TAGS:`;
+
+    const response = await this.anthropic.messages.create({
+      model: 'claude-opus-4-5-20251101',
+      max_tokens: 200,
+      temperature: 0.3,
+      messages: [{ role: 'user', content: tagsPrompt }],
+    });
+
+    const tagsText = response.content.find(c => c.type === 'text')?.text || '';
+    const seoTags = tagsText.split(',').map(t => t.trim()).filter(Boolean).slice(0, 14);
+    const tokens = response.usage.input_tokens + response.usage.output_tokens;
+
+    return { seoTags, tokens };
+  }
+
+  /**
+   * Step 4d: Generate illustration prompt (checkpointable)
+   */
+  private async step4dIllustration(draft: string): Promise<{ illustrationPrompt: string; tokens: number }> {
+    const prompt = `Create a detailed AI image generation prompt for an illustration to accompany this blog post:
+
+${draft.substring(0, 1500)}
+
+Describe the style, mood, colors, and specific visual elements. Output only the prompt:`;
+
+    const response = await this.anthropic.messages.create({
+      model: 'claude-opus-4-5-20251101',
+      max_tokens: 300,
+      temperature: 0.7,
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    const illustrationPrompt = response.content.find(c => c.type === 'text')?.text?.trim() || '';
+    const tokens = response.usage.input_tokens + response.usage.output_tokens;
+
+    return { illustrationPrompt, tokens };
   }
 }
 

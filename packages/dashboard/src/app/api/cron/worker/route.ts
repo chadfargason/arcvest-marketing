@@ -15,7 +15,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getMultiAIPipeline } from '@/lib/content-pipeline';
+import { getMultiAIPipeline, type PipelineCheckpoint, type PipelineStep } from '@/lib/content-pipeline';
 import { getIdeaScorer, getDailySelectionService, getSourceRegistry, initializeAdapters } from '@arcvest/services';
 import { runNewsScan } from '@/lib/news-sourcer';
 
@@ -333,6 +333,7 @@ async function processSelectDaily(payload: Record<string, unknown>): Promise<Job
 
 /**
  * Process pipeline job with checkpointing
+ * If the pipeline fails mid-way, it saves progress and can resume from where it left off
  */
 async function processPipeline(
   supabase: ReturnType<typeof createClient> extends Promise<infer T> ? T : never,
@@ -351,10 +352,11 @@ async function processPipeline(
       // Process specific idea
       ideaQuery = ideaQuery.eq('id', ideaId);
     } else {
-      // Get next selected idea for today
+      // Get next selected idea for today (or one that's in-progress from a previous run)
       ideaQuery = ideaQuery
-        .eq('status', 'selected')
+        .or(`status.eq.selected,status.eq.processing`)
         .eq('selected_for_date', dateStr)
+        .order('status', { ascending: false }) // 'processing' comes before 'selected'
         .order('selection_rank', { ascending: true })
         .limit(1);
     }
@@ -370,15 +372,18 @@ async function processPipeline(
     }
 
     const idea = ideas[0];
+    const existingCheckpoint = (idea.pipeline_data || {}) as PipelineCheckpoint;
+
+    console.log(`[Pipeline] Processing idea ${idea.id}: "${idea.title}"`);
+    if (Object.keys(existingCheckpoint).length > 0) {
+      console.log(`[Pipeline] Resuming from checkpoint: ${idea.pipeline_step}`);
+    }
 
     // Mark as processing
     await supabase
       .from('idea_queue')
       .update({ status: 'processing', updated_at: new Date().toISOString() })
       .eq('id', idea.id);
-
-    // Run the 4-AI pipeline
-    const pipeline = getMultiAIPipeline();
 
     // Build input
     const inputContent = [
@@ -388,14 +393,32 @@ async function processPipeline(
       idea.suggested_angle ? `\nSUGGESTED ANGLE: ${idea.suggested_angle}` : '',
     ].filter(Boolean).join('\n');
 
-    // Run pipeline
-    const pipelineResult = await pipeline.run({
-      content: inputContent,
-      inputType: 'raw_text',
-      focusAngle: idea.suggested_angle || undefined,
-    });
+    // Create checkpoint callback to save progress after each step
+    const onCheckpoint = async (step: PipelineStep, checkpoint: PipelineCheckpoint) => {
+      console.log(`[Pipeline] Saving checkpoint: ${step}`);
+      await supabase
+        .from('idea_queue')
+        .update({
+          pipeline_step: step,
+          pipeline_data: checkpoint,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', idea.id);
+    };
 
-    // Extract title
+    // Run the 4-AI pipeline with checkpointing
+    const pipeline = getMultiAIPipeline();
+    const pipelineResult = await pipeline.runWithCheckpoints(
+      {
+        content: inputContent,
+        inputType: 'raw_text',
+        focusAngle: idea.suggested_angle || undefined,
+      },
+      existingCheckpoint,
+      onCheckpoint
+    );
+
+    // Extract title from WordPress HTML
     const h1Match = pipelineResult.finalOutput.wordpressPost.match(/<h1[^>]*>(.*?)<\/h1>/i);
     const finalTitle = h1Match ? h1Match[1].replace(/<[^>]*>/g, '').trim() : idea.title;
 
@@ -429,7 +452,7 @@ async function processPipeline(
       return { success: false, error: contentError.message };
     }
 
-    // Update idea status
+    // Update idea status to completed
     await supabase
       .from('idea_queue')
       .update({
@@ -439,6 +462,8 @@ async function processPipeline(
         updated_at: new Date().toISOString(),
       })
       .eq('id', idea.id);
+
+    console.log(`[Pipeline] Completed idea ${idea.id} -> content ${contentEntry?.id}`);
 
     return {
       success: true,
