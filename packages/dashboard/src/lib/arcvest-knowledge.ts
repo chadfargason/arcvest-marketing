@@ -239,8 +239,151 @@ export const ARCVEST_KNOWLEDGE_CONDENSED = `
 `;
 
 /**
+ * Writing Guidance - How to write clearly and avoid AI-sounding content
+ * Based on Scott Adams' "The Day You Became A Better Writer" and anti-slop patterns
+ */
+export const WRITING_GUIDANCE = `
+# Writing Guidance
+
+## Scott Adams: The Day You Became A Better Writer
+
+Business writing is about clarity and persuasion. The main technique is keeping things simple. A good argument in five sentences will sway more people than a brilliant argument in a hundred sentences.
+
+### Core Rules
+
+**Simple means getting rid of extra words.** Don't write "He was very happy" when you can write "He was happy." You think the word "very" adds something. It doesn't. Prune your sentences.
+
+**Your first sentence needs to grab the reader.** Rewrite it a dozen times if necessary. It makes you curious. That's the key.
+
+**Write short sentences.** Avoid putting multiple thoughts in one sentence. Readers aren't as smart as you'd think.
+
+**Object before action.** Readers comprehend "the boy hit the ball" quicker than "the ball was hit by the boy." Both sentences mean the same, but it's easier to imagine the object (the boy) before the action (the hitting). All brains work that way.
+
+---
+
+## Anti-Slop Patterns to Avoid
+
+These patterns signal AI-generated content. Avoid them when writing. Flag them when editing.
+
+### Structural Red Flags
+
+**Binary Contrast Addiction** - The "it's not X, it's Y" structure.
+- BAD: "success isn't about working hard, it's about working smart"
+- FIX: Say what you mean directly. Use specific details instead of broad contrasts.
+
+**Triple Threat Syndrome** - Grouping things in threes everywhere.
+- BAD: "fast, efficient, reliable" / "powerful, simple, transformative"
+- FIX: Vary rhythm. Sometimes two. Sometimes four. Sometimes one.
+
+**Infomercial Transitions** - Cringe questions meant to create "engagement."
+- BAD: "the catch?" / "want to know the secret?" / "here's the kicker"
+- FIX: If you wouldn't say it in conversation, don't write it.
+
+**Corporate Verb Disease** - Stuffy -ing verbs.
+- BAD: "highlighting the benefits" / "facilitating better outcomes"
+- FIX: Use simple, active verbs. "show" not "highlighting." "help" not "facilitating."
+
+**Hedging Language** - Clearing your throat before making a point.
+- BAD: "it's worth considering..." / "it's important to note that..."
+- FIX: State your opinion. Skip the diplomatic warm-up.
+
+**Thesaurus Abuse** - Fancy words nobody uses in conversation.
+- "utilize" → use
+- "execute" → do
+- "facilitate" → help
+- "implement" → start
+- "optimize" → improve
+- "leverage" → use
+- FIX: Write like you talk.
+
+### Phrase Patterns to Eliminate
+
+**"No X. No Y. Just Z."**
+- BAD: "no fluff. no theory. just actionable insights."
+
+**"The game has changed"** and cousins: "game-changer," "supercharge your [thing]"
+
+**"Real" Overload**
+- BAD: "just real strategy from real experts getting real results"
+- FIX: Show authenticity through specific examples, not by repeating "real."
+
+**Profound But Obvious** - "not because of X. but because of Y"
+- BAD: "I didn't succeed because of luck. But because of hard work."
+- FIX: If everyone already knows it, don't package it as insight.
+
+**Short Hook Questions**
+- BAD: "the best part?" / "want access?" / "ready to level up?"
+- FIX: Ask real questions that require thought to answer.
+
+**"Enter: [Thing]"**
+- BAD: "enter: my revolutionary framework"
+- FIX: Introduce the thing normally.
+
+**"Stopped Me in My Tracks"**
+- BAD: "yesterday my mentor said something that stopped me in my tracks:"
+- FIX: Describe actual impact without melodrama.
+
+**Symbol Obsession** - Telling what things "represent" instead of what happened.
+- BAD: "this symbolizes..." / "which reflects..." / "emphasizing the importance of..."
+- FIX: Say what happened. Say what you learned. Skip the literary analysis.
+
+**Everything Changed**
+- BAD: "the strategy that changed everything" / "this one shift transformed my entire business"
+- FIX: Describe specific changes with specific metrics.
+
+---
+
+## The Core Principle
+
+People don't stop reading bad AI content because it's inaccurate. They stop because it's forgettable.
+
+If a sentence could appear in anyone's content, delete it.
+
+If a phrase makes you cringe when you read it out loud, cut it.
+
+Your voice is your moat.
+`;
+
+/**
+ * Condensed writing guidance - Anti-slop checklist for editing passes
+ */
+export const WRITING_GUIDANCE_CONDENSED = `
+## Writing Quality Checklist
+
+**Clarity Rules (Scott Adams):**
+- Cut extra words. "Very happy" → "happy"
+- First sentence must grab the reader
+- Short sentences. One thought each.
+- Object before action. "The boy hit the ball" not "the ball was hit by the boy"
+
+**Anti-Slop Patterns - DELETE THESE:**
+- Binary contrasts: "it's not X, it's Y"
+- Forced triples: "fast, efficient, reliable"
+- Infomercial hooks: "the catch?" / "want to know the secret?" / "here's the kicker"
+- Corporate verbs: highlighting, facilitating, leveraging, optimizing
+- Hedging: "it's worth considering..." / "it's important to note..."
+- Thesaurus words: utilize→use, execute→do, facilitate→help, leverage→use
+- "No X. No Y. Just Z."
+- "Game-changer" / "supercharge" / "everything changed"
+- "Real strategy from real experts"
+- Hook questions: "the best part?" / "ready to level up?"
+- "Enter: [thing]"
+- "Stopped me in my tracks"
+- Symbol talk: "this symbolizes..." / "which reflects..."
+
+**The Test:** Read it out loud. If it sounds like every other article, rewrite it.
+`;
+
+/**
  * Get the appropriate knowledge base for a given context
  */
 export function getArcVestKnowledge(condensed: boolean = false): string {
   return condensed ? ARCVEST_KNOWLEDGE_CONDENSED : ARCVEST_KNOWLEDGE;
+}
+
+/**
+ * Get writing guidance for a given context
+ */
+export function getWritingGuidance(condensed: boolean = false): string {
+  return condensed ? WRITING_GUIDANCE_CONDENSED : WRITING_GUIDANCE;
 }

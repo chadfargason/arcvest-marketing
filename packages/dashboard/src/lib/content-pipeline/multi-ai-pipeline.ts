@@ -8,7 +8,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 import { PIPELINE_CONFIG, type PipelineInput, type PipelineOutput } from './config';
-import { ARCVEST_KNOWLEDGE, ARCVEST_KNOWLEDGE_CONDENSED } from '../arcvest-knowledge';
+import { ARCVEST_KNOWLEDGE, ARCVEST_KNOWLEDGE_CONDENSED, WRITING_GUIDANCE, WRITING_GUIDANCE_CONDENSED } from '../arcvest-knowledge';
 
 /**
  * Pipeline checkpoint data - stores intermediate results
@@ -292,11 +292,21 @@ export class MultiAIPipeline {
     const topicsOfInterest = PIPELINE_CONFIG.TOPICS_OF_INTEREST.join(', ');
     const topicsToAvoid = PIPELINE_CONFIG.TOPICS_TO_AVOID.join(', ');
 
-    const prompt = `You are writing a blog post for ArcVest. Study this knowledge base carefully and write in the ArcVest voice:
+    const prompt = `You are writing a blog post for ArcVest. Study the brand knowledge base AND the writing guidance carefully.
+
+## BRAND KNOWLEDGE BASE
 
 ${ARCVEST_KNOWLEDGE}
 
 ---
+
+## WRITING GUIDANCE - READ THIS CAREFULLY
+
+${WRITING_GUIDANCE}
+
+---
+
+## YOUR TASK
 
 SOURCE CONTENT TO WRITE ABOUT:
 ${input.content}
@@ -307,7 +317,7 @@ ${input.targetKeywords?.length ? `TARGET KEYWORDS: ${input.targetKeywords.join('
 ADDITIONAL TOPICS WE COVER: ${topicsOfInterest}
 TOPICS TO AVOID: ${topicsToAvoid}
 
-TASK:
+INSTRUCTIONS:
 1. Write a blog post (${PIPELINE_CONFIG.OUTPUT_REQUIREMENTS.target_word_count.min}-${PIPELINE_CONFIG.OUTPUT_REQUIREMENTS.target_word_count.max} words) based on the source content
 2. Write in ArcVest's voice: authoritative but accessible, evidence-based, honest and direct
 3. Lead with the insight, use specific numbers, use our frameworks where relevant
@@ -315,7 +325,9 @@ TASK:
 5. Include appropriate disclaimers naturally (don't lead with them)
 6. Do NOT make specific stock recommendations or guarantee returns
 7. Use "we" when speaking as ArcVest
-8. No exclamation points, no hedge words like "might" or "perhaps"
+8. CRITICAL: Follow the writing guidance - avoid ALL anti-slop patterns, write short sentences, cut extra words
+9. First sentence must grab the reader - rewrite it until it's compelling
+10. No exclamation points, no hedge words, no corporate verbs, no thesaurus abuse
 
 Write the blog post in markdown format with a compelling title (H1), clear sections (H2), and engaging prose-forward content.`;
 
@@ -382,9 +394,13 @@ Respond in JSON format only:
     compliance: { passed: boolean; issues: string[]; suggestions: string[] },
     _input: PipelineInput
   ): Promise<{ draft: string; improvements: string[]; tokens: number }> {
-    const prompt = `You are an expert editor improving a blog post for ArcVest. Maintain their voice throughout your edits:
+    const prompt = `You are an expert editor improving a blog post for ArcVest. Maintain their voice and eliminate AI-sounding patterns.
 
+## BRAND VOICE
 ${ARCVEST_KNOWLEDGE_CONDENSED}
+
+## WRITING QUALITY CHECKLIST - USE THIS TO EDIT
+${WRITING_GUIDANCE_CONDENSED}
 
 ---
 
@@ -399,11 +415,13 @@ ${compliance.suggestions.length > 0 ? compliance.suggestions.map(s => `- ${s}`).
 
 YOUR TASK:
 1. Fix any compliance issues identified above
-2. Tighten the writing - remove fluff and redundancy
-3. MAINTAIN the ArcVest voice: authoritative, evidence-based, direct, no hedge words
-4. Ensure it provides genuine value to high-net-worth readers
-5. Keep it between ${PIPELINE_CONFIG.OUTPUT_REQUIREMENTS.target_word_count.min}-${PIPELINE_CONFIG.OUTPUT_REQUIREMENTS.target_word_count.max} words
-6. No exclamation points, use "we" for ArcVest, lead with insights
+2. AGGRESSIVELY eliminate anti-slop patterns from the checklist above
+3. Tighten the writing - remove fluff, redundancy, and extra words
+4. MAINTAIN the ArcVest voice: authoritative, evidence-based, direct
+5. Ensure it provides genuine value to high-net-worth readers
+6. Keep it between ${PIPELINE_CONFIG.OUTPUT_REQUIREMENTS.target_word_count.min}-${PIPELINE_CONFIG.OUTPUT_REQUIREMENTS.target_word_count.max} words
+7. No exclamation points, no hedge words, no corporate verbs, no thesaurus abuse
+8. Every sentence should pass the "read it out loud" test
 
 Provide your improved version in markdown format.
 
@@ -449,9 +467,13 @@ After the blog post, add a section titled "## IMPROVEMENTS MADE" with a bullet l
     draft: string,
     _input: PipelineInput
   ): Promise<{ draft: string; edits: string[]; tokens: number }> {
-    const prompt = `You are a senior editor doing a final review of a blog post for ArcVest. Preserve their distinctive voice:
+    const prompt = `You are a senior editor doing a final review of a blog post for ArcVest. Your job is to catch and eliminate any remaining AI-sounding patterns.
 
+## BRAND VOICE
 ${ARCVEST_KNOWLEDGE_CONDENSED}
+
+## FINAL QUALITY CHECK - ELIMINATE THESE PATTERNS
+${WRITING_GUIDANCE_CONDENSED}
 
 ---
 
@@ -459,14 +481,16 @@ CURRENT DRAFT:
 ${draft}
 
 YOUR TASK:
-1. Polish the writing for maximum clarity and impact
-2. Ensure smooth transitions between sections
-3. Verify the opening hook leads with the insight (not background)
-4. Check that the conclusion has a clear takeaway
-5. Ensure regulatory compliance language is present but not overwhelming
-6. PRESERVE the ArcVest voice: authoritative, direct, evidence-based
-7. No exclamation points, no hedge words, use "we" for ArcVest
-8. Make any final improvements to make this publication-ready
+1. Do a FINAL PASS to catch any remaining anti-slop patterns from the checklist above
+2. Polish the writing for maximum clarity and impact
+3. Ensure smooth transitions between sections
+4. Verify the opening hook leads with the insight (not background)
+5. Check that the conclusion has a clear takeaway
+6. Ensure regulatory compliance language is present but not overwhelming
+7. PRESERVE the ArcVest voice: authoritative, direct, evidence-based
+8. No exclamation points, no hedge words, no corporate verbs
+9. READ EACH SENTENCE OUT LOUD - if it sounds generic, rewrite it
+10. Make this publication-ready
 
 Provide your polished version in markdown format.
 
