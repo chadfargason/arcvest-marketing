@@ -4,7 +4,6 @@
   "outputDirectory": "packages/dashboard/.next",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "ignoreCommand": "npx turbo-ignore",
   "crons": [
     {
       "path": "/api/cron/news-scan",
