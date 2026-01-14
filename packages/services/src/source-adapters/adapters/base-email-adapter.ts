@@ -30,9 +30,9 @@ export abstract class BaseEmailAdapter implements SourceAdapter {
 
   constructor() {
     this.gmail = new GmailService({
-      clientId: process.env['GOOGLE_CLIENT_ID'] || '',
-      clientSecret: process.env['GOOGLE_CLIENT_SECRET'] || '',
-      redirectUri: process.env['GOOGLE_REDIRECT_URI'] || '',
+      clientId: process.env['GMAIL_CLIENT_ID'] || '',
+      clientSecret: process.env['GMAIL_CLIENT_SECRET'] || '',
+      redirectUri: process.env['GMAIL_REDIRECT_URI'] || '',
     });
   }
 
