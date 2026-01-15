@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from('content_calendar')
       .select('*')
-      .order('scheduled_date', { ascending: true, nullsFirst: false });
+      .order('created_at', { ascending: false });
 
     if (status && status !== 'all') {
       query = query.eq('status', status);

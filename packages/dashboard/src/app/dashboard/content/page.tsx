@@ -677,6 +677,7 @@ export default function ContentPage() {
                   <th className="text-left p-3">Title</th>
                   <th className="text-left p-3">Type</th>
                   <th className="text-left p-3">Status</th>
+                  <th className="text-left p-3">Created</th>
                   <th className="text-left p-3">Scheduled</th>
                   <th className="text-left p-3">Keyword</th>
                   <th className="text-right p-3">Actions</th>
@@ -685,7 +686,7 @@ export default function ContentPage() {
               <tbody>
                 {content.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="text-center p-8 text-muted-foreground">
+                    <td colSpan={7} className="text-center p-8 text-muted-foreground">
                       No content items found. Create your first piece of content!
                     </td>
                   </tr>
@@ -703,6 +704,16 @@ export default function ContentPage() {
                         <td className="p-3">{getContentTypeLabel(item.content_type)}</td>
                         <td className="p-3">
                           <Badge className={status.color}>{status.label}</Badge>
+                        </td>
+                        <td className="p-3 text-sm text-muted-foreground">
+                          {item.created_at
+                            ? new Date(item.created_at).toLocaleString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                hour: 'numeric',
+                                minute: '2-digit',
+                              })
+                            : '-'}
                         </td>
                         <td className="p-3">
                           {item.scheduled_date
