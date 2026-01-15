@@ -144,6 +144,7 @@ async function saveResultsToDatabase(
     const { data: masterAsset, error: masterError } = await getSupabase()
       .from('creative_assets')
       .insert({
+        name: `RSA: ${persona?.displayName} - ${voice?.displayName}`,
         asset_type: 'rsa',
         status: result.complianceResult.passed ? 'pending_approval' : 'draft',
         content: {
@@ -236,6 +237,7 @@ async function saveResultsToDatabase(
       const { data: varAsset, error: varError } = await getSupabase()
         .from('creative_assets')
         .insert({
+          name: `RSA Variation ${i + 1}: ${persona?.displayName} - ${voice?.displayName}`,
           asset_type: 'rsa',
           status: 'draft',
           content: {
