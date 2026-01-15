@@ -22,10 +22,14 @@ let supabase: SupabaseClient | null = null;
 
 function getSupabase(): SupabaseClient {
   if (!supabase) {
-    supabase = createClient(
-      process.env['NEXT_PUBLIC_SUPABASE_URL']!,
-      process.env['SUPABASE_SERVICE_ROLE_KEY']!
-    );
+    const url = process.env['NEXT_PUBLIC_SUPABASE_URL'];
+    const key = process.env['SUPABASE_SERVICE_KEY'] || process.env['SUPABASE_SERVICE_ROLE_KEY'];
+
+    if (!url || !key) {
+      throw new Error(`Missing Supabase credentials: url=${!!url}, key=${!!key}`);
+    }
+
+    supabase = createClient(url, key);
   }
   return supabase;
 }
