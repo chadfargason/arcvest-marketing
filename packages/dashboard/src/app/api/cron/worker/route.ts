@@ -307,6 +307,7 @@ async function processScoreIdeas(): Promise<JobResult> {
 
 /**
  * Process select daily job
+ * After selecting ideas, creates process_pipeline jobs for each selected idea
  */
 async function processSelectDaily(payload: Record<string, unknown>): Promise<JobResult> {
   try {
@@ -318,13 +319,76 @@ async function processSelectDaily(payload: Record<string, unknown>): Promise<Job
       maxPerSource: 3,
     });
 
+    if (!result.success) {
+      return {
+        success: false,
+        error: result.error
+      };
+    }
+
+    // Create process_pipeline jobs for selected ideas
+    // Get today's selected ideas
+    const dateStr = new Date().toISOString().split('T')[0];
+    const supabase = await createClient();
+
+    const { data: selectedIdeas, error: fetchError } = await supabase
+      .from('idea_queue')
+      .select('id, title, selection_rank')
+      .eq('status', 'selected')
+      .eq('selected_for_date', dateStr)
+      .order('selection_rank', { ascending: true });
+
+    if (fetchError) {
+      console.error('[SelectDaily] Error fetching selected ideas:', fetchError);
+      return {
+        success: true,
+        data: {
+          selectedCount: result.selectedCount,
+          sourceBreakdown: result.sourceBreakdown,
+          pipelineJobsCreated: 0,
+          pipelineError: fetchError.message
+        }
+      };
+    }
+
+    // Create pipeline jobs for each selected idea
+    if (selectedIdeas && selectedIdeas.length > 0) {
+      const pipelineJobs = selectedIdeas.map((idea, index) => ({
+        job_type: 'process_pipeline',
+        payload: { idea_id: idea.id, title: idea.title },
+        priority: 5 - index, // Higher priority for higher-ranked ideas
+        max_attempts: 5,
+        status: 'pending',
+        next_run_at: new Date().toISOString()
+      }));
+
+      const { error: insertError } = await supabase
+        .from('job_queue')
+        .insert(pipelineJobs);
+
+      if (insertError) {
+        console.error('[SelectDaily] Error creating pipeline jobs:', insertError);
+        return {
+          success: true,
+          data: {
+            selectedCount: result.selectedCount,
+            sourceBreakdown: result.sourceBreakdown,
+            pipelineJobsCreated: 0,
+            pipelineError: insertError.message
+          }
+        };
+      }
+
+      console.log(`[SelectDaily] Created ${pipelineJobs.length} process_pipeline jobs`);
+    }
+
     return {
-      success: result.success,
+      success: true,
       data: {
         selectedCount: result.selectedCount,
-        sourceBreakdown: result.sourceBreakdown
-      },
-      error: result.error
+        sourceBreakdown: result.sourceBreakdown,
+        pipelineJobsCreated: selectedIdeas?.length || 0
+      }
     };
   } catch (error) {
     return { success: false, error: error instanceof Error ? error.message : String(error) };
