@@ -79,6 +79,9 @@ export {
   type JobResult,
 } from './job-queue-service';
 
+// Pipeline Logging
+export { PipelineLogger, logPipelineEvent } from './pipeline-logger';
+
 export type {
   SourceType,
   IdeaStatus,

@@ -16,7 +16,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getMultiAIPipeline, type PipelineCheckpoint, type PipelineStep } from '@/lib/content-pipeline';
-import { getIdeaScorer, getDailySelectionService, getSourceRegistry, initializeAdapters } from '@arcvest/services';
+import { getIdeaScorer, getDailySelectionService, getSourceRegistry, initializeAdapters, PipelineLogger } from '@arcvest/services';
 import { runNewsScan } from '@/lib/news-sourcer';
 
 export const maxDuration = 300; // 5 minutes max
@@ -182,40 +182,75 @@ async function claimNextJob(supabase: ReturnType<typeof createClient> extends Pr
  * Process a job based on its type
  */
 async function processJob(supabase: ReturnType<typeof createClient> extends Promise<infer T> ? T : never, job: Job): Promise<JobResult> {
-  switch (job.job_type) {
-    case 'news_scan':
-      return processNewsScan(supabase);
+  const logger = new PipelineLogger(job.job_type, job.id);
+  logger.info(`Starting job`, 'start', { attempts: job.attempts, payload: job.payload });
 
-    case 'email_scan':
-      return processEmailScan();
+  try {
+    let result: JobResult;
 
-    case 'bloomberg_scan':
-      return processBloombergScan();
+    switch (job.job_type) {
+      case 'news_scan':
+        result = await processNewsScan(supabase, logger);
+        break;
 
-    case 'score_ideas':
-      return processScoreIdeas();
+      case 'email_scan':
+        result = await processEmailScan(logger);
+        break;
 
-    case 'select_daily':
-      return processSelectDaily(job.payload);
+      case 'bloomberg_scan':
+        result = await processBloombergScan(logger);
+        break;
 
-    case 'process_pipeline':
-      return processPipeline(supabase, job.payload);
+      case 'score_ideas':
+        result = await processScoreIdeas(logger);
+        break;
 
-    default:
-      return { success: false, error: `Unknown job type: ${job.job_type}` };
+      case 'select_daily':
+        result = await processSelectDaily(job.payload, logger);
+        break;
+
+      case 'process_pipeline':
+        result = await processPipeline(supabase, job.payload, logger);
+        break;
+
+      default:
+        result = { success: false, error: `Unknown job type: ${job.job_type}` };
+    }
+
+    if (result.success) {
+      await logger.complete(`Job completed successfully`);
+    } else {
+      logger.error(`Job failed: ${result.error}`, 'complete');
+      await logger.complete();
+    }
+
+    return result;
+  } catch (error) {
+    logger.logError(error, 'unexpected_error');
+    await logger.complete();
+    throw error;
   }
 }
 
 /**
  * Process news scan job
  */
-async function processNewsScan(supabase: ReturnType<typeof createClient> extends Promise<infer T> ? T : never): Promise<JobResult> {
+async function processNewsScan(supabase: ReturnType<typeof createClient> extends Promise<infer T> ? T : never, logger: PipelineLogger): Promise<JobResult> {
   try {
+    logger.info('Starting news scan', 'scan_start');
+    logger.startStep();
+
     const result = await runNewsScan({
       highPriorityOnly: false,
       hoursBack: 24,
       minScore: 65,
       maxToSelect: 3,
+    });
+
+    logger.info(`Found ${result.articlesFound} articles, selected ${result.selectedStories.length}`, 'scan_complete', {
+      articlesFound: result.articlesFound,
+      selectedCount: result.selectedStories.length,
+      processingTimeMs: result.processingTimeMs,
     });
 
     // Log the scan
@@ -237,6 +272,7 @@ async function processNewsScan(supabase: ReturnType<typeof createClient> extends
       }
     };
   } catch (error) {
+    logger.logError(error, 'scan_error');
     return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
@@ -244,20 +280,43 @@ async function processNewsScan(supabase: ReturnType<typeof createClient> extends
 /**
  * Process email scan job
  */
-async function processEmailScan(): Promise<JobResult> {
+async function processEmailScan(logger: PipelineLogger): Promise<JobResult> {
   try {
+    logger.info('Initializing email adapters', 'init');
+    logger.startStep();
     initializeAdapters();
+
     const registry = getSourceRegistry();
+    logger.info('Fetching email sources', 'fetch_start');
+    logger.startStep();
+
     const results = await registry.fetchEmailSources();
 
     let totalIdeas = 0;
     let successfulSources = 0;
+    const sourceResults: Record<string, { success: boolean; ideas: number; error?: string }> = {};
 
-    results.forEach((result) => {
+    results.forEach((result, sourceName) => {
+      sourceResults[sourceName] = {
+        success: result.success,
+        ideas: result.ideas.length,
+        error: result.error
+      };
       if (result.success) {
         successfulSources++;
         totalIdeas += result.ideas.length;
+      } else {
+        logger.warn(`Source ${sourceName} failed: ${result.error}`, 'source_error', {
+          sourceName
+        });
       }
+    });
+
+    logger.info(`Email scan complete: ${totalIdeas} ideas from ${successfulSources} sources`, 'fetch_complete', {
+      totalIdeas,
+      successfulSources,
+      totalSources: results.size,
+      sourceResults
     });
 
     return {
@@ -265,6 +324,7 @@ async function processEmailScan(): Promise<JobResult> {
       data: { totalIdeas, successfulSources }
     };
   } catch (error) {
+    logger.logError(error, 'email_scan_error');
     return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
@@ -272,11 +332,28 @@ async function processEmailScan(): Promise<JobResult> {
 /**
  * Process Bloomberg scan job
  */
-async function processBloombergScan(): Promise<JobResult> {
+async function processBloombergScan(logger: PipelineLogger): Promise<JobResult> {
   try {
+    logger.info('Initializing Bloomberg adapter', 'init');
+    logger.startStep();
     initializeAdapters();
+
     const registry = getSourceRegistry();
+    logger.info('Fetching Bloomberg emails', 'fetch_start');
+    logger.startStep();
+
     const result = await registry.fetchSource('email-bloomberg');
+
+    if (result.success) {
+      logger.info(`Bloomberg scan complete: ${result.ideas.length} ideas found`, 'fetch_complete', {
+        ideasFound: result.ideas.length,
+        ideaTitles: result.ideas.slice(0, 5).map(i => i.title)
+      });
+    } else {
+      logger.error(`Bloomberg scan failed: ${result.error}`, 'fetch_error', {
+        error: result.error
+      });
+    }
 
     return {
       success: result.success,
@@ -284,6 +361,7 @@ async function processBloombergScan(): Promise<JobResult> {
       error: result.error
     };
   } catch (error) {
+    logger.logError(error, 'bloomberg_scan_error');
     return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
@@ -291,16 +369,25 @@ async function processBloombergScan(): Promise<JobResult> {
 /**
  * Process score ideas job
  */
-async function processScoreIdeas(): Promise<JobResult> {
+async function processScoreIdeas(logger: PipelineLogger): Promise<JobResult> {
   try {
+    logger.info('Starting idea scoring', 'score_start');
+    logger.startStep();
+
     const scorer = getIdeaScorer();
     const result = await scorer.scorePendingIdeas({ limit: 50 });
+
+    logger.info(`Scored ${result.scored} ideas with ${result.errors} errors`, 'score_complete', {
+      scored: result.scored,
+      errors: result.errors
+    });
 
     return {
       success: true,
       data: { scored: result.scored, errors: result.errors }
     };
   } catch (error) {
+    logger.logError(error, 'score_error');
     return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
@@ -309,9 +396,12 @@ async function processScoreIdeas(): Promise<JobResult> {
  * Process select daily job
  * After selecting ideas, creates process_pipeline jobs for each selected idea
  */
-async function processSelectDaily(payload: Record<string, unknown>): Promise<JobResult> {
+async function processSelectDaily(payload: Record<string, unknown>, logger: PipelineLogger): Promise<JobResult> {
   try {
     const targetCount = (payload.count as number) || 6;
+    logger.info(`Selecting top ${targetCount} ideas for today`, 'select_start');
+    logger.startStep();
+
     const selector = getDailySelectionService();
     const result = await selector.selectDaily({
       targetCount,
@@ -320,16 +410,24 @@ async function processSelectDaily(payload: Record<string, unknown>): Promise<Job
     });
 
     if (!result.success) {
+      logger.error(`Selection failed: ${result.error}`, 'select_error');
       return {
         success: false,
         error: result.error
       };
     }
 
+    logger.info(`Selected ${result.selectedCount} ideas`, 'select_complete', {
+      selectedCount: result.selectedCount,
+      sourceBreakdown: result.sourceBreakdown
+    });
+
     // Create process_pipeline jobs for selected ideas
-    // Get today's selected ideas
     const dateStr = new Date().toISOString().split('T')[0];
     const supabase = await createClient();
+
+    logger.info('Fetching selected ideas to create pipeline jobs', 'fetch_selected');
+    logger.startStep();
 
     const { data: selectedIdeas, error: fetchError } = await supabase
       .from('idea_queue')
@@ -339,7 +437,7 @@ async function processSelectDaily(payload: Record<string, unknown>): Promise<Job
       .order('selection_rank', { ascending: true });
 
     if (fetchError) {
-      console.error('[SelectDaily] Error fetching selected ideas:', fetchError);
+      logger.error(`Error fetching selected ideas: ${fetchError.message}`, 'fetch_error');
       return {
         success: true,
         data: {
@@ -353,10 +451,12 @@ async function processSelectDaily(payload: Record<string, unknown>): Promise<Job
 
     // Create pipeline jobs for each selected idea
     if (selectedIdeas && selectedIdeas.length > 0) {
+      logger.info(`Creating ${selectedIdeas.length} pipeline jobs`, 'create_jobs');
+
       const pipelineJobs = selectedIdeas.map((idea, index) => ({
         job_type: 'process_pipeline',
         payload: { idea_id: idea.id, title: idea.title },
-        priority: 5 - index, // Higher priority for higher-ranked ideas
+        priority: 5 - index,
         max_attempts: 5,
         status: 'pending',
         next_run_at: new Date().toISOString()
@@ -367,7 +467,7 @@ async function processSelectDaily(payload: Record<string, unknown>): Promise<Job
         .insert(pipelineJobs);
 
       if (insertError) {
-        console.error('[SelectDaily] Error creating pipeline jobs:', insertError);
+        logger.error(`Error creating pipeline jobs: ${insertError.message}`, 'insert_error');
         return {
           success: true,
           data: {
@@ -379,7 +479,9 @@ async function processSelectDaily(payload: Record<string, unknown>): Promise<Job
         };
       }
 
-      console.log(`[SelectDaily] Created ${pipelineJobs.length} process_pipeline jobs`);
+      logger.info(`Created ${pipelineJobs.length} pipeline jobs`, 'jobs_created', {
+        ideaTitles: selectedIdeas.map(i => i.title)
+      });
     }
 
     return {
@@ -391,6 +493,7 @@ async function processSelectDaily(payload: Record<string, unknown>): Promise<Job
       }
     };
   } catch (error) {
+    logger.logError(error, 'select_daily_error');
     return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
@@ -401,11 +504,15 @@ async function processSelectDaily(payload: Record<string, unknown>): Promise<Job
  */
 async function processPipeline(
   supabase: ReturnType<typeof createClient> extends Promise<infer T> ? T : never,
-  payload: Record<string, unknown>
+  payload: Record<string, unknown>,
+  logger: PipelineLogger
 ): Promise<JobResult> {
   try {
     const ideaId = payload.idea_id as string | undefined;
     const dateStr = new Date().toISOString().split('T')[0] || '';
+
+    logger.info(`Fetching idea to process`, 'fetch_idea', { ideaId, date: dateStr });
+    logger.startStep();
 
     // Get the idea to process
     let ideaQuery = supabase
@@ -413,14 +520,12 @@ async function processPipeline(
       .select('id, title, source_name, full_content, suggested_angle, relevance_score, selection_rank, pipeline_step, pipeline_data');
 
     if (ideaId) {
-      // Process specific idea
       ideaQuery = ideaQuery.eq('id', ideaId);
     } else {
-      // Get next selected idea for today (or one that's in-progress from a previous run)
       ideaQuery = ideaQuery
         .or(`status.eq.selected,status.eq.processing`)
         .eq('selected_for_date', dateStr)
-        .order('status', { ascending: false }) // 'processing' comes before 'selected'
+        .order('status', { ascending: false })
         .order('selection_rank', { ascending: true })
         .limit(1);
     }
@@ -428,19 +533,28 @@ async function processPipeline(
     const { data: ideas, error: fetchError } = await ideaQuery;
 
     if (fetchError) {
+      logger.error(`Failed to fetch idea: ${fetchError.message}`, 'fetch_error');
       return { success: false, error: fetchError.message };
     }
 
     if (!ideas || ideas.length === 0) {
+      logger.info('No ideas to process', 'no_ideas');
       return { success: true, data: { message: 'No ideas to process' } };
     }
 
     const idea = ideas[0];
     const existingCheckpoint = (idea.pipeline_data || {}) as PipelineCheckpoint;
 
-    console.log(`[Pipeline] Processing idea ${idea.id}: "${idea.title}"`);
+    logger.info(`Processing: "${idea.title}"`, 'idea_loaded', {
+      ideaId: idea.id,
+      source: idea.source_name,
+      relevanceScore: idea.relevance_score,
+      hasCheckpoint: Object.keys(existingCheckpoint).length > 0,
+      checkpointStep: idea.pipeline_step
+    });
+
     if (Object.keys(existingCheckpoint).length > 0) {
-      console.log(`[Pipeline] Resuming from checkpoint: ${idea.pipeline_step}`);
+      logger.info(`Resuming from checkpoint: ${idea.pipeline_step}`, 'resume_checkpoint');
     }
 
     // Mark as processing
@@ -457,9 +571,16 @@ async function processPipeline(
       idea.suggested_angle ? `\nSUGGESTED ANGLE: ${idea.suggested_angle}` : '',
     ].filter(Boolean).join('\n');
 
-    // Create checkpoint callback to save progress after each step
+    logger.info('Starting 4-AI pipeline', 'pipeline_start', {
+      inputLength: inputContent.length,
+      hasAngle: !!idea.suggested_angle
+    });
+
+    // Create checkpoint callback to save progress and log each step
     const onCheckpoint = async (step: PipelineStep, checkpoint: PipelineCheckpoint) => {
-      console.log(`[Pipeline] Saving checkpoint: ${step}`);
+      logger.info(`Checkpoint: ${step}`, `step_${step}`, {
+        stepComplete: step
+      });
       await supabase
         .from('idea_queue')
         .update({
@@ -471,6 +592,7 @@ async function processPipeline(
     };
 
     // Run the 4-AI pipeline with checkpointing
+    logger.startStep();
     const pipeline = getMultiAIPipeline();
     const pipelineResult = await pipeline.runWithCheckpoints(
       {
@@ -482,11 +604,20 @@ async function processPipeline(
       onCheckpoint
     );
 
+    logger.info('Pipeline complete, saving content', 'pipeline_complete', {
+      processingTimeMs: pipelineResult.metadata?.processingTimeMs,
+      totalTokensUsed: pipelineResult.metadata?.totalTokensUsed,
+      compliancePassed: pipelineResult.claudeDraft?.complianceCheck?.passed
+    });
+
     // Extract title from WordPress HTML
     const h1Match = pipelineResult.finalOutput.wordpressPost.match(/<h1[^>]*>(.*?)<\/h1>/i);
     const finalTitle = h1Match ? h1Match[1].replace(/<[^>]*>/g, '').trim() : idea.title;
 
     // Save to content_calendar
+    logger.info('Saving to content calendar', 'save_content');
+    logger.startStep();
+
     const { data: contentEntry, error: contentError } = await supabase
       .from('content_calendar')
       .insert({
@@ -513,6 +644,7 @@ async function processPipeline(
       .single();
 
     if (contentError) {
+      logger.error(`Failed to save content: ${contentError.message}`, 'save_error');
       return { success: false, error: contentError.message };
     }
 
@@ -527,7 +659,12 @@ async function processPipeline(
       })
       .eq('id', idea.id);
 
-    console.log(`[Pipeline] Completed idea ${idea.id} -> content ${contentEntry?.id}`);
+    logger.info(`Content created successfully`, 'content_saved', {
+      ideaId: idea.id,
+      contentId: contentEntry?.id,
+      title: finalTitle,
+      seoTags: pipelineResult.finalOutput.seoTags
+    });
 
     return {
       success: true,
@@ -539,6 +676,7 @@ async function processPipeline(
     };
 
   } catch (error) {
+    logger.logError(error, 'pipeline_error');
     return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
