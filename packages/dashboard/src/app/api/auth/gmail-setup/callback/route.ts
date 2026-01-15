@@ -103,11 +103,11 @@ export async function GET(request: NextRequest) {
 
     // Store tokens in database (same format GmailService expects)
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!supabaseUrl || !supabaseServiceKey) {
       return new NextResponse(
-        `<html><body><h1>Error: Supabase not configured</h1></body></html>`,
+        `<html><body><h1>Error: Supabase not configured (NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_KEY)</h1></body></html>`,
         { headers: { 'Content-Type': 'text/html' } }
       );
     }
