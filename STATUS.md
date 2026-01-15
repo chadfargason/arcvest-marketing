@@ -1,5 +1,5 @@
 # ArcVest Marketing Automation - Status Report
-**Last Updated:** January 14, 2026
+**Last Updated:** January 15, 2026
 
 ---
 
@@ -24,6 +24,7 @@ ArcVest Marketing Automation is an AI-powered content generation and marketing m
 | **Analytics** | https://arcvest-marketing.vercel.app/dashboard/analytics |
 | **Campaigns** | https://arcvest-marketing.vercel.app/dashboard/campaigns |
 | **Settings** | https://arcvest-marketing.vercel.app/dashboard/settings |
+| **Pipeline Logs** | https://arcvest-marketing.vercel.app/dashboard/pipeline-logs |
 
 ---
 
@@ -188,6 +189,7 @@ The system now uses a job queue pattern for reliability:
 | `content_calendar` | Generated blog posts and drafts |
 | `approval_queue` | Items pending human review |
 | `job_queue` | Persistent job queue with retry logic and exponential backoff |
+| `pipeline_logs` | Debug logs from cron jobs and content pipeline (for overnight debugging) |
 | `system_state` | OAuth tokens, settings |
 | `activity_log` | Audit trail |
 
@@ -245,7 +247,24 @@ ANTHROPIC_API_KEY=✅ configured
 
 ---
 
-## Recent Fixes (January 14, 2026)
+## Recent Fixes (January 14-15, 2026)
+
+### Pipeline Logging System (January 15, 2026)
+- **Problem:** When content pipeline runs overnight, no way to debug failures in the morning
+- **Solution:** Implemented comprehensive logging to Supabase with dashboard UI
+- **Features:**
+  - **PipelineLogger Service:** Logs to console + Supabase with auto-flush
+  - **Step Timing:** Tracks duration of each pipeline step
+  - **Error Capture:** Full stack traces and context for debugging
+  - **Dashboard UI:** Filter by level (error/warn/info/debug), job type, time range
+  - **Auto-refresh:** Toggle to watch logs in real-time
+- **New Files:**
+  - `packages/database/migrations/011_pipeline_logs.sql` - Logs table with indexes
+  - `packages/services/src/pipeline-logger.ts` - Logger service
+  - `packages/dashboard/src/app/api/pipeline-logs/route.ts` - Logs API
+  - `packages/dashboard/src/app/dashboard/pipeline-logs/page.tsx` - Dashboard UI
+- **Worker Integration:** All job types now log their activity (news_scan, email_scan, bloomberg_scan, score_ideas, select_daily, process_pipeline)
+- **Result:** Check `/dashboard/pipeline-logs` each morning to see overnight activity and debug any failures
 
 ### Robust Job Queue System with Checkpointing (NEW)
 - **Problem:** Content pipeline (7 API calls) frequently timed out on Vercel, losing all progress
@@ -306,6 +325,15 @@ curl "https://arcvest-marketing.vercel.app/api/test/process-pipeline?limit=1"
 
 # Run full pipeline for all selected ideas
 curl https://arcvest-marketing.vercel.app/api/test/process-pipeline
+
+# Test pipeline logging (creates sample log entries)
+curl https://arcvest-marketing.vercel.app/api/test/log-test
+
+# View pipeline logs (last 24 hours)
+curl "https://arcvest-marketing.vercel.app/api/pipeline-logs?limit=50"
+
+# View only errors
+curl "https://arcvest-marketing.vercel.app/api/pipeline-logs?level=error"
 ```
 
 ---
@@ -318,6 +346,7 @@ curl https://arcvest-marketing.vercel.app/api/test/process-pipeline
 - [x] Upgrade Vercel to Pro plan
 - [x] Implement robust job queue with checkpointing
 - [x] Add pipeline resume capability for timeouts
+- [x] Add pipeline logging for overnight debugging
 - [ ] Apply for Google Ads Basic Access
 - [ ] Fix Vercel GitHub webhook (auto-deploy)
 
@@ -415,4 +444,4 @@ arcvest-marketing/
 
 ---
 
-**Report Generated:** January 14, 2026, 2:00 PM CT
+**Report Generated:** January 15, 2026, 2:30 PM CT
