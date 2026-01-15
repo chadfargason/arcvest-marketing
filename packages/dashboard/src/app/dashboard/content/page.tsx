@@ -46,7 +46,9 @@ import {
   Copy,
   Download,
   Eye,
+  LayoutGrid,
 } from 'lucide-react';
+import { ContentEditPanel, KanbanView, BulkActionBar } from '@/components/content';
 
 interface ContentItem {
   id: string;
@@ -107,9 +109,11 @@ export default function ContentPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
-  const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
+  const [viewMode, setViewMode] = useState<'calendar' | 'list' | 'kanban'>('list');
   const [showNewDialog, setShowNewDialog] = useState(false);
   const [selectedContent, setSelectedContent] = useState<ContentItem | null>(null);
+  const [editPanelContent, setEditPanelContent] = useState<ContentItem | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [generatedContent, setGeneratedContent] = useState<string | null>(null);
@@ -240,6 +244,78 @@ export default function ContentPage() {
       fetchContent();
     } catch (error) {
       console.error('Error deleting content:', error);
+    }
+  };
+
+  // Bulk operations
+  const handleBulkStatusChange = async (newStatus: string) => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+
+    try {
+      await Promise.all(
+        ids.map((id) =>
+          fetch(`/api/content/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus }),
+          })
+        )
+      );
+      setSelectedIds(new Set());
+      fetchContent();
+    } catch (error) {
+      console.error('Error updating status:', error);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    if (!confirm(`Delete ${ids.length} item(s)?`)) return;
+
+    try {
+      await Promise.all(
+        ids.map((id) => fetch(`/api/content/${id}`, { method: 'DELETE' }))
+      );
+      setSelectedIds(new Set());
+      fetchContent();
+    } catch (error) {
+      console.error('Error deleting:', error);
+    }
+  };
+
+  const handleStatusChange = async (id: string, newStatus: string) => {
+    try {
+      const response = await fetch(`/api/content/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!response.ok) throw new Error('Failed to update status');
+      fetchContent();
+    } catch (error) {
+      console.error('Error updating status:', error);
+    }
+  };
+
+  const toggleSelectItem = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === content.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(content.map((c) => c.id)));
     }
   };
 
@@ -458,18 +534,28 @@ export default function ContentPage() {
           </Select>
           <div className="flex border rounded-md">
             <Button
-              variant={viewMode === 'calendar' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('calendar')}
-            >
-              <Calendar className="h-4 w-4" />
-            </Button>
-            <Button
               variant={viewMode === 'list' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('list')}
+              title="List view"
             >
               <FileText className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'kanban' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('kanban')}
+              title="Kanban view"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'calendar' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('calendar')}
+              title="Calendar view"
+            >
+              <Calendar className="h-4 w-4" />
             </Button>
           </div>
           <Button variant="outline" onClick={fetchContent}>
@@ -674,6 +760,14 @@ export default function ContentPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b bg-gray-50 text-xs">
+                  <th className="text-left px-2 py-1.5 w-8">
+                    <input
+                      type="checkbox"
+                      checked={content.length > 0 && selectedIds.size === content.length}
+                      onChange={toggleSelectAll}
+                      className="h-3.5 w-3.5 rounded border-gray-300"
+                    />
+                  </th>
                   <th className="text-left px-2 py-1.5">Title</th>
                   <th className="text-left px-2 py-1.5">Type</th>
                   <th className="text-left px-2 py-1.5">Status</th>
@@ -686,7 +780,7 @@ export default function ContentPage() {
               <tbody>
                 {content.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="text-center p-6 text-muted-foreground text-sm">
+                    <td colSpan={8} className="text-center p-6 text-muted-foreground text-sm">
                       No content items found. Create your first piece of content!
                     </td>
                   </tr>
@@ -695,6 +789,14 @@ export default function ContentPage() {
                     const status = getStatusBadge(item.status);
                     return (
                       <tr key={item.id} className="border-b hover:bg-gray-50 text-xs">
+                        <td className="px-2 py-1.5">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(item.id)}
+                            onChange={() => toggleSelectItem(item.id)}
+                            className="h-3.5 w-3.5 rounded border-gray-300"
+                          />
+                        </td>
                         <td className="px-2 py-1.5">
                           <span className="font-medium text-sm">{item.title || 'Untitled'}</span>
                         </td>
@@ -747,7 +849,7 @@ export default function ContentPage() {
                               variant="ghost"
                               size="sm"
                               className="h-6 w-6 p-0"
-                              onClick={() => openEditDialog(item)}
+                              onClick={() => setEditPanelContent(item)}
                             >
                               <Edit className="h-3.5 w-3.5" />
                             </Button>
@@ -770,6 +872,36 @@ export default function ContentPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Kanban View */}
+      {viewMode === 'kanban' && (
+        <KanbanView
+          content={content}
+          onEdit={(item) => setEditPanelContent(item)}
+          onPreview={(item) => setPreviewContent(item)}
+          onStatusChange={handleStatusChange}
+        />
+      )}
+
+      {/* Edit Panel (slide-in from right) */}
+      {editPanelContent && (
+        <ContentEditPanel
+          content={editPanelContent}
+          onClose={() => setEditPanelContent(null)}
+          onSave={(updated) => {
+            setEditPanelContent(null);
+            fetchContent();
+          }}
+        />
+      )}
+
+      {/* Bulk Action Bar */}
+      <BulkActionBar
+        selectedCount={selectedIds.size}
+        onClearSelection={() => setSelectedIds(new Set())}
+        onBulkStatusChange={handleBulkStatusChange}
+        onBulkDelete={handleBulkDelete}
+      />
 
       {/* Edit Dialog */}
       <Dialog open={!!selectedContent} onOpenChange={(open) => !open && setSelectedContent(null)}>
