@@ -8,4 +8,4 @@ export { RSAAssetCard } from './RSAAssetCard';
 export { RSAFilterBar } from './RSAFilterBar';
 export { AssetDetailDialog } from './AssetDetailDialog';
 export { BulkActionDialog } from './BulkActionDialog';
-export { ExportDialog } from './ExportDialog';
+export { ExportDialog, type ExportOptions } from './ExportDialog';
