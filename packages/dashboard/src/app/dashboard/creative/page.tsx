@@ -299,6 +299,9 @@ export default function CreativePage() {
             Generate high-volume RSA ads with AI-powered persona and voice targeting
           </p>
         </div>
+        <Button variant="outline" asChild>
+          <a href="/dashboard/creative/assets">View Asset Library</a>
+        </Button>
       </div>
 
       {/* Generation Panel */}
@@ -458,9 +461,14 @@ export default function CreativePage() {
                 </div>
               </div>
               {results.summary.savedRecords && (
-                <p className="text-center text-sm text-muted-foreground mt-4">
-                  Saved {results.summary.savedRecords.assetGroups} groups and {results.summary.savedRecords.assets} assets to database
-                </p>
+                <div className="text-center mt-4">
+                  <p className="text-sm text-muted-foreground">
+                    Saved {results.summary.savedRecords.assetGroups} groups and {results.summary.savedRecords.assets} assets to database
+                  </p>
+                  <Button variant="outline" size="sm" className="mt-2" asChild>
+                    <a href="/dashboard/creative/assets">View in Asset Library</a>
+                  </Button>
+                </div>
               )}
             </CardContent>
           </Card>
