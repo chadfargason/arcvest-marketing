@@ -8,10 +8,11 @@ import { NextRequest, NextResponse } from 'next/server';
  * into Vercel environment variables.
  */
 export async function GET(request: NextRequest) {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
+  // Use GMAIL_CLIENT_ID (same as GmailService uses for token refresh)
+  const clientId = process.env.GMAIL_CLIENT_ID;
 
   if (!clientId) {
-    return NextResponse.json({ error: 'GOOGLE_CLIENT_ID not configured' }, { status: 500 });
+    return NextResponse.json({ error: 'GMAIL_CLIENT_ID not configured' }, { status: 500 });
   }
 
   // Determine the redirect URI based on environment
