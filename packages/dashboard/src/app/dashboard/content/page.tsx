@@ -673,20 +673,20 @@ export default function ContentPage() {
           <CardContent className="p-0">
             <table className="w-full">
               <thead>
-                <tr className="border-b bg-gray-50">
-                  <th className="text-left p-3">Title</th>
-                  <th className="text-left p-3">Type</th>
-                  <th className="text-left p-3">Status</th>
-                  <th className="text-left p-3">Created</th>
-                  <th className="text-left p-3">Scheduled</th>
-                  <th className="text-left p-3">Keyword</th>
-                  <th className="text-right p-3">Actions</th>
+                <tr className="border-b bg-gray-50 text-xs">
+                  <th className="text-left px-2 py-1.5">Title</th>
+                  <th className="text-left px-2 py-1.5">Type</th>
+                  <th className="text-left px-2 py-1.5">Status</th>
+                  <th className="text-left px-2 py-1.5">Created</th>
+                  <th className="text-left px-2 py-1.5">Scheduled</th>
+                  <th className="text-left px-2 py-1.5">Keyword</th>
+                  <th className="text-right px-2 py-1.5">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {content.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="text-center p-8 text-muted-foreground">
+                    <td colSpan={7} className="text-center p-6 text-muted-foreground text-sm">
                       No content items found. Create your first piece of content!
                     </td>
                   </tr>
@@ -694,18 +694,15 @@ export default function ContentPage() {
                   content.map((item) => {
                     const status = getStatusBadge(item.status);
                     return (
-                      <tr key={item.id} className="border-b hover:bg-gray-50">
-                        <td className="p-3">
-                          <span className="font-medium">{item.title || 'Untitled'}</span>
-                          {item.topic && (
-                            <p className="text-sm text-muted-foreground">{item.topic}</p>
-                          )}
+                      <tr key={item.id} className="border-b hover:bg-gray-50 text-xs">
+                        <td className="px-2 py-1.5">
+                          <span className="font-medium text-sm">{item.title || 'Untitled'}</span>
                         </td>
-                        <td className="p-3">{getContentTypeLabel(item.content_type)}</td>
-                        <td className="p-3">
-                          <Badge className={status.color}>{status.label}</Badge>
+                        <td className="px-2 py-1.5 text-muted-foreground">{getContentTypeLabel(item.content_type)}</td>
+                        <td className="px-2 py-1.5">
+                          <Badge className={`${status.color} text-xs px-1.5 py-0`}>{status.label}</Badge>
                         </td>
-                        <td className="p-3 text-sm text-muted-foreground">
+                        <td className="px-2 py-1.5 text-muted-foreground">
                           {item.created_at
                             ? new Date(item.created_at).toLocaleString('en-US', {
                                 month: 'short',
@@ -715,48 +712,52 @@ export default function ContentPage() {
                               })
                             : '-'}
                         </td>
-                        <td className="p-3">
+                        <td className="px-2 py-1.5 text-muted-foreground">
                           {item.scheduled_date
                             ? new Date(item.scheduled_date).toLocaleDateString()
                             : '-'}
                         </td>
-                        <td className="p-3 text-sm text-muted-foreground">
+                        <td className="px-2 py-1.5 text-muted-foreground">
                           {item.target_keyword || '-'}
                         </td>
-                        <td className="p-3 text-right">
-                          <div className="flex justify-end gap-1">
+                        <td className="px-2 py-1.5 text-right">
+                          <div className="flex justify-end gap-0.5">
                             {item.final_content && (
                               <Button
                                 variant="ghost"
                                 size="sm"
+                                className="h-6 w-6 p-0"
                                 onClick={() => setPreviewContent(item)}
                                 title="View generated content"
                               >
-                                <Eye className="h-4 w-4 text-blue-500" />
+                                <Eye className="h-3.5 w-3.5 text-blue-500" />
                               </Button>
                             )}
                             {item.published_url && (
                               <Button
                                 variant="ghost"
                                 size="sm"
+                                className="h-6 w-6 p-0"
                                 onClick={() => window.open(item.published_url!, '_blank')}
                               >
-                                <ExternalLink className="h-4 w-4" />
+                                <ExternalLink className="h-3.5 w-3.5" />
                               </Button>
                             )}
                             <Button
                               variant="ghost"
                               size="sm"
+                              className="h-6 w-6 p-0"
                               onClick={() => openEditDialog(item)}
                             >
-                              <Edit className="h-4 w-4" />
+                              <Edit className="h-3.5 w-3.5" />
                             </Button>
                             <Button
                               variant="ghost"
                               size="sm"
+                              className="h-6 w-6 p-0"
                               onClick={() => handleDelete(item.id)}
                             >
-                              <Trash2 className="h-4 w-4 text-red-500" />
+                              <Trash2 className="h-3.5 w-3.5 text-red-500" />
                             </Button>
                           </div>
                         </td>
