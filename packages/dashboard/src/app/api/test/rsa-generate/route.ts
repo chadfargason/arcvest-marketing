@@ -145,8 +145,8 @@ async function saveResultsToDatabase(
       .from('creative_assets')
       .insert({
         name: `RSA: ${persona?.displayName} - ${voice?.displayName}`,
-        asset_type: 'rsa',
-        status: result.complianceResult.passed ? 'pending_approval' : 'draft',
+        asset_type: 'ad_copy',
+        status: result.complianceResult.passed ? 'approved' : 'draft',
         content: {
           headlines: result.master.headlines,
           descriptions: result.master.descriptions,
@@ -238,7 +238,7 @@ async function saveResultsToDatabase(
         .from('creative_assets')
         .insert({
           name: `RSA Variation ${i + 1}: ${persona?.displayName} - ${voice?.displayName}`,
-          asset_type: 'rsa',
+          asset_type: 'ad_copy',
           status: 'draft',
           content: {
             headlines: variation.headlines,
