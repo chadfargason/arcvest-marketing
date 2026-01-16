@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Sparkles,
   Play,
@@ -15,6 +16,9 @@ import {
   ChevronDown,
   ChevronUp,
   Copy,
+  Star,
+  Trash2,
+  Wand2,
 } from 'lucide-react';
 
 // Persona and Voice definitions (matching backend)
@@ -66,6 +70,14 @@ interface GenerationResponse {
   error?: string;
 }
 
+interface PhraseVariation {
+  id: string;
+  text: string;
+  variationNumber: number;
+  rating?: number;
+  isNew?: boolean;
+}
+
 function CharacterCount({ count, max }: { count: number; max: number }) {
   const status = count > max ? 'error' : count >= max - 5 ? 'warning' : 'ok';
   const colors = {
@@ -77,6 +89,42 @@ function CharacterCount({ count, max }: { count: number; max: number }) {
     <span className={`text-xs font-mono ${colors[status]}`}>
       {count}/{max}
     </span>
+  );
+}
+
+function StarRating({
+  rating,
+  onRate,
+  disabled = false,
+}: {
+  rating?: number;
+  onRate: (rating: number) => void;
+  disabled?: boolean;
+}) {
+  const [hovered, setHovered] = useState<number | null>(null);
+
+  return (
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          disabled={disabled}
+          className={`p-0.5 transition-colors ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:scale-110'}`}
+          onMouseEnter={() => !disabled && setHovered(star)}
+          onMouseLeave={() => setHovered(null)}
+          onClick={() => !disabled && onRate(star)}
+        >
+          <Star
+            className={`h-4 w-4 ${
+              (hovered !== null ? star <= hovered : star <= (rating || 0))
+                ? 'fill-yellow-400 text-yellow-400'
+                : 'text-gray-300'
+            }`}
+          />
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -203,7 +251,295 @@ function ResultCard({ result, expanded, onToggle }: { result: GenerationResult; 
   );
 }
 
-export default function CreativePage() {
+function PhraseVariationGenerator() {
+  const [seedPhrase, setSeedPhrase] = useState('');
+  const [variationCount, setVariationCount] = useState(10);
+  const [style, setStyle] = useState<'varied' | 'similar' | 'contrasting'>('varied');
+  const [generating, setGenerating] = useState(false);
+  const [variations, setVariations] = useState<PhraseVariation[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [ratingLoading, setRatingLoading] = useState<string | null>(null);
+
+  const generateVariations = async () => {
+    if (!seedPhrase.trim()) {
+      setError('Please enter a seed phrase');
+      return;
+    }
+
+    setGenerating(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/creative/phrase-variations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          seedPhrase: seedPhrase.trim(),
+          count: variationCount,
+          style,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Generation failed');
+      }
+
+      setVariations(data.variations);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const rateVariation = async (variationId: string, rating: number) => {
+    setRatingLoading(variationId);
+
+    try {
+      const response = await fetch('/api/creative/phrase-variations/rating', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ variationId, rating }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Rating failed');
+      }
+
+      // Update local state
+      if (rating === 1) {
+        // Remove rejected variations from the list
+        setVariations(prev => prev.filter(v => v.id !== variationId));
+      } else {
+        // Update the rating
+        setVariations(prev =>
+          prev.map(v => (v.id === variationId ? { ...v, rating } : v))
+        );
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Rating failed');
+    } finally {
+      setRatingLoading(null);
+    }
+  };
+
+  const deleteVariation = async (variationId: string) => {
+    setRatingLoading(variationId);
+
+    try {
+      const response = await fetch(`/api/creative/phrase-variations/rating?variationId=${variationId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Delete failed');
+      }
+
+      // Remove from list
+      setVariations(prev => prev.filter(v => v.id !== variationId));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Delete failed');
+    } finally {
+      setRatingLoading(null);
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+  };
+
+  const copyAllHighRated = () => {
+    const highRated = variations
+      .filter(v => v.rating && v.rating >= 4)
+      .map(v => v.text)
+      .join('\n');
+    navigator.clipboard.writeText(highRated);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Input Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Wand2 className="h-5 w-5" />
+            Seed Phrase
+          </CardTitle>
+          <CardDescription>
+            Enter a phrase or tagline to generate variations
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <textarea
+            value={seedPhrase}
+            onChange={(e) => setSeedPhrase(e.target.value)}
+            placeholder="e.g., Give us 15 minutes and we'll save you $15,000"
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm min-h-[80px] resize-none"
+          />
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Number of Variations
+              </label>
+              <select
+                value={variationCount}
+                onChange={(e) => setVariationCount(Number(e.target.value))}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value={5}>5 variations</option>
+                <option value={10}>10 variations</option>
+                <option value={15}>15 variations</option>
+                <option value={20}>20 variations</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Style
+              </label>
+              <select
+                value={style}
+                onChange={(e) => setStyle(e.target.value as 'varied' | 'similar' | 'contrasting')}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="varied">Varied (diverse angles)</option>
+                <option value="similar">Similar (subtle changes)</option>
+                <option value="contrasting">Contrasting (different approaches)</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <Button
+              onClick={generateVariations}
+              disabled={generating || !seedPhrase.trim()}
+            >
+              {generating ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Generate Variations
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Error Display */}
+      {error && (
+        <div className="flex items-center gap-2 p-4 bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300 rounded-lg">
+          <AlertCircle className="h-5 w-5" />
+          <p>{error}</p>
+        </div>
+      )}
+
+      {/* Variations Display */}
+      {variations.length > 0 && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base">Generated Variations</CardTitle>
+                <CardDescription>
+                  {variations.length} variations • Rate to keep or reject
+                </CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={copyAllHighRated}
+                  disabled={!variations.some(v => v.rating && v.rating >= 4)}
+                >
+                  <Copy className="h-3 w-3 mr-1" />
+                  Copy 4-5 Star
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => copyToClipboard(variations.map(v => v.text).join('\n'))}
+                >
+                  <Copy className="h-3 w-3 mr-1" />
+                  Copy All
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {variations.map((variation) => (
+                <div
+                  key={variation.id}
+                  className={`flex items-center justify-between p-3 rounded border ${
+                    variation.isNew
+                      ? 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800'
+                      : 'bg-muted/50 border-transparent'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 flex-1">
+                    <span className="text-xs text-muted-foreground w-6">
+                      {variation.variationNumber}.
+                    </span>
+                    <span className="flex-1 text-sm">{variation.text}</span>
+                    {variation.isNew && (
+                      <Badge variant="secondary" className="text-xs">
+                        New
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <StarRating
+                      rating={variation.rating}
+                      onRate={(rating) => rateVariation(variation.id, rating)}
+                      disabled={ratingLoading === variation.id}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyToClipboard(variation.text)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => deleteVariation(variation.id)}
+                      disabled={ratingLoading === variation.id}
+                      className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 pt-4 border-t text-xs text-muted-foreground">
+              <p>
+                <strong>Tip:</strong> Rate 1 star or delete to reject a variation. Rejected phrases are remembered and won&apos;t be generated again.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+function RSAGenerator() {
   const [selectedPersonas, setSelectedPersonas] = useState<string[]>(['pre-retiree']);
   const [selectedVoices, setSelectedVoices] = useState<string[]>(['direct']);
   const [variationsPerCombo, setVariationsPerCombo] = useState(10);
@@ -288,22 +624,6 @@ export default function CreativePage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Sparkles className="h-6 w-6" />
-            Creative Studio
-          </h1>
-          <p className="text-muted-foreground">
-            Generate high-volume RSA ads with AI-powered persona and voice targeting
-          </p>
-        </div>
-        <Button variant="outline" asChild>
-          <a href="/dashboard/creative/assets">View Asset Library</a>
-        </Button>
-      </div>
-
       {/* Generation Panel */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Persona Selection */}
@@ -487,6 +807,50 @@ export default function CreativePage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+export default function CreativePage() {
+  return (
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Sparkles className="h-6 w-6" />
+            Creative Studio
+          </h1>
+          <p className="text-muted-foreground">
+            Generate high-volume ad copy with AI-powered tools
+          </p>
+        </div>
+        <Button variant="outline" asChild>
+          <a href="/dashboard/creative/assets">View Asset Library</a>
+        </Button>
+      </div>
+
+      {/* Tabs */}
+      <Tabs defaultValue="phrases" className="space-y-6">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="phrases" className="flex items-center gap-2">
+            <Wand2 className="h-4 w-4" />
+            Phrase Variations
+          </TabsTrigger>
+          <TabsTrigger value="rsa" className="flex items-center gap-2">
+            <Play className="h-4 w-4" />
+            RSA Generator
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="phrases">
+          <PhraseVariationGenerator />
+        </TabsContent>
+
+        <TabsContent value="rsa">
+          <RSAGenerator />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
