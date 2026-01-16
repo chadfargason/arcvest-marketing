@@ -1,5 +1,5 @@
 # ArcVest Marketing Automation - Status Report
-**Last Updated:** January 15, 2026
+**Last Updated:** January 16, 2026
 
 ---
 
@@ -366,11 +366,47 @@ curl "https://arcvest-marketing.vercel.app/api/pipeline-logs?level=error"
 
 ---
 
-## Creative Studio (RSA Generator)
-
-A separate feature for generating Google Ads Responsive Search Ads:
+## Creative Studio
 
 **URL:** https://arcvest-marketing.vercel.app/dashboard/creative
+
+The Creative Studio provides AI-powered tools for generating advertising content.
+
+### Phrase Variation Generator (NEW - January 16, 2026)
+
+Generate multiple variations of a seed phrase for ad copy testing.
+
+**Features:**
+- Enter a seed phrase (e.g., "Give us 15 minutes and we'll save you $15,000")
+- Generate 5-20 variations with different styles (varied, similar, contrasting)
+- **Star Rating System:** Rate each variation 1-5 stars
+- **Smart Rejection:** 1-star or delete removes variation and remembers it
+- **Future-Proof:** Rejected phrases are excluded from future generations
+- **Copy Tools:** Copy all, or copy only 4-5 star rated variations
+
+**New Database Tables:**
+- `phrase_variations` - stores generated variations with ratings
+- `rejected_phrases` - stores patterns to avoid in future generations
+
+**API Endpoints:**
+```bash
+# Generate variations
+curl -X POST https://arcvest-marketing.vercel.app/api/creative/phrase-variations \
+  -H "Content-Type: application/json" \
+  -d '{"seedPhrase": "Your phrase here", "count": 10, "style": "varied"}'
+
+# Fetch existing variations
+curl "https://arcvest-marketing.vercel.app/api/creative/phrase-variations?seedPhrase=..."
+
+# Rate a variation (1-5 stars, 1 = reject)
+curl -X PATCH https://arcvest-marketing.vercel.app/api/creative/phrase-variations/rating \
+  -H "Content-Type: application/json" \
+  -d '{"variationId": "uuid", "rating": 5}'
+```
+
+### RSA Generator
+
+Generate Google Ads Responsive Search Ads with persona/voice targeting.
 
 **Features:**
 - 8 target personas (pre-retirees, HNW investors, business owners, etc.)
@@ -444,4 +480,4 @@ arcvest-marketing/
 
 ---
 
-**Report Generated:** January 15, 2026, 2:30 PM CT
+**Report Generated:** January 16, 2026, 10:00 AM CT
