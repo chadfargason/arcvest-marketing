@@ -11,8 +11,7 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-// @ts-ignore - @arcvest/agents is external dependency
-import { type ExtractedCandidate } from '@arcvest/agents';
+import type { ExtractedCandidate } from '@arcvest/shared';
 
 export interface ScoredLead extends ExtractedCandidate {
   score: number;

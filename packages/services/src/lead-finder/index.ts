@@ -13,6 +13,3 @@ export type { FetchedPage, FetchOptions } from './page-fetcher-service';
 export { LeadScorerService, leadScorerService } from './lead-scorer-service';
 export type { ScoredLead, ScoreWeights } from './lead-scorer-service';
 
-export { LeadFinderOrchestrator, leadFinderOrchestrator } from './orchestrator';
-export type { RunConfig, RunStats, RunResult } from './orchestrator';
-

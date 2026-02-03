@@ -12,17 +12,16 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { GoogleSearchService, SearchResult } from './google-search-service';
-import { PageFetcherService, FetchedPage } from './page-fetcher-service';
-import { LeadScorerService, ScoredLead } from './lead-scorer-service';
-// @ts-ignore - @arcvest/agents is external dependency
 import {
-  LeadExtractorAgent,
-  EmailGeneratorAgent,
-  type ExtractedCandidate,
-  type EmailTone,
-  type GeneratedEmail,
-} from '@arcvest/agents';
+  GoogleSearchService,
+  SearchResult,
+  PageFetcherService,
+  FetchedPage,
+  LeadScorerService,
+  ScoredLead
+} from '@arcvest/services';
+import { LeadExtractorAgent, type ExtractedCandidate, type ExtractionResult } from './lead-extractor-agent';
+import { EmailGeneratorAgent, type EmailTone, type GeneratedEmail } from './email-generator-agent';
 
 export interface RunConfig {
   geoName: string;

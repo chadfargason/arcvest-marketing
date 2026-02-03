@@ -20,6 +20,8 @@
     "dashboard:build": "npm run build --workspace=@arcvest/dashboard"
   },
   "devDependencies": {
+    "pg": "^8.17.0",
+    "puppeteer": "^24.35.0",
     "turbo": "^2.3.0",
     "typescript": "^5.7.2"
   },

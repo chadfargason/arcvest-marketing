@@ -11,3 +11,6 @@ export * from './agent';
 
 // Content types
 export * from './content';
+
+// Lead finder types
+export * from './lead-finder';

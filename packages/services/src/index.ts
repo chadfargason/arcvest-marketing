@@ -90,8 +90,6 @@ export {
   pageFetcherService,
   LeadScorerService,
   leadScorerService,
-  LeadFinderOrchestrator,
-  leadFinderOrchestrator,
 } from './lead-finder';
 export type {
   SearchResult,
@@ -100,9 +98,6 @@ export type {
   FetchOptions,
   ScoredLead,
   ScoreWeights,
-  RunConfig,
-  RunStats,
-  RunResult,
 } from './lead-finder';
 
 export type {

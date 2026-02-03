@@ -10,30 +10,9 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
+import type { ExtractedCandidate, ExtractionResult } from '@arcvest/shared';
 
-export interface ExtractedCandidate {
-  fullName: string;
-  title: string | null;
-  company: string | null;
-  geoSignal: string | null;
-  triggerType: 'career_move' | 'funding_mna' | 'expansion' | 'recognition' | 'other';
-  category: 'exec' | 'owner' | 'professional' | 'real_estate' | 'other';
-  rationaleShort: string;
-  rationaleDetail: string;
-  contactPaths: Array<{
-    type: 'company_contact_url' | 'bio_url' | 'linkedin' | 'phone' | 'generic_email' | 'other';
-    value: string;
-    foundOnPage: boolean;
-  }>;
-  evidenceSnippets: string[];
-  confidence: number; // 0-1
-}
-
-export interface ExtractionResult {
-  candidates: ExtractedCandidate[];
-  processingTime: number;
-  tokensUsed: number;
-}
+export type { ExtractedCandidate, ExtractionResult };
 
 const EXTRACTION_SYSTEM_PROMPT = `You are a lead extraction specialist for a wealth management firm. Your job is to identify high-net-worth individuals from news articles and press releases.
 
