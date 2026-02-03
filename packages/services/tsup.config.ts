@@ -3,7 +3,7 @@ import { defineConfig } from 'tsup';
 export default defineConfig({
   entry: ['src/index.ts'],
   format: ['cjs', 'esm'],
-  dts: true,
+  dts: false, // Disabled to avoid circular dependency issues with @arcvest/agents
   splitting: false,
   sourcemap: true,
   clean: true,
