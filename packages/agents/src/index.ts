@@ -24,6 +24,30 @@ export { getMonitoringConfig, getHighPriorityFeeds } from './research/sources';
 // Jobs
 export { runGmailSync, gmailSyncHandler, checkGmailConnection } from './jobs/sync-gmail';
 
+// RSA Pipeline (Creative)
+export {
+  RSAPipeline,
+  getRSAPipeline,
+  generateRSABatch,
+  type RSAAsset,
+  type RSAGenerationResult,
+  type BatchGenerationOptions,
+  type BatchGenerationResult,
+} from './creative/rsa-pipeline';
+export { AUDIENCE_PERSONAS, getPersonaById, getAllPersonaIds, type AudiencePersona } from './creative/personas';
+export { VOICE_PROFILES, getVoiceById, getAllVoiceIds, type VoiceProfile } from './creative/voice-system';
+export {
+  ARCVEST_AD_KNOWLEDGE,
+  RSA_SPECS,
+  COMPLIANCE_RULES,
+  APPROVED_PHRASES,
+  checkCompliance,
+  checkHeadlineLength,
+  checkDescriptionLength,
+  validateRSA,
+  type ComplianceCheckResult,
+} from './creative/ad-knowledge';
+
 // Types from agents
 export type { OptimizationRecommendation, BudgetAlert } from './paid-media/PaidMediaAgent';
 export type { GoogleRSAAsset, VideoScript } from './creative/CreativeAgent';
@@ -31,3 +55,17 @@ export type { KeywordRanking, ContentOpportunity } from './seo/SEOAgent';
 export type { DailyMetricsRollup, KPIAlert, WeeklyReportData } from './analytics/AnalyticsAgent';
 export type { NewsArticle, CompetitorUpdate, IntelligenceBrief } from './research/ResearchAgent';
 export type { Competitor, RSSFeed } from './research/sources';
+
+// Lead Finder Agents
+export {
+  LeadExtractorAgent,
+  leadExtractorAgent,
+  EmailGeneratorAgent,
+  emailGeneratorAgent,
+} from './lead-finder';
+export type {
+  ExtractedCandidate,
+  ExtractionResult,
+  EmailTone,
+  GeneratedEmail,
+} from './lead-finder';

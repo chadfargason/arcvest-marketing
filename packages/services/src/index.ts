@@ -82,6 +82,29 @@ export {
 // Pipeline Logging
 export { PipelineLogger, logPipelineEvent } from './pipeline-logger';
 
+// Lead Finder
+export {
+  GoogleSearchService,
+  googleSearchService,
+  PageFetcherService,
+  pageFetcherService,
+  LeadScorerService,
+  leadScorerService,
+  LeadFinderOrchestrator,
+  leadFinderOrchestrator,
+} from './lead-finder';
+export type {
+  SearchResult,
+  SearchQuery,
+  FetchedPage,
+  FetchOptions,
+  ScoredLead,
+  ScoreWeights,
+  RunConfig,
+  RunStats,
+  RunResult,
+} from './lead-finder';
+
 export type {
   SourceType,
   IdeaStatus,

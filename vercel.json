@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "turbo run build --filter=@arcvest/dashboard",
+  "buildCommand": "turbo run build --filter=@arcvest/dashboard...",
   "outputDirectory": "packages/dashboard/.next",
   "installCommand": "npm install",
   "framework": "nextjs",
@@ -28,6 +28,10 @@
     {
       "path": "/api/cron/ads-optimize",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/lead-finder",
+      "schedule": "45 12 * * *"
     }
   ]
 }

@@ -14,11 +14,13 @@ import {
   Bot,
   Settings,
   ClipboardCheck,
+  Target,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Lead Finder', href: '/dashboard/lead-finder', icon: Target },
   { name: 'Contacts', href: '/dashboard/contacts', icon: Users },
   { name: 'Tasks', href: '/dashboard/tasks', icon: CheckSquare },
   { name: 'Pipeline', href: '/dashboard/pipeline', icon: BarChart3 },
