@@ -59,8 +59,8 @@ export class GoogleSearchService {
   private baseUrl = 'https://www.googleapis.com/customsearch/v1';
 
   constructor() {
-    this.apiKey = process.env.GOOGLE_CUSTOM_SEARCH_API_KEY || '';
-    this.searchEngineId = process.env.GOOGLE_CUSTOM_SEARCH_ENGINE_ID || '';
+    this.apiKey = process.env['GOOGLE_CUSTOM_SEARCH_API_KEY'] || '';
+    this.searchEngineId = process.env['GOOGLE_CUSTOM_SEARCH_ENGINE_ID'] || '';
 
     if (!this.apiKey) {
       console.warn('GOOGLE_CUSTOM_SEARCH_API_KEY not configured');
@@ -89,7 +89,7 @@ export class GoogleSearchService {
   /**
    * Extract publication date from search result metadata
    */
-  private extractPublishDate(item: GoogleSearchResponse['items'][0]): string | undefined {
+  private extractPublishDate(item: GoogleSearchResponse['items'][number]): string | undefined {
     const metatags = item.pagemap?.metatags?.[0];
     if (!metatags) return undefined;
 
