@@ -8,9 +8,9 @@
  * - Error handling and retries
  */
 
-// @ts-expect-error - jsdom is external dependency
+// @ts-ignore - jsdom is external dependency
 import { JSDOM } from 'jsdom';
-// @ts-expect-error - @mozilla/readability is external dependency
+// @ts-ignore - @mozilla/readability is external dependency
 import { Readability } from '@mozilla/readability';
 
 export interface FetchedPage {

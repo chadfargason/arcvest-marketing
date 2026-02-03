@@ -15,7 +15,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { GoogleSearchService, SearchResult } from './google-search-service';
 import { PageFetcherService, FetchedPage } from './page-fetcher-service';
 import { LeadScorerService, ScoredLead } from './lead-scorer-service';
-// @ts-expect-error - @arcvest/agents is external dependency
+// @ts-ignore - @arcvest/agents is external dependency
 import {
   LeadExtractorAgent,
   EmailGeneratorAgent,
