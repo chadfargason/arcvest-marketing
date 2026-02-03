@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
       totalIdeas,
       successfulSources,
       failedSources,
-      sources: Array.from(results.entries()).map(([sourceId, result]) => ({
+      sources: Array.from(results.entries()).map(([sourceId, result]: [string, FetchResult]) => ({
         sourceId,
         success: result.success,
         ideasFound: result.ideas.length,
