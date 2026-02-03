@@ -11,7 +11,7 @@ import { createClient } from '@supabase/supabase-js';
 
 // Import orchestrator dynamically to avoid module resolution issues
 async function runLeadFinder() {
-  const { LeadFinderOrchestrator } = await import('@arcvest/services/lead-finder/orchestrator');
+  const { LeadFinderOrchestrator } = await import('@arcvest/agents');
   const orchestrator = new LeadFinderOrchestrator();
   return orchestrator.executeRun();
 }

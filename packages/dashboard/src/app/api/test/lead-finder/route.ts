@@ -10,13 +10,13 @@ import { NextRequest, NextResponse } from 'next/server';
 
 // Import orchestrator dynamically
 async function runLeadFinder() {
-  const { LeadFinderOrchestrator } = await import('@arcvest/services/lead-finder/orchestrator');
+  const { LeadFinderOrchestrator } = await import('@arcvest/agents');
   const orchestrator = new LeadFinderOrchestrator();
   return orchestrator.executeRun();
 }
 
 async function getTodayConfig() {
-  const { LeadFinderOrchestrator } = await import('@arcvest/services/lead-finder/orchestrator');
+  const { LeadFinderOrchestrator } = await import('@arcvest/agents');
   const orchestrator = new LeadFinderOrchestrator();
   return orchestrator.determineTodayRotation();
 }
