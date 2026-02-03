@@ -238,7 +238,7 @@ async function processJob(supabase: ReturnType<typeof createClient> extends Prom
 /**
  * Process news scan job
  */
-async function processNewsScan(supabase: ReturnType<typeof createClient> extends Promise<infer T> ? T : never, logger: PipelineLogger): Promise<JobResult> {
+async function processNewsScan(supabase: ReturnType<typeof createClient> extends Promise<infer T> ? T : never, logger: InstanceType<typeof PipelineLogger>): Promise<JobResult> {
   try {
     logger.info('Starting news scan', 'scan_start');
     logger.startStep();
@@ -283,7 +283,7 @@ async function processNewsScan(supabase: ReturnType<typeof createClient> extends
 /**
  * Process email scan job
  */
-async function processEmailScan(logger: PipelineLogger): Promise<JobResult> {
+async function processEmailScan(logger: InstanceType<typeof PipelineLogger>): Promise<JobResult> {
   try {
     logger.info('Initializing email adapters', 'init');
     logger.startStep();
@@ -335,7 +335,7 @@ async function processEmailScan(logger: PipelineLogger): Promise<JobResult> {
 /**
  * Process Bloomberg scan job
  */
-async function processBloombergScan(logger: PipelineLogger): Promise<JobResult> {
+async function processBloombergScan(logger: InstanceType<typeof PipelineLogger>): Promise<JobResult> {
   try {
     logger.info('Initializing Bloomberg adapter', 'init');
     logger.startStep();
@@ -372,7 +372,7 @@ async function processBloombergScan(logger: PipelineLogger): Promise<JobResult> 
 /**
  * Process score ideas job
  */
-async function processScoreIdeas(logger: PipelineLogger): Promise<JobResult> {
+async function processScoreIdeas(logger: InstanceType<typeof PipelineLogger>): Promise<JobResult> {
   try {
     logger.info('Starting idea scoring', 'score_start');
     logger.startStep();
@@ -399,7 +399,7 @@ async function processScoreIdeas(logger: PipelineLogger): Promise<JobResult> {
  * Process select daily job
  * After selecting ideas, creates process_pipeline jobs for each selected idea
  */
-async function processSelectDaily(payload: Record<string, unknown>, logger: PipelineLogger): Promise<JobResult> {
+async function processSelectDaily(payload: Record<string, unknown>, logger: InstanceType<typeof PipelineLogger>): Promise<JobResult> {
   try {
     const targetCount = (payload.count as number) || 6;
     logger.info(`Selecting top ${targetCount} ideas for today`, 'select_start');
@@ -508,7 +508,7 @@ async function processSelectDaily(payload: Record<string, unknown>, logger: Pipe
 async function processPipeline(
   supabase: ReturnType<typeof createClient> extends Promise<infer T> ? T : never,
   payload: Record<string, unknown>,
-  logger: PipelineLogger
+  logger: InstanceType<typeof PipelineLogger>
 ): Promise<JobResult> {
   try {
     const ideaId = payload.idea_id as string | undefined;
