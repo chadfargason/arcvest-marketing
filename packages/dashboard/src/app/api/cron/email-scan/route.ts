@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     let successfulSources = 0;
     let failedSources = 0;
 
-    results.forEach((result) => {
+    results.forEach((result: any) => {
       if (result.success) {
         successfulSources++;
         totalIdeas += result.ideas.length;
