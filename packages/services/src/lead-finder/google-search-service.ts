@@ -89,7 +89,7 @@ export class GoogleSearchService {
   /**
    * Extract publication date from search result metadata
    */
-  private extractPublishDate(item: GoogleSearchResponse['items'][number]): string | undefined {
+  private extractPublishDate(item: NonNullable<GoogleSearchResponse['items']>[number]): string | undefined {
     const metatags = item.pagemap?.metatags?.[0];
     if (!metatags) return undefined;
 
