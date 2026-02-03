@@ -286,4 +286,11 @@ export class GoogleSearchService {
 }
 
 // Export singleton instance
-export const googleSearchService = new GoogleSearchService();
+let _googleSearchServiceInstance: GoogleSearchService | null = null;
+
+export function getGoogleSearchService(): GoogleSearchService {
+  if (!_googleSearchServiceInstance) {
+    _googleSearchServiceInstance = new GoogleSearchService();
+  }
+  return _googleSearchServiceInstance;
+}

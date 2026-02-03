@@ -50,7 +50,14 @@ export function ideaToRecord(idea: IdeaCandidate): Omit<IdeaQueueRecord, 'id' | 
 
 export class SourceRegistry {
   private adapters: Map<string, SourceAdapter> = new Map();
-  private supabase = getSupabase();
+  private _supabase: any = null;
+
+  private get supabase() {
+    if (!this._supabase) {
+      this._supabase = getSupabase();
+    }
+    return this._supabase;
+  }
 
   /**
    * Register a source adapter

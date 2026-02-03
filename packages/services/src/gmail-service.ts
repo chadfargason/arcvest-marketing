@@ -77,9 +77,16 @@ const GMAIL_SCOPES = [
 export class GmailService {
   private config: GmailConfig;
   private tokens: GmailTokens | null = null;
-  private supabase = getSupabase();
+  private _supabase: any = null;
   private contactService: ContactService;
   private interactionService: InteractionService;
+
+  private get supabase() {
+    if (!this._supabase) {
+      this._supabase = getSupabase();
+    }
+    return this._supabase;
+  }
 
   constructor(config?: Partial<GmailConfig>) {
     // Use GMAIL_* env vars (separate from GOOGLE_ADS_* credentials)

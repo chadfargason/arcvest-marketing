@@ -34,13 +34,27 @@ interface IdeaToScore {
 }
 
 export class IdeaScorer {
-  private supabase = getSupabase();
-  private anthropic: Anthropic;
+  private _supabase: any = null;
+  private _anthropic: Anthropic | null = null;
+
+  private get supabase() {
+    if (!this._supabase) {
+      this._supabase = getSupabase();
+    }
+    return this._supabase;
+  }
+
+  private get anthropic(): Anthropic {
+    if (!this._anthropic) {
+      this._anthropic = new Anthropic({
+        apiKey: process.env['ANTHROPIC_API_KEY'],
+      });
+    }
+    return this._anthropic;
+  }
 
   constructor() {
-    this.anthropic = new Anthropic({
-      apiKey: process.env['ANTHROPIC_API_KEY'],
-    });
+    // Dependencies are lazy-loaded on first access
   }
 
   /**

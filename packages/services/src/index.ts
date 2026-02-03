@@ -71,7 +71,7 @@ export { DailySelectionService, getDailySelectionService } from './selection';
 // Job Queue
 export {
   JobQueueService,
-  jobQueueService,
+  getJobQueueService,
   type Job,
   type JobType,
   type JobStatus,
@@ -85,11 +85,11 @@ export { PipelineLogger, logPipelineEvent } from './pipeline-logger';
 // Lead Finder
 export {
   GoogleSearchService,
-  googleSearchService,
+  getGoogleSearchService,
   PageFetcherService,
-  pageFetcherService,
+  getPageFetcherService,
   LeadScorerService,
-  leadScorerService,
+  getLeadScorerService,
 } from './lead-finder';
 export type {
   SearchResult,

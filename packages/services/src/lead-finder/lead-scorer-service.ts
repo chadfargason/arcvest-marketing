@@ -79,13 +79,20 @@ const TITLE_SENIORITY: Record<string, number> = {
 };
 
 export class LeadScorerService {
-  private supabase: SupabaseClient;
+  private _supabase: SupabaseClient | null = null;
+
+  private get supabase(): SupabaseClient {
+    if (!this._supabase) {
+      this._supabase = createClient(
+        process.env['NEXT_PUBLIC_SUPABASE_URL']!,
+        process.env['SUPABASE_SERVICE_KEY']!
+      );
+    }
+    return this._supabase;
+  }
 
   constructor() {
-    this.supabase = createClient(
-      process.env['NEXT_PUBLIC_SUPABASE_URL']!,
-      process.env['SUPABASE_SERVICE_KEY']!
-    );
+    // Supabase client is lazy-loaded on first access
   }
 
   /**
@@ -372,4 +379,11 @@ export class LeadScorerService {
 }
 
 // Export singleton
-export const leadScorerService = new LeadScorerService();
+let _leadScorerServiceInstance: LeadScorerService | null = null;
+
+export function getLeadScorerService(): LeadScorerService {
+  if (!_leadScorerServiceInstance) {
+    _leadScorerServiceInstance = new LeadScorerService();
+  }
+  return _leadScorerServiceInstance;
+}

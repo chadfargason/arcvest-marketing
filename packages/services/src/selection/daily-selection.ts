@@ -32,7 +32,14 @@ interface SelectionResult {
 }
 
 export class DailySelectionService {
-  private supabase = getSupabase();
+  private _supabase: any = null;
+
+  private get supabase() {
+    if (!this._supabase) {
+      this._supabase = getSupabase();
+    }
+    return this._supabase;
+  }
 
   /**
    * Select top ideas for today (or specified date)

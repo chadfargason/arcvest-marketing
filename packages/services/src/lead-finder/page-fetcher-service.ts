@@ -343,4 +343,11 @@ export class PageFetcherService {
 }
 
 // Export singleton instance
-export const pageFetcherService = new PageFetcherService();
+let _pageFetcherServiceInstance: PageFetcherService | null = null;
+
+export function getPageFetcherService(): PageFetcherService {
+  if (!_pageFetcherServiceInstance) {
+    _pageFetcherServiceInstance = new PageFetcherService();
+  }
+  return _pageFetcherServiceInstance;
+}

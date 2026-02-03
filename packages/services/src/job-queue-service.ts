@@ -65,7 +65,14 @@ export interface JobResult {
  * Job Queue Service class
  */
 export class JobQueueService {
-  private supabase = getSupabase();
+  private _supabase: any = null;
+
+  private get supabase() {
+    if (!this._supabase) {
+      this._supabase = getSupabase();
+    }
+    return this._supabase;
+  }
 
   /**
    * Enqueue a new job
@@ -417,4 +424,11 @@ export class JobQueueService {
 }
 
 // Export singleton instance
-export const jobQueueService = new JobQueueService();
+let _jobQueueServiceInstance: JobQueueService | null = null;
+
+export function getJobQueueService(): JobQueueService {
+  if (!_jobQueueServiceInstance) {
+    _jobQueueServiceInstance = new JobQueueService();
+  }
+  return _jobQueueServiceInstance;
+}
