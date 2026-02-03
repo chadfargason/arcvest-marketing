@@ -7,5 +7,5 @@ export default defineConfig({
   splitting: false,
   sourcemap: true,
   clean: true,
-  external: ['@supabase/supabase-js', '@anthropic-ai/sdk'],
+  external: ['@supabase/supabase-js', '@anthropic-ai/sdk', '@arcvest/services'],
 });
