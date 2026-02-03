@@ -8,7 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getSourceRegistry, initializeAdapters } from '@arcvest/services';
+import { getSourceRegistry, initializeAdapters, type FetchResult } from '@arcvest/services';
 
 export const maxDuration = 300; // 5 minutes max
 export const runtime = 'nodejs';
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     let successfulSources = 0;
     let failedSources = 0;
 
-    results.forEach((result: any) => {
+    results.forEach((result: FetchResult) => {
       if (result.success) {
         successfulSources++;
         totalIdeas += result.ideas.length;
