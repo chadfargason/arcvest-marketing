@@ -8,7 +8,24 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getSourceRegistry, initializeAdapters, type FetchResult } from '@arcvest/services';
+import { getSourceRegistry, initializeAdapters } from '@arcvest/services';
+
+interface FetchResult {
+  success: boolean;
+  ideas: Array<{
+    title: string;
+    summary?: string;
+    rawContent: string;
+    sourceId: string;
+    sourceUrl: string;
+    publishedAt?: Date;
+    author?: string;
+    hash: string;
+  }>;
+  error?: string;
+  fetchedAt: Date;
+  duration: number;
+}
 
 export const maxDuration = 300; // 5 minutes max
 export const runtime = 'nodejs';
