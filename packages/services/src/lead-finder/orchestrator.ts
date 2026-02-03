@@ -15,6 +15,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { GoogleSearchService, SearchResult } from './google-search-service';
 import { PageFetcherService, FetchedPage } from './page-fetcher-service';
 import { LeadScorerService, ScoredLead } from './lead-scorer-service';
+// @ts-expect-error - @arcvest/agents is external dependency
 import {
   LeadExtractorAgent,
   EmailGeneratorAgent,
@@ -72,8 +73,8 @@ export class LeadFinderOrchestrator {
 
   constructor() {
     this.supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_KEY!
+      process.env['NEXT_PUBLIC_SUPABASE_URL']!,
+      process.env['SUPABASE_SERVICE_KEY']!
     );
     this.searchService = new GoogleSearchService();
     this.fetcherService = new PageFetcherService();
@@ -105,10 +106,10 @@ export class LeadFinderOrchestrator {
     const config = await this.getConfig();
     
     // Get lists from config
-    const geoList = (config.geo_list as Array<{ name: string; aliases: string[] }>) || [];
-    const triggerList = (config.trigger_list as string[]) || ['career_move', 'funding_mna', 'expansion'];
-    const industryList = (config.industry_list as string[]) || [];
-    const emailTones = (config.email_tones as EmailTone[]) || ['congratulatory', 'value_first', 'peer_credibility', 'direct_curious'];
+    const geoList = (config['geo_list'] as Array<{ name: string; aliases: string[] }>) || [];
+    const triggerList = (config['trigger_list'] as string[]) || ['career_move', 'funding_mna', 'expansion'];
+    const industryList = (config['industry_list'] as string[]) || [];
+    const emailTones = (config['email_tones'] as EmailTone[]) || ['congratulatory', 'value_first', 'peer_credibility', 'direct_curious'];
 
     // Calculate day index for rotation
     const today = new Date();
@@ -120,7 +121,7 @@ export class LeadFinderOrchestrator {
 
     // Rotate through triggers (change daily)
     const triggerIndex = dayOfYear % triggerList.length;
-    const trigger = triggerList[triggerIndex];
+    const trigger = triggerList[triggerIndex] || 'career_move';
 
     // Rotate through industries (optional, change every 2 days)
     const industryIndex = Math.floor(dayOfYear / 2) % industryList.length;
@@ -131,10 +132,10 @@ export class LeadFinderOrchestrator {
       geoAliases: geo.aliases,
       triggerFocus: trigger,
       industryFocus: industry,
-      dailyLeadTarget: (config.daily_lead_target as number) || 20,
-      candidateTarget: (config.candidate_target as number) || 60,
-      recencyDays: (config.recency_days as number) || 7,
-      leadCooldownDays: (config.lead_cooldown_days as number) || 90,
+      dailyLeadTarget: (config['daily_lead_target'] as number) || 20,
+      candidateTarget: (config['candidate_target'] as number) || 60,
+      recencyDays: (config['recency_days'] as number) || 7,
+      leadCooldownDays: (config['lead_cooldown_days'] as number) || 90,
       emailTones,
     };
   }
@@ -185,14 +186,14 @@ export class LeadFinderOrchestrator {
     const updateData: Record<string, unknown> = {};
     
     if (updates.status) {
-      updateData.status = updates.status;
-      updateData.ended_at = new Date().toISOString();
+      updateData['status'] = updates.status;
+      updateData['ended_at'] = new Date().toISOString();
     }
     if (updates.stats) {
-      updateData.stats = updates.stats;
+      updateData['stats'] = updates.stats;
     }
     if (updates.errorMessage) {
-      updateData.error_message = updates.errorMessage;
+      updateData['error_message'] = updates.errorMessage;
     }
 
     await this.supabase
@@ -268,7 +269,7 @@ export class LeadFinderOrchestrator {
       // Find page ID from URL (approximate match)
       let pageId: string | undefined;
       for (const [url, id] of urlToPageId) {
-        if (lead.evidenceSnippets?.length > 0) {
+        if ((lead as any).evidenceSnippets?.length > 0) {
           pageId = id;
           break;
         }
@@ -281,18 +282,18 @@ export class LeadFinderOrchestrator {
           run_id: runId,
           page_id: pageId,
           person_key: lead.personKey,
-          full_name: lead.fullName,
-          title: lead.title,
-          company: lead.company,
-          geo_signal: lead.geoSignal,
-          trigger_type: lead.triggerType,
-          category: lead.category,
+          full_name: (lead as any).fullName,
+          title: (lead as any).title,
+          company: (lead as any).company,
+          geo_signal: (lead as any).geoSignal,
+          trigger_type: (lead as any).triggerType,
+          category: (lead as any).category,
           score: lead.score,
           tier: lead.tier,
-          rationale_short: lead.rationaleShort,
-          rationale_detail: lead.rationaleDetail,
-          evidence_snippets: lead.evidenceSnippets,
-          contact_paths: lead.contactPaths,
+          rationale_short: (lead as any).rationaleShort,
+          rationale_detail: (lead as any).rationaleDetail,
+          evidence_snippets: (lead as any).evidenceSnippets,
+          contact_paths: (lead as any).contactPaths,
           outreach_status: 'email_ready',
         }, { onConflict: 'run_id,person_key' })
         .select('id')
