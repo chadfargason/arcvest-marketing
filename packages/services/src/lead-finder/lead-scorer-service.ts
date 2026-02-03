@@ -11,6 +11,7 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+// @ts-expect-error - @arcvest/agents is external dependency
 import { type ExtractedCandidate } from '@arcvest/agents';
 
 export interface ScoredLead extends ExtractedCandidate {
@@ -83,8 +84,8 @@ export class LeadScorerService {
 
   constructor() {
     this.supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_KEY!
+      process.env['NEXT_PUBLIC_SUPABASE_URL']!,
+      process.env['SUPABASE_SERVICE_KEY']!
     );
   }
 
@@ -220,7 +221,7 @@ export class LeadScorerService {
     if (!contactPaths || contactPaths.length === 0) return 3;
     
     let score = 0;
-    const pathTypes = new Set(contactPaths.map(p => p.type));
+    const pathTypes = new Set(contactPaths.map((p: any) => p.type));
     
     if (pathTypes.has('bio_url')) score += 5;
     if (pathTypes.has('company_contact_url')) score += 4;
@@ -350,7 +351,7 @@ export class LeadScorerService {
     // Max 4 from same company
     const companyCount = new Map<string, number>();
     filtered = filtered.filter(lead => {
-      const company = lead.company?.toLowerCase() || 'unknown';
+      const company = (lead as any).company?.toLowerCase() || 'unknown';
       const count = companyCount.get(company) || 0;
       if (count >= 4) return false;
       companyCount.set(company, count + 1);
@@ -360,9 +361,9 @@ export class LeadScorerService {
     // Max 8 from same trigger type (unless insufficient leads)
     const triggerCount = new Map<string, number>();
     const diverseFiltered = filtered.filter(lead => {
-      const count = triggerCount.get(lead.triggerType) || 0;
+      const count = triggerCount.get((lead as any).triggerType) || 0;
       if (count >= 8 && filtered.length > targetCount * 1.5) return false;
-      triggerCount.set(lead.triggerType, count + 1);
+      triggerCount.set((lead as any).triggerType, count + 1);
       return true;
     });
 
