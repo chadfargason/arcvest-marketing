@@ -324,7 +324,7 @@ export default function LeadFinderPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="text-2xl font-bold">{todayStats.total}</div>
-            <div className="text-sm text-muted-foreground">Today's Leads</div>
+            <div className="text-sm text-muted-foreground">Today&apos;s Leads</div>
           </CardContent>
         </Card>
         <Card>
@@ -375,7 +375,7 @@ export default function LeadFinderPage() {
             ))}
             {runs.length === 0 && (
               <div className="text-muted-foreground text-center py-4 w-full">
-                No runs yet. Click "Run Now" to start.
+                No runs yet. Click &quot;Run Now&quot; to start.
               </div>
             )}
           </div>
