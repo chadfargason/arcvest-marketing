@@ -16,5 +16,3 @@ export type { ScoredLead, ScoreWeights } from './lead-scorer-service';
 export { LeadFinderOrchestrator, leadFinderOrchestrator } from './orchestrator';
 export type { RunConfig, RunStats, RunResult } from './orchestrator';
 
-// Re-export agent types for convenience
-export type { ExtractedCandidate, EmailTone, GeneratedEmail } from '@arcvest/agents';
