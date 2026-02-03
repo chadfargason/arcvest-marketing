@@ -7,6 +7,9 @@
 import { NextResponse } from 'next/server';
 import { GmailService } from '@arcvest/services';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const gmailService = new GmailService();
 
