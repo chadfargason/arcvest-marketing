@@ -11,6 +11,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDailySelectionService } from '@arcvest/services';
 
 export const maxDuration = 60; // 1 minute max
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   // Verify cron secret

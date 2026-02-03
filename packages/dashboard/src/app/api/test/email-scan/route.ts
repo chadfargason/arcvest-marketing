@@ -12,6 +12,9 @@ import {
   initializeAdapters,
 } from '@arcvest/services';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     // Initialize adapters if not already done

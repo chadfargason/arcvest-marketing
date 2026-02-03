@@ -9,6 +9,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GmailService } from '@arcvest/services';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/gmail
  * Get Gmail connection status and profile

@@ -9,6 +9,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDailySelectionService } from '@arcvest/services';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const url = new URL(request.url);

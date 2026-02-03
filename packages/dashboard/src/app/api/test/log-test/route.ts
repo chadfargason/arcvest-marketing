@@ -9,6 +9,9 @@
 import { NextResponse } from 'next/server';
 import { PipelineLogger } from '@arcvest/services';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const logger = new PipelineLogger('test_logging');
 

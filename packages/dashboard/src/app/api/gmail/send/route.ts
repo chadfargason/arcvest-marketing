@@ -7,6 +7,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GmailService, type SendEmailParams } from '@arcvest/services';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/gmail/send
  * Send an email via Gmail
