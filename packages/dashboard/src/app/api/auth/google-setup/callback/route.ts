@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 // GET /api/auth/google-setup/callback - Exchange code for tokens
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get('code');
   const error = request.nextUrl.searchParams.get('error');

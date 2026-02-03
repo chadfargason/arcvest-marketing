@@ -10,6 +10,9 @@ import { createClient } from '@/lib/supabase/server';
  *   - minScore: Minimum relevance score (default 60)
  *   - maxToSelect: Max stories to select (default 5)
  */
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   const startTime = Date.now();
 

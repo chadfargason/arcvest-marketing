@@ -7,6 +7,9 @@ import { createClient } from '@supabase/supabase-js';
  * This callback receives the authorization code from Google OAuth,
  * exchanges it for access/refresh tokens, and stores them in the database.
  */
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get('code');
   const error = request.nextUrl.searchParams.get('error');

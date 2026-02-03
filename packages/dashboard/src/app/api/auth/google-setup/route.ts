@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 // GET /api/auth/google-setup - Start OAuth flow to get refresh token
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   const clientId = process.env.GOOGLE_CLIENT_ID;
 

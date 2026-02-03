@@ -13,6 +13,9 @@ import { createClient } from '@supabase/supabase-js';
  * POST /api/campaigns/optimize
  * Run optimization rules on Google Ads campaigns
  */
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     console.log('[Campaign Optimize] Starting optimization run...');

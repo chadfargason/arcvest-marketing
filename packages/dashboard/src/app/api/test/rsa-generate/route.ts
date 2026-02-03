@@ -41,6 +41,9 @@ interface RequestBody {
   saveToDatabase?: boolean;
 }
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const body: RequestBody = await request.json();

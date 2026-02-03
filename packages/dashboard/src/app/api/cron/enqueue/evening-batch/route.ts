@@ -19,6 +19,9 @@ import { createClient } from '@/lib/supabase/server';
 
 export const maxDuration = 10; // Quick - just enqueuing
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   // Verify cron secret
   const authHeader = request.headers.get('authorization');

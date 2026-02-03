@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 
 // GET /api/test-google-ads - Test Google Ads API connection
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const results: Record<string, unknown> = {
     timestamp: new Date().toISOString(),

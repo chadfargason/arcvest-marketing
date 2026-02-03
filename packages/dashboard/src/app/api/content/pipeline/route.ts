@@ -3,6 +3,9 @@ import { getMultiAIPipeline } from '@/lib/content-pipeline';
 import { createClient } from '@/lib/supabase/server';
 
 // POST /api/content/pipeline - Run the full 4-AI content pipeline
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
 

@@ -7,6 +7,9 @@ import { NextRequest, NextResponse } from 'next/server';
  * After authorization, the callback will display the refresh token to copy
  * into Vercel environment variables.
  */
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   // Use GMAIL_CLIENT_ID (same as GmailService uses for token refresh)
   const clientId = process.env.GMAIL_CLIENT_ID;

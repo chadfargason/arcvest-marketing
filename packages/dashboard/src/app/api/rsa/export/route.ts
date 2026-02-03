@@ -32,6 +32,9 @@ interface ExportRequest {
   finalUrl?: string;
 }
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const body: ExportRequest = await request.json();

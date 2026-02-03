@@ -11,6 +11,9 @@ import { getGA4Client } from '@/lib/google/ga4-client';
  * GET /api/analytics/metrics
  * Get analytics metrics for a date range
  */
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;

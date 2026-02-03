@@ -8,6 +8,9 @@ import { createClient } from '@/lib/supabase/server';
  *
  * GET /api/cron/news-scan
  */
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   const startTime = Date.now();
 

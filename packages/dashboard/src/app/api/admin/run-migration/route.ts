@@ -7,6 +7,9 @@ import { createClient } from '@supabase/supabase-js';
  * Runs the job_queue migration. Protected by a simple secret.
  * This endpoint should be removed after migration is complete.
  */
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   // Simple protection - require a secret header
   const secret = request.headers.get('x-migration-secret');

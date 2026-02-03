@@ -13,6 +13,9 @@ import { createClient } from '@supabase/supabase-js';
  * POST /api/campaigns/sync
  * Trigger a manual sync from Google Ads
  */
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));

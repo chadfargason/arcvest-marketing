@@ -4,6 +4,9 @@ import { getGA4Client } from '@/lib/google/ga4-client';
 import { getGoogleAdsClient } from '@/lib/google/google-ads-client';
 
 // GET /api/analytics - Get marketing analytics data
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();

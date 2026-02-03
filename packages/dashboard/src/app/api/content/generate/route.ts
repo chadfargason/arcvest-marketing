@@ -27,6 +27,9 @@ TARGET AUDIENCE:
 - People seeking objective, unbiased financial advice`;
 
 // POST /api/content/generate - Generate content using Claude AI
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const apiKey = process.env.ANTHROPIC_API_KEY;

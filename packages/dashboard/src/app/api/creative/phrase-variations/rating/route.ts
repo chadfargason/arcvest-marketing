@@ -27,6 +27,9 @@ interface RatingRequest {
   reason?: string; // Optional reason for rejection
 }
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function PATCH(request: NextRequest) {
   try {
     const body: RatingRequest = await request.json();

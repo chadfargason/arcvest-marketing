@@ -19,6 +19,9 @@ interface ProcessedIdea {
   error?: string;
 }
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
   const url = new URL(request.url);
