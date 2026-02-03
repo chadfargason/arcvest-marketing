@@ -8,7 +8,9 @@
  * - Error handling and retries
  */
 
+// @ts-expect-error - jsdom is external dependency
 import { JSDOM } from 'jsdom';
+// @ts-expect-error - @mozilla/readability is external dependency
 import { Readability } from '@mozilla/readability';
 
 export interface FetchedPage {
@@ -180,7 +182,7 @@ export class PageFetcherService {
       if (body) {
         // Remove script and style elements
         const scripts = body.querySelectorAll('script, style, nav, footer, header');
-        scripts.forEach(el => el.remove());
+        scripts.forEach((el: Element) => el.remove());
 
         return {
           title: document.title || null,
