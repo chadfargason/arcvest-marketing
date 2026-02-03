@@ -81,7 +81,7 @@ export class LeadExtractorAgent {
 
   constructor() {
     this.client = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
+      apiKey: process.env['ANTHROPIC_API_KEY'],
     });
   }
 
@@ -126,7 +126,7 @@ export class LeadExtractorAgent {
       
       // Extract JSON from response
       const content = response.content[0];
-      if (content.type !== 'text') {
+      if (!content || content.type !== 'text') {
         return {
           candidates: [],
           processingTime: Date.now() - startTime,
@@ -189,10 +189,10 @@ export class LeadExtractorAgent {
     const c = candidate as Record<string, unknown>;
     
     // Must have a name
-    if (typeof c.fullName !== 'string' || c.fullName.length < 2) return false;
+    if (typeof c['fullName'] !== 'string' || (c['fullName'] as string).length < 2) return false;
     
     // Must have rationale
-    if (typeof c.rationaleShort !== 'string') return false;
+    if (typeof c['rationaleShort'] !== 'string') return false;
     
     return true;
   }
