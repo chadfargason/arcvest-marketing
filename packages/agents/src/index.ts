@@ -62,10 +62,15 @@ export {
   leadExtractorAgent,
   EmailGeneratorAgent,
   emailGeneratorAgent,
+  LeadFinderOrchestrator,
+  leadFinderOrchestrator,
 } from './lead-finder';
 export type {
   ExtractedCandidate,
   ExtractionResult,
   EmailTone,
   GeneratedEmail,
+  RunConfig,
+  RunStats,
+  RunResult,
 } from './lead-finder';
