@@ -127,7 +127,7 @@ export class EmailGeneratorAgent {
 
   constructor() {
     this.client = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
+      apiKey: process.env['ANTHROPIC_API_KEY'],
     });
   }
 
@@ -137,15 +137,15 @@ export class EmailGeneratorAgent {
   async generateEmail(lead: ScoredLead, tone: EmailTone): Promise<GeneratedEmail | null> {
     const toneInstructions = TONE_INSTRUCTIONS[tone];
     
-    const firstName = lead.fullName.split(' ')[0];
+    const firstName = (lead as any).fullName.split(' ')[0] as string;
     
     const userPrompt = EMAIL_USER_PROMPT
       .replace('{name}', firstName)
-      .replace('{title}', lead.title || 'Executive')
-      .replace('{company}', lead.company || 'their organization')
-      .replace('{location}', lead.geoSignal || 'Texas')
-      .replace('{triggerType}', this.formatTriggerType(lead.triggerType))
-      .replace('{rationale}', lead.rationaleDetail || lead.rationaleShort)
+      .replace('{title}', (lead as any).title || 'Executive')
+      .replace('{company}', (lead as any).company || 'their organization')
+      .replace('{location}', (lead as any).geoSignal || 'Texas')
+      .replace('{triggerType}', this.formatTriggerType((lead as any).triggerType || 'other'))
+      .replace('{rationale}', (lead as any).rationaleDetail || (lead as any).rationaleShort)
       .replace('{toneInstructions}', toneInstructions);
 
     try {
@@ -159,7 +159,7 @@ export class EmailGeneratorAgent {
       });
 
       const content = response.content[0];
-      if (content.type !== 'text') {
+      if (!content || content.type !== 'text') {
         return null;
       }
 
@@ -224,10 +224,11 @@ export class EmailGeneratorAgent {
 
     for (let i = 0; i < leads.length; i++) {
       const lead = leads[i];
-      const tone = tones[i % tones.length]; // Rotate through tones
+      if (!lead) continue;
+      const tone = tones[i % tones.length] as EmailTone; // Rotate through tones
 
       const email = await this.generateEmail(lead, tone);
-      results.set(lead.personKey, email);
+      results.set((lead as any).personKey, email);
 
       // Small delay between API calls
       if (i < leads.length - 1) {
