@@ -8,6 +8,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { BloombergProcessor } from '@/lib/bloomberg';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/bloomberg/scan
  * Run a quick scan for Bloomberg emails with article extraction
