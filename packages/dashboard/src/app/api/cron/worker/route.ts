@@ -299,7 +299,7 @@ async function processEmailScan(logger: InstanceType<typeof PipelineLogger>): Pr
     let successfulSources = 0;
     const sourceResults: Record<string, { success: boolean; ideas: number; error?: string }> = {};
 
-    results.forEach((result, sourceName) => {
+    results.forEach((result: any, sourceName: string) => {
       sourceResults[sourceName] = {
         success: result.success,
         ideas: result.ideas.length,
