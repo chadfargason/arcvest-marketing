@@ -21,6 +21,24 @@ import { runNewsScan } from '@/lib/news-sourcer';
 
 export const maxDuration = 300; // 5 minutes max
 
+// Local type definitions (since DTS is disabled for services)
+interface FetchResult {
+  success: boolean;
+  ideas: Array<{
+    title: string;
+    summary?: string;
+    rawContent: string;
+    sourceId: string;
+    sourceUrl: string;
+    publishedAt?: Date;
+    author?: string;
+    hash: string;
+  }>;
+  error?: string;
+  fetchedAt: Date;
+  duration: number;
+}
+
 // Job types and their handlers
 type JobType = 'news_scan' | 'email_scan' | 'bloomberg_scan' | 'score_ideas' | 'select_daily' | 'process_pipeline';
 
@@ -299,7 +317,7 @@ async function processEmailScan(logger: InstanceType<typeof PipelineLogger>): Pr
     let successfulSources = 0;
     const sourceResults: Record<string, { success: boolean; ideas: number; error?: string }> = {};
 
-    results.forEach((result: any, sourceName: string) => {
+    results.forEach((result: FetchResult, sourceName: string) => {
       sourceResults[sourceName] = {
         success: result.success,
         ideas: result.ideas.length,
