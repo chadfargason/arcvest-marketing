@@ -11,11 +11,6 @@ import Anthropic from '@anthropic-ai/sdk';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY!
-);
-
 type EmailTone = 'congratulatory' | 'value_first' | 'peer_credibility' | 'direct_curious';
 
 const TONE_INSTRUCTIONS: Record<EmailTone, string> = {
@@ -58,6 +53,11 @@ export async function POST(
   { params }: { params: Promise<{ leadId: string }> }
 ) {
   try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_KEY!
+    );
+
     const { leadId } = await params;
     const body = await request.json();
     const tone = (body.tone as EmailTone) || 'congratulatory';
