@@ -415,7 +415,7 @@ export class BloombergProcessor {
     article: BloombergArticle & { focusAngle?: string }
   ): Promise<void> {
     // Create content calendar entry
-    const { error: calendarError } = await (this.supabase.from('content_calendar').insert({
+    const { error: calendarError } = await (this.supabase as any).from('content_calendar').insert({
       title: article.headline,
       content_type: 'blog_post',
       status: 'idea',
@@ -436,14 +436,14 @@ ${article.content.substring(0, 5000)}`,
         received_at: article.receivedAt.toISOString(),
         email_id: article.emailId,
       },
-    }) as any);
+    });
 
     if (calendarError) {
       throw new Error(`Failed to create calendar entry: ${calendarError.message}`);
     }
 
     // Also add to approval queue for review
-    await (this.supabase.from('approval_queue').insert({
+    await (this.supabase as any).from('approval_queue').insert({
       type: 'content_idea',
       title: `Bloomberg Story: ${article.headline}`,
       summary: `New content idea from Bloomberg ${article.newsletterType}. ${article.focusAngle ? `Suggested Angle: ${article.focusAngle}` : ''} Summary: ${article.summary}`,
@@ -458,7 +458,7 @@ ${article.content.substring(0, 5000)}`,
         newsletter_type: article.newsletterType,
         full_summary: article.summary,
       },
-    }) as any);
+    });
 
     console.log(`[Bloomberg] Queued: ${article.headline}`);
   }
