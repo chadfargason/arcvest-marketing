@@ -265,9 +265,9 @@ Respond in JSON only:
  * Main scanner class
  */
 export class BloombergProcessor {
-  private gmailService: GmailService;
+  private gmailService: InstanceType<typeof GmailService>;
   private anthropic: Anthropic;
-  private supabase;
+  private supabase: any;
 
   constructor() {
     const anthropicKey = process.env.ANTHROPIC_API_KEY;
