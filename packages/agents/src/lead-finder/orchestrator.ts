@@ -348,23 +348,29 @@ export class LeadFinderOrchestrator {
           }
         }
 
-        // If no emails found via search, use AI to predict likely addresses
-        const hasEmail = candidate.contactPaths.some(cp => cp.type === 'generic_email');
-        if (!hasEmail) {
-          console.log(`🤖 No email found via search, using AI to predict for ${candidate.fullName}...`);
-          const predictedEmails = await this.predictEmailAddresses(candidate);
+        // ALWAYS use AI to predict emails (provides backup options even if we found one)
+        console.log(`🤖 Using advanced AI to predict emails for ${candidate.fullName}...`);
+        const predictedEmails = await this.predictEmailAddresses(candidate);
+        
+        for (const email of predictedEmails) {
+          // Don't add if we already found this exact email
+          const alreadyHasEmail = candidate.contactPaths.some(cp => 
+            (cp.type === 'generic_email' || cp.type === 'predicted_email') && cp.value === email
+          );
           
-          for (const email of predictedEmails) {
+          if (!alreadyHasEmail) {
             candidate.contactPaths.push({
               type: 'predicted_email',
               value: email,
               foundOnPage: false,
             });
           }
-          
-          if (predictedEmails.length > 0) {
-            console.log(`🎯 AI predicted ${predictedEmails.length} likely emails for ${candidate.fullName}`);
-          }
+        }
+        
+        if (predictedEmails.length > 0) {
+          console.log(`🎯 AI predicted ${predictedEmails.length} likely emails for ${candidate.fullName}`);
+        } else {
+          console.log(`⚠️ AI could not predict emails for ${candidate.fullName} (no company domain)`);
         }
       } catch (error) {
         console.error(`Error enriching ${candidate.fullName}:`, error);
@@ -374,7 +380,70 @@ export class LeadFinderOrchestrator {
   }
 
   /**
-   * Use AI to predict likely email addresses based on common company patterns
+   * Step 1: Search for company website and extract domain + email patterns
+   */
+  async findCompanyEmailPattern(company: string): Promise<{ domain: string; pattern: string | null }> {
+    try {
+      // Search for company website
+      const companySearchResults = await this.searchService.search({
+        query: `${company} official website`,
+        limit: 3,
+        recencyDays: undefined,
+      });
+
+      let companyDomain = '';
+      const emailsFound: string[] = [];
+
+      // Extract domain and look for email examples
+      for (const result of companySearchResults) {
+        if (!companyDomain) {
+          try {
+            const url = new URL(result.url);
+            const hostname = url.hostname.replace('www.', '');
+            // Prefer actual company domains over news sites
+            if (!hostname.includes('linkedin') && !hostname.includes('bloomberg') && !hostname.includes('prnewswire')) {
+              companyDomain = hostname;
+            }
+          } catch {
+            // Invalid URL
+          }
+        }
+
+        // Look for email addresses in snippet
+        const emails = this.extractEmailsFromText(result.snippet + ' ' + result.title);
+        emailsFound.push(...emails.filter(e => !this.isGenericEmail(e)));
+      }
+
+      // Infer pattern from found emails
+      let pattern = null;
+      if (emailsFound.length > 0 && companyDomain) {
+        const sampleEmail = emailsFound[0].split('@')[0];
+        if (sampleEmail.includes('.')) {
+          pattern = 'first.last';
+        } else if (sampleEmail.length <= 2) {
+          pattern = 'firstinitiallast';
+        } else {
+          pattern = 'firstlast';
+        }
+      }
+
+      // Fallback: infer domain from company name
+      if (!companyDomain) {
+        companyDomain = company
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, '')
+          .replace(/inc|corp|corporation|llc|ltd|limited|company|co|group|partners/g, '') + '.com';
+      }
+
+      return { domain: companyDomain, pattern };
+    } catch (error) {
+      console.error(`Error finding company email pattern for ${company}:`, error);
+      return { domain: '', pattern: null };
+    }
+  }
+
+  /**
+   * Step 2: Use advanced AI (Claude Sonnet) to predict email addresses with context
    */
   async predictEmailAddresses(
     candidate: ExtractedCandidate
@@ -384,49 +453,43 @@ export class LeadFinderOrchestrator {
     }
 
     try {
-      // Extract company domain from company name or existing contact paths
-      let companyDomain = '';
-      
-      // First, check if we have a company website in contact paths
-      const websiteContact = candidate.contactPaths.find(cp => cp.type === 'company_website' || cp.type === 'company_contact_url');
-      if (websiteContact) {
-        try {
-          const url = new URL(websiteContact.value);
-          companyDomain = url.hostname.replace('www.', '');
-        } catch {
-          // Invalid URL, continue
-        }
-      }
-      
-      // If no domain found, try to infer from company name
+      // First, try to find company domain and email pattern
+      const { domain: companyDomain, pattern: detectedPattern } = await this.findCompanyEmailPattern(candidate.company);
+
       if (!companyDomain) {
-        companyDomain = candidate.company
-          .toLowerCase()
-          .replace(/[^a-z0-9]/g, '')
-          .replace(/inc|corp|corporation|llc|ltd|limited|company|co/g, '') + '.com';
+        console.log(`⚠️ Could not determine domain for ${candidate.company}`);
+        return [];
       }
 
-      const prompt = `You are an expert at predicting corporate email addresses based on common patterns.
+      const prompt = `You are an expert executive researcher helping find the correct email address for a business professional.
 
-Given this information:
+PERSON DETAILS:
 - Name: ${candidate.fullName}
 - Title: ${candidate.title || 'Unknown'}
 - Company: ${candidate.company}
-- Likely domain: ${companyDomain}
+- Company Domain: ${companyDomain}
+${detectedPattern ? `- Detected company email pattern: ${detectedPattern}` : ''}
 
-Please provide 2-3 most likely email addresses for this person, based on common corporate email formats:
-- FirstLast@domain.com (e.g., JohnSmith@company.com)
-- First.Last@domain.com (e.g., John.Smith@company.com)
-- FInitialLast@domain.com (e.g., JSmith@company.com)
-- First_Last@domain.com (e.g., John_Smith@company.com)
+TASK: Predict the 3 most likely personal work email addresses for this executive.
 
-Respond with ONLY a JSON array of email addresses, nothing else. Example:
-["john.smith@company.com", "jsmith@company.com", "johnsmith@company.com"]`;
+RULES:
+1. Use ONLY the provided company domain: ${companyDomain}
+2. Consider common executive email patterns: first.last, flast, firstlast, first_last
+3. If a pattern was detected from the company, prioritize that format
+4. Handle names correctly: use actual first and last name, not title
+5. For names like "John Smith Jr." or "Mary O'Brien", handle properly
+6. Consider that executives sometimes have simpler/shorter formats
+
+OUTPUT FORMAT:
+Respond with ONLY a JSON array of 3 email addresses, ordered by likelihood.
+Example: ["john.smith@company.com", "jsmith@company.com", "johnsmith@company.com"]
+
+IMPORTANT: Only return the JSON array, no other text.`;
 
       const response = await this.anthropic.messages.create({
-        model: 'claude-3-haiku-20240307',
-        max_tokens: 150,
-        temperature: 0.3,
+        model: 'claude-3-5-sonnet-20241022', // Upgraded to Sonnet for better reasoning
+        max_tokens: 200,
+        temperature: 0.2,
         messages: [{
           role: 'user',
           content: prompt,
@@ -439,7 +502,7 @@ Respond with ONLY a JSON array of email addresses, nothing else. Example:
         const jsonMatch = content.text.match(/\[.*\]/s);
         if (jsonMatch) {
           const predictedEmails = JSON.parse(jsonMatch[0]) as string[];
-          console.log(`AI predicted emails for ${candidate.fullName}:`, predictedEmails);
+          console.log(`🤖 AI predicted ${predictedEmails.length} emails for ${candidate.fullName}:`, predictedEmails);
           return predictedEmails.slice(0, 3); // Max 3
         }
       }
@@ -449,6 +512,20 @@ Respond with ONLY a JSON array of email addresses, nothing else. Example:
       console.error(`Error predicting emails for ${candidate.fullName}:`, error);
       return [];
     }
+  }
+
+  /**
+   * Check if an email is generic/useless (info@, pr@, contact@, etc.)
+   */
+  private isGenericEmail(email: string): boolean {
+    const genericPrefixes = [
+      'info@', 'contact@', 'admin@', 'support@', 'help@',
+      'sales@', 'marketing@', 'pr@', 'press@', 'media@',
+      'hello@', 'team@', 'general@', 'office@', 'inquiries@',
+      'noreply@', 'no-reply@', 'donotreply@'
+    ];
+    const emailLower = email.toLowerCase();
+    return genericPrefixes.some(prefix => emailLower.startsWith(prefix));
   }
 
   /**
@@ -466,23 +543,33 @@ Respond with ONLY a JSON array of email addresses, nothing else. Example:
   private isLegitimateEmail(email: string, candidate: ExtractedCandidate): boolean {
     const emailLower = email.toLowerCase();
     const nameLower = candidate.fullName.toLowerCase();
-    const companyLower = (candidate.company || '').toLowerCase();
     
-    // Filter out generic/spam emails
-    const spamPatterns = ['noreply', 'no-reply', 'info@', 'contact@', 'admin@', 'support@'];
-    if (spamPatterns.some(pattern => emailLower.includes(pattern))) {
+    // FIRST: Filter out generic/useless emails
+    if (this.isGenericEmail(email)) {
+      console.log(`❌ Filtered generic email: ${email}`);
       return false;
     }
     
-    // Prefer emails that contain person's name or company
+    // SECOND: Check if email contains person's name (strong signal)
     const nameParts = nameLower.split(' ').filter(p => p.length > 2);
-    const companyParts = companyLower.split(' ').filter(p => p.length > 3);
-    
     const hasNamePart = nameParts.some(part => emailLower.includes(part));
-    const hasCompanyPart = companyParts.some(part => emailLower.includes(part));
     
-    // Accept if it has name OR company reference
-    return hasNamePart || hasCompanyPart;
+    if (hasNamePart) {
+      console.log(`✅ Legitimate email (has name): ${email}`);
+      return true;
+    }
+    
+    // THIRD: For emails without name, be very selective
+    // Only accept if it's a single letter + last name (e.g., jsmith@)
+    const lastNamePart = nameParts[nameParts.length - 1];
+    if (lastNamePart && emailLower.includes(lastNamePart) && emailLower.match(/^[a-z]{1,2}[a-z]+@/)) {
+      console.log(`✅ Legitimate email (initial + last name pattern): ${email}`);
+      return true;
+    }
+    
+    // Reject everything else
+    console.log(`❌ Rejected email (no name match): ${email}`);
+    return false;
   }
 
   /**
