@@ -58,7 +58,7 @@ export async function POST(
       ideasFound: result.ideas.length,
       duration: result.duration,
       error: result.error,
-      ideas: result.ideas.map(idea => ({
+      ideas: result.ideas.map((idea: { title: string; summary?: string; originalUrl: string; tags?: string[]; discoveredAt: Date }) => ({
         title: idea.title,
         summary: idea.summary?.substring(0, 200),
         originalUrl: idea.originalUrl,
