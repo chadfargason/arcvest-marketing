@@ -5,6 +5,8 @@
  * and queues them for the content pipeline.
  */
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { GmailService } from '@arcvest/services';
 import { createClient } from '@supabase/supabase-js';
 import Anthropic from '@anthropic-ai/sdk';
@@ -413,7 +415,6 @@ export class BloombergProcessor {
     article: BloombergArticle & { focusAngle?: string }
   ): Promise<void> {
     // Create content calendar entry
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error: calendarError } = await (this.supabase.from('content_calendar').insert({
       title: article.headline,
       content_type: 'blog_post',
@@ -442,7 +443,6 @@ ${article.content.substring(0, 5000)}`,
     }
 
     // Also add to approval queue for review
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (this.supabase.from('approval_queue').insert({
       type: 'content_idea',
       title: `Bloomberg Story: ${article.headline}`,
