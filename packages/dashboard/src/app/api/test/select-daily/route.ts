@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       selectedCount: result.selectedCount,
       sourceBreakdown: result.sourceBreakdown,
       error: result.error,
-      selectedIdeas: result.selectedIdeas.map(idea => ({
+      selectedIdeas: result.selectedIdeas.map((idea: { rank: number; title: string; sourceName: string; score: number }) => ({
         rank: idea.rank,
         title: idea.title,
         source: idea.sourceName,
