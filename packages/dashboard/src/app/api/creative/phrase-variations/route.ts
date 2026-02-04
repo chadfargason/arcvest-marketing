@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     const prompt = buildPrompt(seedPhrase, count, style, maxLength, rejectedList);
 
     const response = await getAnthropic().messages.create({
-      model: 'claude-sonnet-4-5-20251022',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 2048,
       temperature: 0.9,
       system: `You are an expert advertising copywriter specializing in financial services marketing.

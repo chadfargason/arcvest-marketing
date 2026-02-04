@@ -123,7 +123,7 @@ IMPORTANT:
 
 export class EmailGeneratorAgent {
   private client: Anthropic;
-  private model = 'claude-sonnet-4-5-20251022';
+  private model = 'claude-sonnet-4-20250514';
 
   constructor() {
     this.client = new Anthropic({

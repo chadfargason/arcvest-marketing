@@ -155,7 +155,7 @@ If it's a briefing with multiple stories, return up to 5 most relevant articles.
 
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20251022',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 4096,
       temperature: 0.3,
       messages: [{ role: 'user', content: extractionPrompt }],
@@ -244,7 +244,7 @@ Respond in JSON only:
 
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20251022',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 500,
       temperature: 0.3,
       messages: [{ role: 'user', content: scoringPrompt }],

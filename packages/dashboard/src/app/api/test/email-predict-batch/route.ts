@@ -77,7 +77,7 @@ Respond with ONLY a JSON array of email addresses, nothing else.
 Example: ["john.smith@company.com", "jsmith@company.com", "johnsmith@company.com"]`;
 
         const response = await anthropic.messages.create({
-          model: 'claude-sonnet-4-5-20251022',
+          model: 'claude-sonnet-4-20250514',
           max_tokens: 300,
           temperature: 0.3,
           messages: [{

@@ -27,7 +27,7 @@ export interface GeneratedContent {
 
 export class ClaudeClient {
   private client: Anthropic;
-  private defaultModel = 'claude-sonnet-4-5-20251022';
+  private defaultModel = 'claude-sonnet-4-20250514';
 
   constructor(apiKey?: string) {
     const key = apiKey || process.env.ANTHROPIC_API_KEY;

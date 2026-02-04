@@ -232,7 +232,7 @@ OUTPUT FORMAT (JSON only):
 Generate the RSA now:`;
 
     const response = await this.anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20251022',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 2048,
       temperature: 0.8,
       messages: [{ role: 'user', content: prompt }],
@@ -484,7 +484,7 @@ Output the fixed version in JSON format ONLY:
 }`;
 
       const response = await this.anthropic.messages.create({
-        model: 'claude-sonnet-4-5-20251022',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 2048,
         temperature: 0.5,
         messages: [{ role: 'user', content: fixPrompt }],
@@ -592,7 +592,7 @@ Output as JSON array:
 ]`;
 
     const response = await this.anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20251022',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 8192,
       temperature: 0.9,
       messages: [{ role: 'user', content: prompt }],
