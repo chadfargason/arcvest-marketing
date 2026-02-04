@@ -97,7 +97,7 @@ export async function POST(
     const toneInstructions = TONE_INSTRUCTIONS[tone];
 
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-5-20251022', // Upgraded to Sonnet 4.5
       max_tokens: 1000,
       system: `You are a copywriter for ArcVest, a Texas-based wealth management firm. Write personalized outreach emails to potential high-net-worth clients.
 
