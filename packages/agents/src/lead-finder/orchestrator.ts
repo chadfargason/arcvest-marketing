@@ -332,7 +332,7 @@ export class LeadFinderOrchestrator {
                     value: email,
                     foundOnPage: false, // Found via search, not on original page
                   });
-                  console.log(`Found email for ${candidate.fullName}: ${email}`);
+                  console.log(`✅ Found email for ${candidate.fullName}: ${email}`);
                 }
               }
             }
@@ -347,10 +347,107 @@ export class LeadFinderOrchestrator {
             });
           }
         }
+
+        // If no emails found via search, use AI to predict likely addresses
+        const hasEmail = candidate.contactPaths.some(cp => cp.type === 'generic_email');
+        if (!hasEmail) {
+          console.log(`🤖 No email found via search, using AI to predict for ${candidate.fullName}...`);
+          const predictedEmails = await this.predictEmailAddresses(candidate);
+          
+          for (const email of predictedEmails) {
+            candidate.contactPaths.push({
+              type: 'predicted_email',
+              value: email,
+              foundOnPage: false,
+            });
+          }
+          
+          if (predictedEmails.length > 0) {
+            console.log(`🎯 AI predicted ${predictedEmails.length} likely emails for ${candidate.fullName}`);
+          }
+        }
       } catch (error) {
         console.error(`Error enriching ${candidate.fullName}:`, error);
         // Continue with next candidate
       }
+    }
+  }
+
+  /**
+   * Use AI to predict likely email addresses based on common company patterns
+   */
+  async predictEmailAddresses(
+    candidate: ExtractedCandidate
+  ): Promise<string[]> {
+    if (!candidate.company) {
+      return [];
+    }
+
+    try {
+      // Extract company domain from company name or existing contact paths
+      let companyDomain = '';
+      
+      // First, check if we have a company website in contact paths
+      const websiteContact = candidate.contactPaths.find(cp => cp.type === 'company_website' || cp.type === 'company_contact_url');
+      if (websiteContact) {
+        try {
+          const url = new URL(websiteContact.value);
+          companyDomain = url.hostname.replace('www.', '');
+        } catch {
+          // Invalid URL, continue
+        }
+      }
+      
+      // If no domain found, try to infer from company name
+      if (!companyDomain) {
+        companyDomain = candidate.company
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, '')
+          .replace(/inc|corp|corporation|llc|ltd|limited|company|co/g, '') + '.com';
+      }
+
+      const prompt = `You are an expert at predicting corporate email addresses based on common patterns.
+
+Given this information:
+- Name: ${candidate.fullName}
+- Title: ${candidate.title || 'Unknown'}
+- Company: ${candidate.company}
+- Likely domain: ${companyDomain}
+
+Please provide 2-3 most likely email addresses for this person, based on common corporate email formats:
+- FirstLast@domain.com (e.g., JohnSmith@company.com)
+- First.Last@domain.com (e.g., John.Smith@company.com)
+- FInitialLast@domain.com (e.g., JSmith@company.com)
+- First_Last@domain.com (e.g., John_Smith@company.com)
+
+Respond with ONLY a JSON array of email addresses, nothing else. Example:
+["john.smith@company.com", "jsmith@company.com", "johnsmith@company.com"]`;
+
+      const response = await this.anthropic.messages.create({
+        model: 'claude-3-haiku-20240307',
+        max_tokens: 150,
+        temperature: 0.3,
+        messages: [{
+          role: 'user',
+          content: prompt,
+        }],
+      });
+
+      const content = response.content[0];
+      if (content.type === 'text') {
+        // Parse JSON response
+        const jsonMatch = content.text.match(/\[.*\]/s);
+        if (jsonMatch) {
+          const predictedEmails = JSON.parse(jsonMatch[0]) as string[];
+          console.log(`AI predicted emails for ${candidate.fullName}:`, predictedEmails);
+          return predictedEmails.slice(0, 3); // Max 3
+        }
+      }
+
+      return [];
+    } catch (error) {
+      console.error(`Error predicting emails for ${candidate.fullName}:`, error);
+      return [];
     }
   }
 
