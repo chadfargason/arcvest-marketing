@@ -646,6 +646,12 @@ Example: ["elizabeth.trejos-castillo@ttu.edu", "e.trejos-castillo@ttu.edu", "etr
         }
       }
 
+      // Log what we're about to store
+      const contactPaths = (lead as any).contactPaths || [];
+      const emailPaths = contactPaths.filter((cp: any) => cp.type === 'generic_email' || cp.type === 'predicted_email');
+      console.log(`💾 Storing ${(lead as any).fullName} with ${emailPaths.length} email(s):`, 
+        emailPaths.map((cp: any) => `${cp.type}:${cp.value}`));
+
       // Insert lead
       const { data: leadData, error: leadError } = await this.supabase
         .from('lead_finder_leads')
@@ -671,8 +677,10 @@ Example: ["elizabeth.trejos-castillo@ttu.edu", "e.trejos-castillo@ttu.edu", "etr
         .single();
 
       if (leadError || !leadData) {
-        console.error('Error storing lead:', leadError);
+        console.error('❌ Error storing lead:', leadError);
         continue;
+      } else {
+        console.log(`✅ Stored ${(lead as any).fullName} (ID: ${leadData.id})`);
       }
 
       // Insert email if generated
@@ -830,6 +838,7 @@ Example: ["elizabeth.trejos-castillo@ttu.edu", "e.trejos-castillo@ttu.edu", "etr
 
       // Step 4.5: Enrich SELECTED leads with email addresses
       console.log('Step 4.5: Enriching selected leads with email addresses...');
+      console.log(`📊 Enriching ${selectedLeads.length} leads:`, selectedLeads.map(l => `${l.fullName} (${l.company})`));
       const enrichStart = Date.now();
       
       // Convert selected leads back to candidate format for enrichment
@@ -839,6 +848,19 @@ Example: ["elizabeth.trejos-castillo@ttu.edu", "e.trejos-castillo@ttu.edu", "etr
       }));
       
       await this.enrichCandidatesWithEmails(selectedCandidates);
+      
+      // Log results for each lead
+      console.log(`📧 Email enrichment results:`);
+      for (const lead of selectedLeads) {
+        const emailCount = (lead as any).contactPaths?.filter((cp: any) => 
+          cp.type === 'generic_email' || cp.type === 'predicted_email'
+        ).length || 0;
+        const emails = (lead as any).contactPaths?.filter((cp: any) => 
+          cp.type === 'generic_email' || cp.type === 'predicted_email'
+        ).map((cp: any) => cp.value) || [];
+        console.log(`   ${lead.fullName}: ${emailCount} emails - ${emails.join(', ') || 'NONE'}`);
+      }
+      
       console.log(`Email enrichment completed in ${Date.now() - enrichStart}ms`);
 
       // Step 4.6: Circle Enrichment - Find colleagues of top prospects
