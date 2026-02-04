@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
           runId: result.runId,
           stats: result.stats,
           leadsFound: result.leads.length,
-          sampleLeads: result.leads.slice(0, 3).map(l => ({
+          sampleLeads: result.leads.slice(0, 3).map((l: { fullName: string; title: string | null; company: string | null; score: number }) => ({
             name: l.fullName,
             title: l.title,
             company: l.company,
