@@ -767,12 +767,6 @@ Respond with ONLY a JSON array of email addresses, nothing else. Example:
       stats.timing.extractMs = Date.now() - extractStart;
       console.log(`Extracted ${allCandidates.length} candidates`);
 
-      // Step 3.5: Enrich with email addresses (for high-value candidates only)
-      console.log('Step 3.5: Enriching with email addresses...');
-      const enrichStart = Date.now();
-      await this.enrichCandidatesWithEmails(allCandidates.slice(0, 10)); // Top 10 only
-      console.log(`Email enrichment completed in ${Date.now() - enrichStart}ms`);
-
       // Step 4: Score candidates
       console.log('Step 4: Scoring candidates...');
       const scoreStart = Date.now();
@@ -794,8 +788,21 @@ Respond with ONLY a JSON array of email addresses, nothing else. Example:
       stats.timing.scoreMs = Date.now() - scoreStart;
       console.log(`Selected ${selectedLeads.length} leads after scoring and dedup`);
 
-      // Step 4.5: Circle Enrichment - Find colleagues of top prospects
-      console.log('Step 4.5: Enriching with colleagues of top prospects...');
+      // Step 4.5: Enrich SELECTED leads with email addresses
+      console.log('Step 4.5: Enriching selected leads with email addresses...');
+      const enrichStart = Date.now();
+      
+      // Convert selected leads back to candidate format for enrichment
+      const selectedCandidates = selectedLeads.map(lead => ({
+        candidate: lead as any as ExtractedCandidate,
+        publishedAt: null
+      }));
+      
+      await this.enrichCandidatesWithEmails(selectedCandidates);
+      console.log(`Email enrichment completed in ${Date.now() - enrichStart}ms`);
+
+      // Step 4.6: Circle Enrichment - Find colleagues of top prospects
+      console.log('Step 4.6: Enriching with colleagues of top prospects...');
       const circleEnrichStart = Date.now();
       const additionalLeads = await this.enrichWithColleagues(selectedLeads.slice(0, 3), runConfig);
       
