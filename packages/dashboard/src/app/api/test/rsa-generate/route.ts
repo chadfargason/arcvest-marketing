@@ -135,12 +135,12 @@ export async function POST(request: NextRequest) {
 async function saveResultsToDatabase(
   results: Array<{
     master: {
-      headlines: Array<{ text: string; type?: string }>;
-      descriptions: Array<{ text: string }>;
+      headlines: Array<{ text: string; type?: string; pinPosition?: number | null }>;
+      descriptions: Array<{ text: string; pinPosition?: number | null }>;
     };
     variations: Array<{
-      headlines: Array<{ text: string; type?: string }>;
-      descriptions: Array<{ text: string }>;
+      headlines: Array<{ text: string; type?: string; pinPosition?: number | null }>;
+      descriptions: Array<{ text: string; pinPosition?: number | null }>;
     }>;
     complianceResult: { 
       passed: boolean;
