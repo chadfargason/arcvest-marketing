@@ -267,7 +267,7 @@ Respond in JSON only:
 export class BloombergProcessor {
   private gmailService: InstanceType<typeof GmailService>;
   private anthropic: Anthropic;
-  private supabase: any;
+  private supabase: ReturnType<typeof createClient>;
 
   constructor() {
     const anthropicKey = process.env.ANTHROPIC_API_KEY;
