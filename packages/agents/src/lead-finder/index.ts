@@ -10,5 +10,5 @@ export type { ExtractedCandidate, ExtractionResult } from './lead-extractor-agen
 export { EmailGeneratorAgent, emailGeneratorAgent } from './email-generator-agent';
 export type { EmailTone, GeneratedEmail, ScoredLead } from './email-generator-agent';
 
-export { LeadFinderOrchestrator, leadFinderOrchestrator } from './orchestrator';
+export { LeadFinderOrchestrator, getLeadFinderOrchestrator } from './orchestrator';
 export type { RunConfig, RunStats, RunResult } from './orchestrator';

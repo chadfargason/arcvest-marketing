@@ -521,5 +521,12 @@ export class LeadFinderOrchestrator {
   }
 }
 
-// Export singleton
-export const leadFinderOrchestrator = new LeadFinderOrchestrator();
+// Lazy-loaded singleton to avoid module-level initialization
+let _leadFinderOrchestrator: LeadFinderOrchestrator | null = null;
+
+export function getLeadFinderOrchestrator(): LeadFinderOrchestrator {
+  if (!_leadFinderOrchestrator) {
+    _leadFinderOrchestrator = new LeadFinderOrchestrator();
+  }
+  return _leadFinderOrchestrator;
+}
