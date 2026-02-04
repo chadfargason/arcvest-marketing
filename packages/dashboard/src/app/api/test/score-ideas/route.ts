@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       errors: result.errors,
       stats,
       topScores: result.results
-        .sort((a, b) => b.score - a.score)
+        .sort((a: { score: number }, b: { score: number }) => b.score - a.score)
         .slice(0, 10)
         .map(r => ({
           title: r.title,
