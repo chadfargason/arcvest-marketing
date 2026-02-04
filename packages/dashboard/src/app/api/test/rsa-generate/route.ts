@@ -142,7 +142,10 @@ async function saveResultsToDatabase(
       headlines: Array<{ text: string; type?: string }>;
       descriptions: Array<{ text: string }>;
     }>;
-    complianceResult: { passed: boolean };
+    complianceResult: { 
+      passed: boolean;
+      issues: Array<{ text: string }>;
+    };
     metadata: {
       personaId: string;
       voiceId: string;
