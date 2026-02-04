@@ -588,17 +588,48 @@ export default function LeadFinderPage() {
                 />
               </div>
 
-              {/* Contact Paths */}
-              {selectedLead.contact_paths && selectedLead.contact_paths.length > 0 && (
+              {/* Email Addresses */}
+              {selectedLead.contact_paths && selectedLead.contact_paths.filter(p => p.type === 'generic_email').length > 0 && (
                 <div className="space-y-2">
-                  <Label>Contact Paths Found</Label>
+                  <Label className="text-base font-semibold">📧 Email Addresses Found</Label>
+                  <div className="space-y-1 p-3 bg-blue-50 rounded-md border border-blue-200">
+                    {selectedLead.contact_paths
+                      .filter(p => p.type === 'generic_email')
+                      .map((path, i) => (
+                        <div key={i} className="text-sm flex items-center gap-2">
+                          <Mail className="h-4 w-4 text-blue-600" />
+                          <span className="font-medium text-blue-900">{path.value}</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 ml-auto"
+                            onClick={() => {
+                              navigator.clipboard.writeText(path.value);
+                              setCopied(true);
+                              setTimeout(() => setCopied(false), 2000);
+                            }}
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Other Contact Paths */}
+              {selectedLead.contact_paths && selectedLead.contact_paths.filter(p => p.type !== 'generic_email').length > 0 && (
+                <div className="space-y-2">
+                  <Label>Other Contact Paths</Label>
                   <div className="space-y-1">
-                    {selectedLead.contact_paths.map((path, i) => (
-                      <div key={i} className="text-sm flex items-center gap-2">
-                        <Badge variant="outline">{path.type}</Badge>
-                        <span className="text-muted-foreground">{path.value}</span>
-                      </div>
-                    ))}
+                    {selectedLead.contact_paths
+                      .filter(p => p.type !== 'generic_email')
+                      .map((path, i) => (
+                        <div key={i} className="text-sm flex items-center gap-2">
+                          <Badge variant="outline">{path.type}</Badge>
+                          <span className="text-muted-foreground break-all">{path.value}</span>
+                        </div>
+                      ))}
                   </div>
                 </div>
               )}

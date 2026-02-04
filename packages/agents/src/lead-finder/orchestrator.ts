@@ -361,6 +361,95 @@ export class LeadFinderOrchestrator {
   }
 
   /**
+   * Enrich with colleagues - find similar-rank people at the same company
+   */
+  async enrichWithColleagues(
+    topLeads: ScoredLead[],
+    runConfig: RunConfig
+  ): Promise<ScoredLead[]> {
+    const newColleagues: ScoredLead[] = [];
+    
+    // Only process Tier A and high Tier B leads
+    const worthyLeads = topLeads.filter(l => l.tier === 'A' || (l.tier === 'B' && l.score > 75));
+    
+    for (const lead of worthyLeads) {
+      if (!lead.company) continue;
+      
+      try {
+        // Search for the company's leadership team page
+        const companySearchQuery = `"${lead.company}" ${runConfig.geoName} leadership team executives`;
+        
+        const searchResults = await this.searchService.search({
+          query: companySearchQuery,
+          limit: 5,
+          recencyDays: undefined,
+        });
+        
+        // Look for team/about pages
+        const teamPages = searchResults.filter(r => this.isTeamPage(r.url));
+        
+        if (teamPages.length > 0) {
+          // Fetch the team page
+          const pages = await this.fetcherService.fetchPages([teamPages[0].url]);
+          
+          if (pages.length > 0 && !pages[0].error) {
+            // Extract colleagues from the team page
+            const result = await this.extractorAgent.extractLeads({
+              pageTitle: pages[0].pageTitle,
+              sourceUrl: pages[0].finalUrl,
+              extractedText: pages[0].extractedText,
+            });
+            
+            // Filter for similar rank colleagues
+            for (const colleague of result.candidates) {
+              // Only keep if same company and similar seniority
+              if (colleague.company?.toLowerCase().includes(lead.company.toLowerCase())) {
+                const colleagueScored = this.scorerService.scoreLead(colleague, null);
+                
+                // Only add if similar tier (within 1 tier)
+                if (this.isSimilarRank(lead, colleagueScored)) {
+                  newColleagues.push(colleagueScored);
+                  console.log(`Found colleague: ${colleague.fullName} at ${colleague.company}`);
+                }
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error(`Error enriching colleagues for ${lead.fullName}:`, error);
+      }
+    }
+    
+    return newColleagues;
+  }
+
+  /**
+   * Check if URL is a team/leadership page
+   */
+  private isTeamPage(url: string): boolean {
+    const urlLower = url.toLowerCase();
+    const teamPatterns = [
+      '/team', '/leadership', '/about/team', '/our-team', 
+      '/executives', '/management', '/people', '/about-us/team'
+    ];
+    return teamPatterns.some(pattern => urlLower.includes(pattern));
+  }
+
+  /**
+   * Check if two leads have similar rank/seniority
+   */
+  private isSimilarRank(lead1: ScoredLead, lead2: ScoredLead): boolean {
+    // If both are same tier, definitely similar
+    if (lead1.tier === lead2.tier) return true;
+    
+    // If within 1 tier (A-B or B-C), still similar enough
+    const tierOrder = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 };
+    const tierDiff = Math.abs(tierOrder[lead1.tier] - tierOrder[lead2.tier]);
+    
+    return tierDiff <= 1;
+  }
+
+  /**
    * Store leads and emails
    */
   async storeLeadsAndEmails(
@@ -566,6 +655,24 @@ export class LeadFinderOrchestrator {
       stats.leadsSelected = selectedLeads.length;
       stats.timing.scoreMs = Date.now() - scoreStart;
       console.log(`Selected ${selectedLeads.length} leads after scoring and dedup`);
+
+      // Step 4.5: Circle Enrichment - Find colleagues of top prospects
+      console.log('Step 4.5: Enriching with colleagues of top prospects...');
+      const circleEnrichStart = Date.now();
+      const additionalLeads = await this.enrichWithColleagues(selectedLeads.slice(0, 3), runConfig);
+      
+      // Add new colleagues to selected leads (if not duplicates)
+      for (const newLead of additionalLeads) {
+        const isDuplicate = selectedLeads.some(existing => 
+          this.scorerService.generatePersonKey(existing) === this.scorerService.generatePersonKey(newLead)
+        );
+        if (!isDuplicate && selectedLeads.length < runConfig.dailyLeadTarget) {
+          selectedLeads.push(newLead);
+          stats.leadsSelected++;
+        }
+      }
+      
+      console.log(`Circle enrichment added ${additionalLeads.length} colleagues in ${Date.now() - circleEnrichStart}ms`);
 
       // Step 5: Generate emails
       console.log('Step 5: Generating emails...');

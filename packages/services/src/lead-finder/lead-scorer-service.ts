@@ -163,26 +163,22 @@ export class LeadScorerService {
   }
 
   /**
-   * Check if two leads are fuzzy duplicates
+   * Check if two leads are duplicates
    * Returns true if they're the same person
+   * Simple rule: Same name in same city = duplicate
    */
   private areFuzzyDuplicates(lead1: ScoredLead, lead2: ScoredLead): boolean {
     const name1 = this.normalizeName(lead1.fullName);
     const name2 = this.normalizeName(lead2.fullName);
-    const company1 = this.normalizeCompany(lead1.company || '');
-    const company2 = this.normalizeCompany(lead2.company || '');
     
-    // If names are very similar (>90% match) and companies match, it's a duplicate
-    const nameSimilarity = this.calculateSimilarity(name1, name2);
-    const companySimilarity = this.calculateSimilarity(company1, company2);
-    
-    // Same person at same company
-    if (nameSimilarity > 0.9 && companySimilarity > 0.85) {
+    // Exact name match = duplicate (regardless of company/title differences)
+    if (name1 === name2) {
       return true;
     }
     
-    // Exact name match (even if companies slightly different)
-    if (nameSimilarity > 0.95 && companySimilarity > 0.7) {
+    // Very close name match (>95% similar) also counts as duplicate
+    const nameSimilarity = this.calculateSimilarity(name1, name2);
+    if (nameSimilarity > 0.95) {
       return true;
     }
     
