@@ -466,6 +466,28 @@ export default function LeadFinderPage() {
                         <Badge variant="outline" className="text-xs py-0">
                           {triggerLabels[lead.trigger_type] || lead.trigger_type}
                         </Badge>
+                        {(() => {
+                          // Find best email (prefer found over predicted)
+                          const foundEmail = lead.contact_paths?.find(p => p.type === 'generic_email');
+                          const predictedEmail = lead.contact_paths?.find(p => p.type === 'predicted_email');
+                          const bestEmail = foundEmail || predictedEmail;
+                          
+                          if (bestEmail) {
+                            return (
+                              <span className="text-xs flex items-center gap-1 px-2 py-0.5 bg-green-50 text-green-700 rounded border border-green-200">
+                                <Mail className="h-3 w-3" />
+                                {bestEmail.value}
+                              </span>
+                            );
+                          } else {
+                            return (
+                              <span className="text-xs flex items-center gap-1 px-2 py-0.5 bg-gray-50 text-gray-500 rounded border border-gray-200">
+                                <Mail className="h-3 w-3" />
+                                No email
+                              </span>
+                            );
+                          }
+                        })()}
                         <span className="text-xs text-muted-foreground ml-auto">
                           Score: {lead.score}
                         </span>
@@ -588,19 +610,23 @@ export default function LeadFinderPage() {
                 />
               </div>
 
-              {/* Email Addresses - Found via Search */}
-              {selectedLead.contact_paths && selectedLead.contact_paths.filter(p => p.type === 'generic_email').length > 0 && (
-                <div className="space-y-2">
-                  <Label className="text-base font-semibold flex items-center gap-1">
-                    <Mail className="h-4 w-4 text-green-600" />
-                    Email Addresses Found
-                  </Label>
+              {/* Email Addresses - ALWAYS SHOWN */}
+              <div className="space-y-2">
+                <Label className="text-base font-semibold flex items-center gap-1">
+                  <Mail className="h-4 w-4" />
+                  Email Addresses
+                </Label>
+                
+                {/* Found Emails (via Search) */}
+                {selectedLead.contact_paths && selectedLead.contact_paths.filter(p => p.type === 'generic_email').length > 0 && (
                   <div className="space-y-1 p-3 bg-green-50 rounded-md border border-green-200">
+                    <p className="text-xs text-green-700 font-medium mb-2 flex items-center gap-1">
+                      <Check className="h-3 w-3" /> Found via Search
+                    </p>
                     {selectedLead.contact_paths
                       .filter(p => p.type === 'generic_email')
                       .map((path, i) => (
                         <div key={i} className="text-sm flex items-center gap-2">
-                          <Check className="h-4 w-4 text-green-600" />
                           <span className="font-medium text-green-900">{path.value}</span>
                           <Button
                             variant="ghost"
@@ -617,25 +643,18 @@ export default function LeadFinderPage() {
                         </div>
                       ))}
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Predicted Email Addresses - AI Generated */}
-              {selectedLead.contact_paths && selectedLead.contact_paths.filter(p => p.type === 'predicted_email').length > 0 && (
-                <div className="space-y-2">
-                  <Label className="text-base font-semibold flex items-center gap-1">
-                    <Sparkles className="h-4 w-4 text-purple-600" />
-                    AI-Predicted Email Addresses
-                  </Label>
+                {/* AI-Predicted Emails */}
+                {selectedLead.contact_paths && selectedLead.contact_paths.filter(p => p.type === 'predicted_email').length > 0 && (
                   <div className="space-y-1 p-3 bg-purple-50 rounded-md border border-purple-200">
-                    <p className="text-xs text-purple-700 mb-2">
-                      🤖 These are likely email addresses based on common company patterns. Verify before using.
+                    <p className="text-xs text-purple-700 font-medium mb-2 flex items-center gap-1">
+                      <Sparkles className="h-3 w-3" /> AI-Predicted (verify before using)
                     </p>
                     {selectedLead.contact_paths
                       .filter(p => p.type === 'predicted_email')
                       .map((path, i) => (
                         <div key={i} className="text-sm flex items-center gap-2">
-                          <Sparkles className="h-4 w-4 text-purple-600" />
                           <span className="font-medium text-purple-900">{path.value}</span>
                           <Button
                             variant="ghost"
@@ -652,8 +671,19 @@ export default function LeadFinderPage() {
                         </div>
                       ))}
                   </div>
-                </div>
-              )}
+                )}
+
+                {/* No Emails Found */}
+                {(!selectedLead.contact_paths || 
+                  (selectedLead.contact_paths.filter(p => p.type === 'generic_email' || p.type === 'predicted_email').length === 0)) && (
+                  <div className="p-3 bg-gray-50 rounded-md border border-gray-200">
+                    <p className="text-sm text-gray-600 flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4" />
+                      No email addresses found or predicted for this lead
+                    </p>
+                  </div>
+                )}
+              </div>
 
               {/* Other Contact Paths */}
               {selectedLead.contact_paths && selectedLead.contact_paths.filter(p => p.type !== 'generic_email' && p.type !== 'predicted_email').length > 0 && (
