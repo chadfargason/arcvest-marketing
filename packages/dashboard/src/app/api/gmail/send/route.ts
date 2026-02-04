@@ -5,7 +5,19 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { GmailService, type SendEmailParams } from '@arcvest/services';
+import { GmailService } from '@arcvest/services';
+
+// Local type definition (since DTS is disabled for services)
+interface SendEmailParams {
+  to: string | string[];
+  subject: string;
+  body: string;
+  bodyHtml?: string;
+  cc?: string[];
+  bcc?: string[];
+  replyToMessageId?: string;
+  threadId?: string;
+}
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
