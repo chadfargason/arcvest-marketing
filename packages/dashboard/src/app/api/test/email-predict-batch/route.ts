@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
 
       try {
         // Check if lead already has emails
-        const existingEmails = (lead.contact_paths || []).filter((cp: any) => 
+        const existingEmails = (lead.contact_paths || []).filter((cp: { type: string; value: string }) => 
           cp.type === 'generic_email' || cp.type === 'predicted_email'
         );
 
