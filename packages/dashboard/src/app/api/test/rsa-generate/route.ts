@@ -103,12 +103,12 @@ export async function POST(request: NextRequest) {
         personaName: getPersonaById(r.metadata.personaId)?.displayName,
         voiceName: getVoiceById(r.metadata.voiceId)?.displayName,
         master: {
-          headlines: r.master.headlines.map(h => ({
+          headlines: r.master.headlines.map((h: { text: string; type: string }) => ({
             text: h.text,
             type: h.type,
             charCount: h.text.length,
           })),
-          descriptions: r.master.descriptions.map(d => ({
+          descriptions: r.master.descriptions.map((d: { text: string }) => ({
             text: d.text,
             charCount: d.text.length,
           })),
