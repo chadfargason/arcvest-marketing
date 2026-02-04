@@ -94,15 +94,41 @@ Example: ["john.smith@company.com", "jsmith@company.com", "johnsmith@company.com
             const validEmails = predictedEmails.filter(e => e && e.includes('@') && e.includes('.'));
             
             if (validEmails.length > 0) {
+              // Save predictions to database
+              const newContactPaths = validEmails.map(email => ({
+                type: 'predicted_email',
+                value: email,
+                confidence: 'ai_predicted',
+                source: 'sonnet_4_batch',
+              }));
+
+              // Merge with existing contact paths
+              const updatedContactPaths = [
+                ...(lead.contact_paths || []),
+                ...newContactPaths,
+              ];
+
+              // Update the lead in database
+              const { error: updateError } = await supabase
+                .from('lead_finder_leads')
+                .update({ contact_paths: updatedContactPaths })
+                .eq('id', lead.id);
+
+              if (updateError) {
+                console.error(`   ❌ Failed to save predictions:`, updateError);
+              } else {
+                console.log(`   ✅ Predicted and saved ${validEmails.length} emails to database`);
+              }
+
               successCount++;
               results.push({
                 name: lead.full_name,
                 company: lead.company,
                 existingEmails: existingEmails.length,
                 predictedEmails: validEmails,
+                savedToDatabase: !updateError,
                 status: 'success',
               });
-              console.log(`   ✅ Predicted ${validEmails.length} emails`);
             } else {
               failureCount++;
               results.push({
@@ -144,7 +170,9 @@ Example: ["john.smith@company.com", "jsmith@company.com", "johnsmith@company.com
       }
     }
 
+    const savedCount = results.filter(r => r.savedToDatabase).length;
     console.log(`\n📊 Summary: ${successCount} success, ${failureCount} failures out of ${leads.length} total`);
+    console.log(`💾 Saved ${savedCount} predictions to database`);
 
     return NextResponse.json({
       success: true,
@@ -152,6 +180,7 @@ Example: ["john.smith@company.com", "jsmith@company.com", "johnsmith@company.com
         total: leads.length,
         successful: successCount,
         failed: failureCount,
+        savedToDatabase: savedCount,
         successRate: `${Math.round((successCount / leads.length) * 100)}%`,
       },
       results: results,
