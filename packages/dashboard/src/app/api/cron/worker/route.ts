@@ -368,7 +368,7 @@ async function processBloombergScan(logger: InstanceType<typeof PipelineLogger>)
     if (result.success) {
       logger.info(`Bloomberg scan complete: ${result.ideas.length} ideas found`, 'fetch_complete', {
         ideasFound: result.ideas.length,
-        ideaTitles: result.ideas.slice(0, 5).map(i => i.title)
+        ideaTitles: result.ideas.slice(0, 5).map((i: { title: string }) => i.title)
       });
     } else {
       logger.error(`Bloomberg scan failed: ${result.error}`, 'fetch_error', {
@@ -501,7 +501,7 @@ async function processSelectDaily(payload: Record<string, unknown>, logger: Inst
       }
 
       logger.info(`Created ${pipelineJobs.length} pipeline jobs`, 'jobs_created', {
-        ideaTitles: selectedIdeas.map(i => i.title)
+        ideaTitles: selectedIdeas.map((i: { title: string }) => i.title)
       });
     }
 
