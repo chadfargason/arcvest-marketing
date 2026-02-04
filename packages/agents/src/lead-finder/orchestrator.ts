@@ -256,6 +256,111 @@ export class LeadFinderOrchestrator {
   }
 
   /**
+   * Enrich candidates with email addresses by searching for their profiles
+   */
+  async enrichCandidatesWithEmails(
+    candidates: { candidate: ExtractedCandidate; publishedAt: string | null }[]
+  ): Promise<void> {
+    for (const { candidate } of candidates) {
+      try {
+        // Build search query to find this person's profile/contact page
+        const searchQuery = `"${candidate.fullName}" ${candidate.company || ''} email contact`;
+        
+        // Search for profile pages
+        const searchResults = await this.searchService.search({
+          query: searchQuery,
+          limit: 5,
+          recencyDays: undefined, // No recency filter for profile pages
+        });
+
+        // Look for email addresses in search results
+        for (const result of searchResults) {
+          const emails = this.extractEmailsFromText(result.snippet + ' ' + result.title);
+          
+          if (emails.length > 0) {
+            // Add emails to contact paths if they look legitimate
+            for (const email of emails) {
+              if (this.isLegitimateEmail(email, candidate)) {
+                const existingEmail = candidate.contactPaths.find(
+                  cp => cp.type === 'generic_email' && cp.value === email
+                );
+                
+                if (!existingEmail) {
+                  candidate.contactPaths.push({
+                    type: 'generic_email',
+                    value: email,
+                    foundOnPage: false, // Found via search, not on original page
+                  });
+                  console.log(`Found email for ${candidate.fullName}: ${email}`);
+                }
+              }
+            }
+          }
+          
+          // Also check if the URL looks like a profile page
+          if (this.isProfileUrl(result.url)) {
+            candidate.contactPaths.push({
+              type: 'bio_url',
+              value: result.url,
+              foundOnPage: false,
+            });
+          }
+        }
+      } catch (error) {
+        console.error(`Error enriching ${candidate.fullName}:`, error);
+        // Continue with next candidate
+      }
+    }
+  }
+
+  /**
+   * Extract email addresses from text using regex
+   */
+  private extractEmailsFromText(text: string): string[] {
+    const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
+    const matches = text.match(emailRegex);
+    return matches || [];
+  }
+
+  /**
+   * Check if an email address looks legitimate for this candidate
+   */
+  private isLegitimateEmail(email: string, candidate: ExtractedCandidate): boolean {
+    const emailLower = email.toLowerCase();
+    const nameLower = candidate.fullName.toLowerCase();
+    const companyLower = (candidate.company || '').toLowerCase();
+    
+    // Filter out generic/spam emails
+    const spamPatterns = ['noreply', 'no-reply', 'info@', 'contact@', 'admin@', 'support@'];
+    if (spamPatterns.some(pattern => emailLower.includes(pattern))) {
+      return false;
+    }
+    
+    // Prefer emails that contain person's name or company
+    const nameParts = nameLower.split(' ').filter(p => p.length > 2);
+    const companyParts = companyLower.split(' ').filter(p => p.length > 3);
+    
+    const hasNamePart = nameParts.some(part => emailLower.includes(part));
+    const hasCompanyPart = companyParts.some(part => emailLower.includes(part));
+    
+    // Accept if it has name OR company reference
+    return hasNamePart || hasCompanyPart;
+  }
+
+  /**
+   * Check if URL looks like a profile/bio page
+   */
+  private isProfileUrl(url: string): boolean {
+    const urlLower = url.toLowerCase();
+    const profilePatterns = [
+      '/people/', '/team/', '/about/', '/bio/', '/profile/',
+      '/leadership/', '/staff/', '/our-team', '/meet-',
+      'linkedin.com/in/', 'twitter.com/', 'crunchbase.com/person/'
+    ];
+    return profilePatterns.some(pattern => urlLower.includes(pattern));
+  }
+
+  /**
    * Store leads and emails
    */
   async storeLeadsAndEmails(
@@ -434,6 +539,12 @@ export class LeadFinderOrchestrator {
       stats.candidatesExtracted = allCandidates.length;
       stats.timing.extractMs = Date.now() - extractStart;
       console.log(`Extracted ${allCandidates.length} candidates`);
+
+      // Step 3.5: Enrich with email addresses (for high-value candidates only)
+      console.log('Step 3.5: Enriching with email addresses...');
+      const enrichStart = Date.now();
+      await this.enrichCandidatesWithEmails(allCandidates.slice(0, 10)); // Top 10 only
+      console.log(`Email enrichment completed in ${Date.now() - enrichStart}ms`);
 
       // Step 4: Score candidates
       console.log('Step 4: Scoring candidates...');

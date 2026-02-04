@@ -320,29 +320,29 @@ export default function LeadFinderPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-4 gap-3">
         <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold">{todayStats.total}</div>
-            <div className="text-sm text-muted-foreground">Today&apos;s Leads</div>
+          <CardContent className="pt-4 pb-3">
+            <div className="text-xl font-bold">{todayStats.total}</div>
+            <div className="text-xs text-muted-foreground">Today&apos;s Leads</div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-green-600">{todayStats.tierA}</div>
-            <div className="text-sm text-muted-foreground">Tier A Leads</div>
+          <CardContent className="pt-4 pb-3">
+            <div className="text-xl font-bold text-green-600">{todayStats.tierA}</div>
+            <div className="text-xs text-muted-foreground">Tier A Leads</div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-blue-600">{todayStats.ready}</div>
-            <div className="text-sm text-muted-foreground">Ready to Send</div>
+          <CardContent className="pt-4 pb-3">
+            <div className="text-xl font-bold text-blue-600">{todayStats.ready}</div>
+            <div className="text-xs text-muted-foreground">Ready to Send</div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-purple-600">{todayStats.sent}</div>
-            <div className="text-sm text-muted-foreground">Sent Today</div>
+          <CardContent className="pt-4 pb-3">
+            <div className="text-xl font-bold text-purple-600">{todayStats.sent}</div>
+            <div className="text-xs text-muted-foreground">Sent Today</div>
           </CardContent>
         </Card>
       </div>
@@ -447,25 +447,31 @@ export default function LeadFinderPage() {
               <p className="text-sm mt-2">Try running the lead finder or adjusting filters.</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {leads.map(lead => (
                 <div
                   key={lead.id}
-                  className="border rounded-lg p-4 hover:bg-muted/30 transition-colors"
+                  className="border rounded-lg p-3 hover:bg-muted/30 transition-colors"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-semibold text-lg">{lead.full_name}</span>
-                        <Badge className={tierColors[lead.tier]}>
-                          Tier {lead.tier}
+                        <span className="font-semibold text-base">{lead.full_name}</span>
+                        <Badge className={`${tierColors[lead.tier]} text-xs py-0`}>
+                          {lead.tier}
                         </Badge>
-                        <Badge className={statusColors[lead.outreach_status]}>
+                        <Badge className={`${statusColors[lead.outreach_status]} text-xs py-0`}>
                           {lead.outreach_status.replace('_', ' ')}
                         </Badge>
+                        <Badge variant="outline" className="text-xs py-0">
+                          {triggerLabels[lead.trigger_type] || lead.trigger_type}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground ml-auto">
+                          Score: {lead.score}
+                        </span>
                       </div>
                       
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
                         {lead.title && (
                           <span className="flex items-center gap-1">
                             <TrendingUp className="h-3 w-3" />
@@ -485,22 +491,6 @@ export default function LeadFinderPage() {
                           </span>
                         )}
                       </div>
-
-                      <div className="flex items-center gap-2 mb-2">
-                        <Badge variant="outline">
-                          {triggerLabels[lead.trigger_type] || lead.trigger_type}
-                        </Badge>
-                        <Badge variant="outline">
-                          {categoryLabels[lead.category] || lead.category}
-                        </Badge>
-                        <span className="text-sm text-muted-foreground">
-                          Score: {lead.score}
-                        </span>
-                      </div>
-
-                      <p className="text-sm text-muted-foreground">
-                        {lead.rationale_short}
-                      </p>
                     </div>
 
                     <div className="flex items-center gap-2 ml-4">
@@ -508,9 +498,10 @@ export default function LeadFinderPage() {
                         variant="outline"
                         size="sm"
                         onClick={() => openEmailDialog(lead)}
+                        className="h-8"
                       >
-                        <Eye className="mr-1 h-4 w-4" />
-                        View Email
+                        <Eye className="mr-1 h-3 w-3" />
+                        Email
                       </Button>
                     </div>
                   </div>

@@ -118,6 +118,78 @@ export class LeadScorerService {
   }
 
   /**
+   * Calculate similarity between two strings (0-1, where 1 is identical)
+   * Uses Levenshtein distance
+   */
+  private calculateSimilarity(str1: string, str2: string): number {
+    const s1 = str1.toLowerCase();
+    const s2 = str2.toLowerCase();
+    
+    if (s1 === s2) return 1.0;
+    if (s1.length === 0 || s2.length === 0) return 0.0;
+    
+    const longer = s1.length > s2.length ? s1 : s2;
+    const shorter = s1.length > s2.length ? s2 : s1;
+    
+    if (longer.length === 0) return 1.0;
+    
+    const editDistance = this.levenshteinDistance(s1, s2);
+    return (longer.length - editDistance) / longer.length;
+  }
+
+  /**
+   * Calculate Levenshtein distance between two strings
+   */
+  private levenshteinDistance(str1: string, str2: string): number {
+    const track = Array(str2.length + 1).fill(null).map(() =>
+      Array(str1.length + 1).fill(null));
+    for (let i = 0; i <= str1.length; i += 1) {
+      track[0][i] = i;
+    }
+    for (let j = 0; j <= str2.length; j += 1) {
+      track[j][0] = j;
+    }
+    for (let j = 1; j <= str2.length; j += 1) {
+      for (let i = 1; i <= str1.length; i += 1) {
+        const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1;
+        track[j][i] = Math.min(
+          track[j][i - 1] + 1, // deletion
+          track[j - 1][i] + 1, // insertion
+          track[j - 1][i - 1] + indicator, // substitution
+        );
+      }
+    }
+    return track[str2.length][str1.length];
+  }
+
+  /**
+   * Check if two leads are fuzzy duplicates
+   * Returns true if they're the same person
+   */
+  private areFuzzyDuplicates(lead1: ScoredLead, lead2: ScoredLead): boolean {
+    const name1 = this.normalizeName(lead1.fullName);
+    const name2 = this.normalizeName(lead2.fullName);
+    const company1 = this.normalizeCompany(lead1.company || '');
+    const company2 = this.normalizeCompany(lead2.company || '');
+    
+    // If names are very similar (>90% match) and companies match, it's a duplicate
+    const nameSimilarity = this.calculateSimilarity(name1, name2);
+    const companySimilarity = this.calculateSimilarity(company1, company2);
+    
+    // Same person at same company
+    if (nameSimilarity > 0.9 && companySimilarity > 0.85) {
+      return true;
+    }
+    
+    // Exact name match (even if companies slightly different)
+    if (nameSimilarity > 0.95 && companySimilarity > 0.7) {
+      return true;
+    }
+    
+    return false;
+  }
+
+  /**
    * Normalize company name for comparison
    */
   private normalizeCompany(company: string): string {
@@ -339,8 +411,22 @@ export class LeadScorerService {
     targetCount: number,
     cooldownDays = 90
   ): Promise<ScoredLead[]> {
+    // First, do in-memory fuzzy deduplication
+    const fuzzyFiltered: ScoredLead[] = [];
+    for (const lead of scoredLeads) {
+      const isDuplicate = fuzzyFiltered.some(existing => 
+        this.areFuzzyDuplicates(lead, existing)
+      );
+      
+      if (!isDuplicate) {
+        fuzzyFiltered.push(lead);
+      } else {
+        console.log(`Fuzzy duplicate detected: ${lead.fullName} at ${lead.company}`);
+      }
+    }
+    
     // Get person keys for dedup check
-    const personKeys = scoredLeads.map(l => l.personKey);
+    const personKeys = fuzzyFiltered.map(l => l.personKey);
     
     // Check for duplicates and suppression in parallel
     const [duplicates, suppressed] = await Promise.all([
@@ -349,7 +435,7 @@ export class LeadScorerService {
     ]);
 
     // Filter out duplicates and suppressed
-    let filtered = scoredLeads.filter(lead => 
+    let filtered = fuzzyFiltered.filter(lead => 
       !duplicates.has(lead.personKey) && !suppressed.has(lead.personKey)
     );
 
