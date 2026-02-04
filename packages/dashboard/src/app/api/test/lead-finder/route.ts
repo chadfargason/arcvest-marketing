@@ -34,16 +34,12 @@ export async function GET(request: NextRequest) {
     switch (action) {
       case 'status': {
         // Check configuration status
-        const hasSearchKey = Boolean(process.env.GOOGLE_CUSTOM_SEARCH_API_KEY);
-        const hasSearchEngineId = Boolean(process.env.GOOGLE_CUSTOM_SEARCH_ENGINE_ID);
+        const hasSerperKey = Boolean(process.env.SERPER_API_KEY);
         const hasAnthropicKey = Boolean(process.env.ANTHROPIC_API_KEY);
 
         return NextResponse.json({
-          configured: hasSearchKey && hasSearchEngineId && hasAnthropicKey,
-          googleSearch: {
-            apiKey: hasSearchKey ? 'configured' : 'missing',
-            searchEngineId: hasSearchEngineId ? 'configured' : 'missing',
-          },
+          configured: hasSerperKey && hasAnthropicKey,
+          serperApi: hasSerperKey ? 'configured' : 'missing',
           anthropic: hasAnthropicKey ? 'configured' : 'missing',
         });
       }
@@ -56,16 +52,13 @@ export async function GET(request: NextRequest) {
 
       case 'run': {
         // Check if configured
-        if (!process.env.GOOGLE_CUSTOM_SEARCH_API_KEY || !process.env.GOOGLE_CUSTOM_SEARCH_ENGINE_ID) {
+        if (!process.env.SERPER_API_KEY) {
           return NextResponse.json({
-            error: 'Google Custom Search not configured',
+            error: 'Serper API not configured',
             setup: {
-              step1: 'Create Programmable Search Engine at https://programmablesearchengine.google.com/',
-              step2: 'Enable "Search the entire web"',
-              step3: 'Get Search Engine ID (cx parameter)',
-              step4: 'Enable Custom Search API in Google Cloud Console',
-              step5: 'Create API key',
-              step6: 'Set GOOGLE_CUSTOM_SEARCH_API_KEY and GOOGLE_CUSTOM_SEARCH_ENGINE_ID env vars',
+              step1: 'Sign up at https://serper.dev/',
+              step2: 'Get your API key from the dashboard',
+              step3: 'Set SERPER_API_KEY environment variable in Vercel',
             },
           }, { status: 400 });
         }

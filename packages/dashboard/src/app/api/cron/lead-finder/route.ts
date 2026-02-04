@@ -31,13 +31,13 @@ export async function GET(request: NextRequest) {
   console.log('Starting lead finder cron job...');
 
   try {
-    // Check if Google Custom Search is configured
-    if (!process.env.GOOGLE_CUSTOM_SEARCH_API_KEY || !process.env.GOOGLE_CUSTOM_SEARCH_ENGINE_ID) {
-      console.warn('Google Custom Search not configured, skipping lead finder run');
+    // Check if Serper API is configured
+    if (!process.env.SERPER_API_KEY) {
+      console.warn('Serper API not configured, skipping lead finder run');
       return NextResponse.json({
         success: false,
-        error: 'Google Custom Search not configured',
-        message: 'Set GOOGLE_CUSTOM_SEARCH_API_KEY and GOOGLE_CUSTOM_SEARCH_ENGINE_ID',
+        error: 'Serper API not configured',
+        message: 'Set SERPER_API_KEY environment variable',
       });
     }
 

@@ -1,19 +1,15 @@
 /**
- * Google Custom Search API Service
+ * Serper.dev Search API Service
  * 
- * Uses Google Programmable Search Engine to find trigger-based leads.
- * Pricing: $5 per 1,000 queries after free tier (100/day)
+ * Uses Serper.dev to search Google for trigger-based leads.
+ * Pricing: Free tier (2,500 searches/month), then $50/mo for 10,000 searches
  * 
  * Setup required:
- * 1. Create a Programmable Search Engine at https://programmablesearchengine.google.com/
- * 2. Enable "Search the entire web" option
- * 3. Get the Search Engine ID (cx parameter)
- * 4. Enable Custom Search API in Google Cloud Console
- * 5. Create an API key
+ * 1. Sign up at https://serper.dev/
+ * 2. Get your API key from the dashboard
  * 
  * Environment variables:
- * - GOOGLE_CUSTOM_SEARCH_API_KEY
- * - GOOGLE_CUSTOM_SEARCH_ENGINE_ID
+ * - SERPER_API_KEY
  */
 
 export interface SearchResult {
@@ -30,43 +26,30 @@ export interface SearchQuery {
   limit?: number;
 }
 
-export interface GoogleSearchResponse {
-  items?: Array<{
+export interface SerperSearchResponse {
+  organic?: Array<{
     link: string;
     title: string;
     snippet: string;
-    pagemap?: {
-      metatags?: Array<{
-        'article:published_time'?: string;
-        'og:updated_time'?: string;
-        'datePublished'?: string;
-      }>;
-    };
+    date?: string;
+    position?: number;
   }>;
-  searchInformation?: {
-    totalResults: string;
-    searchTime: number;
+  searchParameters?: {
+    q: string;
+    num: number;
   };
-  error?: {
-    code: number;
-    message: string;
-  };
+  error?: string;
 }
 
 export class GoogleSearchService {
   private apiKey: string;
-  private searchEngineId: string;
-  private baseUrl = 'https://www.googleapis.com/customsearch/v1';
+  private baseUrl = 'https://google.serper.dev/search';
 
   constructor() {
-    this.apiKey = process.env['GOOGLE_CUSTOM_SEARCH_API_KEY'] || '';
-    this.searchEngineId = process.env['GOOGLE_CUSTOM_SEARCH_ENGINE_ID'] || '';
+    this.apiKey = process.env['SERPER_API_KEY'] || '';
 
     if (!this.apiKey) {
-      console.warn('GOOGLE_CUSTOM_SEARCH_API_KEY not configured');
-    }
-    if (!this.searchEngineId) {
-      console.warn('GOOGLE_CUSTOM_SEARCH_ENGINE_ID not configured');
+      console.warn('SERPER_API_KEY not configured');
     }
   }
 
@@ -74,37 +57,29 @@ export class GoogleSearchService {
    * Check if the service is properly configured
    */
   isConfigured(): boolean {
-    return Boolean(this.apiKey && this.searchEngineId);
+    return Boolean(this.apiKey);
   }
 
   /**
    * Build date restriction parameter for recency filtering
-   * Google uses format like "d7" for last 7 days
+   * Serper uses format like "qdr:d7" for last 7 days
    */
   private buildDateRestrict(recencyDays?: number): string | undefined {
     if (!recencyDays) return undefined;
-    return `d${recencyDays}`;
+    return `qdr:d${recencyDays}`;
   }
 
   /**
-   * Extract publication date from search result metadata
+   * Extract publication date from search result
    */
-  private extractPublishDate(item: NonNullable<GoogleSearchResponse['items']>[number]): string | undefined {
-    const metatags = item.pagemap?.metatags?.[0];
-    if (!metatags) return undefined;
+  private extractPublishDate(item: NonNullable<SerperSearchResponse['organic']>[number]): string | undefined {
+    if (!item.date) return undefined;
 
-    const dateStr = metatags['article:published_time'] 
-      || metatags['og:updated_time'] 
-      || metatags['datePublished'];
-
-    if (dateStr) {
-      try {
-        return new Date(dateStr).toISOString();
-      } catch {
-        return undefined;
-      }
+    try {
+      return new Date(item.date).toISOString();
+    } catch {
+      return undefined;
     }
-    return undefined;
   }
 
   /**
@@ -123,45 +98,54 @@ export class GoogleSearchService {
    */
   async search(params: SearchQuery): Promise<SearchResult[]> {
     if (!this.isConfigured()) {
-      console.error('Google Custom Search is not configured');
+      console.error('Serper API is not configured');
       return [];
     }
 
     const { query, recencyDays = 7, limit = 10 } = params;
 
-    // Build URL with parameters
-    const url = new URL(this.baseUrl);
-    url.searchParams.set('key', this.apiKey);
-    url.searchParams.set('cx', this.searchEngineId);
-    url.searchParams.set('q', query);
-    url.searchParams.set('num', Math.min(limit, 10).toString()); // Max 10 per request
+    // Build request body
+    const body: Record<string, string | number> = {
+      q: query,
+      num: Math.min(limit, 10), // Max 10 per request
+    };
 
     // Add date restriction for recency
     const dateRestrict = this.buildDateRestrict(recencyDays);
     if (dateRestrict) {
-      url.searchParams.set('dateRestrict', dateRestrict);
+      body.tbs = dateRestrict;
     }
 
-    // Sort by date for most recent results
-    url.searchParams.set('sort', 'date');
-
     try {
-      const response = await fetch(url.toString());
-      const data: GoogleSearchResponse = await response.json();
+      const response = await fetch(this.baseUrl, {
+        method: 'POST',
+        headers: {
+          'X-API-KEY': this.apiKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
 
-      if (data.error) {
-        console.error('Google Search API error:', data.error.message);
-        throw new Error(`Google Search API error: ${data.error.message}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Serper API error (${response.status}): ${errorText}`);
       }
 
-      if (!data.items || data.items.length === 0) {
+      const data: SerperSearchResponse = await response.json();
+
+      if (data.error) {
+        console.error('Serper API error:', data.error);
+        throw new Error(`Serper API error: ${data.error}`);
+      }
+
+      if (!data.organic || data.organic.length === 0) {
         console.log(`No results found for query: ${query}`);
         return [];
       }
 
-      console.log(`Found ${data.items.length} results for query: ${query}`);
+      console.log(`Found ${data.organic.length} results for query: ${query}`);
 
-      return data.items.map(item => ({
+      return data.organic.map(item => ({
         url: item.link,
         title: item.title,
         snippet: item.snippet,
@@ -169,7 +153,7 @@ export class GoogleSearchService {
         source: this.extractDomain(item.link),
       }));
     } catch (error) {
-      console.error('Error performing Google search:', error);
+      console.error('Error performing Serper search:', error);
       throw error;
     }
   }
