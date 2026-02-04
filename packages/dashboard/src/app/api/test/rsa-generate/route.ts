@@ -134,9 +134,15 @@ export async function POST(request: NextRequest) {
  */
 async function saveResultsToDatabase(
   results: Array<{
-    master: unknown;
-    variations: unknown[];
-    complianceResult: unknown;
+    master: {
+      headlines: Array<{ text: string; type?: string }>;
+      descriptions: Array<{ text: string }>;
+    };
+    variations: Array<{
+      headlines: Array<{ text: string; type?: string }>;
+      descriptions: Array<{ text: string }>;
+    }>;
+    complianceResult: { passed: boolean };
     metadata: {
       personaId: string;
       voiceId: string;
