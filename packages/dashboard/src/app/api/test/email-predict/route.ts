@@ -47,7 +47,7 @@ Example: ["elizabeth.trejos-castillo@ttu.edu", "e.trejos-castillo@ttu.edu", "etr
     console.log('📤 Sending prompt to Claude Sonnet...');
 
     const response = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-3-5-sonnet-20240620', // Correct model name
       max_tokens: 300,
       temperature: 0.3,
       messages: [{

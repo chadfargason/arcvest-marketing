@@ -428,7 +428,7 @@ Example: ["elizabeth.trejos-castillo@ttu.edu", "e.trejos-castillo@ttu.edu", "etr
       console.log(`🤖 Asking AI to predict emails for ${candidate.fullName} at ${candidate.company}...`);
 
       const response = await this.anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-3-5-sonnet-20240620', // FIXED: Correct model name!
         max_tokens: 300,
         temperature: 0.3, // Slightly higher for more variety
         messages: [{
