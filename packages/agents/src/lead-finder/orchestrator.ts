@@ -349,13 +349,13 @@ export class LeadFinderOrchestrator {
         }
 
         // ALWAYS use AI to predict emails (provides backup options even if we found one)
-        console.log(`🤖 Using advanced AI to predict emails for ${candidate.fullName}...`);
         const predictedEmails = await this.predictEmailAddresses(candidate);
         
+        let addedCount = 0;
         for (const email of predictedEmails) {
           // Don't add if we already found this exact email
           const alreadyHasEmail = candidate.contactPaths.some(cp => 
-            (cp.type === 'generic_email' || cp.type === 'predicted_email') && cp.value === email
+            (cp.type === 'generic_email' || cp.type === 'predicted_email') && cp.value.toLowerCase() === email.toLowerCase()
           );
           
           if (!alreadyHasEmail) {
@@ -364,13 +364,19 @@ export class LeadFinderOrchestrator {
               value: email,
               foundOnPage: false,
             });
+            addedCount++;
+            console.log(`   ➕ Added predicted email: ${email}`);
+          } else {
+            console.log(`   ⏭️  Skipped duplicate: ${email}`);
           }
         }
         
-        if (predictedEmails.length > 0) {
-          console.log(`🎯 AI predicted ${predictedEmails.length} likely emails for ${candidate.fullName}`);
+        if (addedCount > 0) {
+          console.log(`✅ Added ${addedCount} predicted emails for ${candidate.fullName}`);
+        } else if (predictedEmails.length === 0) {
+          console.log(`❌ AI could not predict any emails for ${candidate.fullName}`);
         } else {
-          console.log(`⚠️ AI could not predict emails for ${candidate.fullName} (no company domain)`);
+          console.log(`ℹ️  All ${predictedEmails.length} predicted emails were duplicates for ${candidate.fullName}`);
         }
       } catch (error) {
         console.error(`Error enriching ${candidate.fullName}:`, error);
@@ -380,116 +386,51 @@ export class LeadFinderOrchestrator {
   }
 
   /**
-   * Step 1: Search for company website and extract domain + email patterns
-   */
-  async findCompanyEmailPattern(company: string): Promise<{ domain: string; pattern: string | null }> {
-    try {
-      // Search for company website
-      const companySearchResults = await this.searchService.search({
-        query: `${company} official website`,
-        limit: 3,
-        recencyDays: undefined,
-      });
-
-      let companyDomain = '';
-      const emailsFound: string[] = [];
-
-      // Extract domain and look for email examples
-      for (const result of companySearchResults) {
-        if (!companyDomain) {
-          try {
-            const url = new URL(result.url);
-            const hostname = url.hostname.replace('www.', '');
-            // Prefer actual company domains over news sites
-            if (!hostname.includes('linkedin') && !hostname.includes('bloomberg') && !hostname.includes('prnewswire')) {
-              companyDomain = hostname;
-            }
-          } catch {
-            // Invalid URL
-          }
-        }
-
-        // Look for email addresses in snippet
-        const emails = this.extractEmailsFromText(result.snippet + ' ' + result.title);
-        emailsFound.push(...emails.filter(e => !this.isGenericEmail(e)));
-      }
-
-      // Infer pattern from found emails
-      let pattern = null;
-      if (emailsFound.length > 0 && companyDomain) {
-        const sampleEmail = emailsFound[0].split('@')[0];
-        if (sampleEmail.includes('.')) {
-          pattern = 'first.last';
-        } else if (sampleEmail.length <= 2) {
-          pattern = 'firstinitiallast';
-        } else {
-          pattern = 'firstlast';
-        }
-      }
-
-      // Fallback: infer domain from company name
-      if (!companyDomain) {
-        companyDomain = company
-          .toLowerCase()
-          .replace(/[^a-z0-9]/g, '')
-          .replace(/inc|corp|corporation|llc|ltd|limited|company|co|group|partners/g, '') + '.com';
-      }
-
-      return { domain: companyDomain, pattern };
-    } catch (error) {
-      console.error(`Error finding company email pattern for ${company}:`, error);
-      return { domain: '', pattern: null };
-    }
-  }
-
-  /**
-   * Step 2: Use advanced AI (Claude Sonnet) to predict email addresses with context
+   * Use AI to predict email addresses - let Sonnet figure out the domain and patterns
+   * This matches the approach that worked in the web UI
    */
   async predictEmailAddresses(
     candidate: ExtractedCandidate
   ): Promise<string[]> {
     if (!candidate.company) {
+      console.log(`⚠️ No company provided for ${candidate.fullName}, skipping email prediction`);
       return [];
     }
 
     try {
-      // First, try to find company domain and email pattern
-      const { domain: companyDomain, pattern: detectedPattern } = await this.findCompanyEmailPattern(candidate.company);
+      // Collect any additional context we have
+      const websiteUrl = candidate.contactPaths?.find(cp => 
+        cp.type === 'company_website' || cp.type === 'company_contact_url'
+      )?.value;
 
-      if (!companyDomain) {
-        console.log(`⚠️ Could not determine domain for ${candidate.company}`);
-        return [];
-      }
+      // Build a natural prompt like the user would ask
+      const prompt = `Help me make an educated guess at the email address for this person:
 
-      const prompt = `You are an expert executive researcher helping find the correct email address for a business professional.
+Name: ${candidate.fullName}
+Title: ${candidate.title || 'Unknown'}
+Organization: ${candidate.company}
+${websiteUrl ? `Website: ${websiteUrl}` : ''}
 
-PERSON DETAILS:
-- Name: ${candidate.fullName}
-- Title: ${candidate.title || 'Unknown'}
-- Company: ${candidate.company}
-- Company Domain: ${companyDomain}
-${detectedPattern ? `- Detected company email pattern: ${detectedPattern}` : ''}
+Please provide the 3-4 most likely email addresses for this person, ordered by likelihood.
 
-TASK: Predict the 3 most likely personal work email addresses for this executive.
+Consider:
+- Universities typically use .edu domains (e.g., ttu.edu for Texas Tech)
+- Non-profits may use .org
+- Government entities use .gov
+- Corporations usually use .com
+- Common formats: first.last@domain, flast@domain, firstname.lastname@domain
+- Handle hyphenated names, apostrophes, and special characters appropriately
+- For universities, check if there are common abbreviations (e.g., "Texas Tech University" = ttu.edu)
 
-RULES:
-1. Use ONLY the provided company domain: ${companyDomain}
-2. Consider common executive email patterns: first.last, flast, firstlast, first_last
-3. If a pattern was detected from the company, prioritize that format
-4. Handle names correctly: use actual first and last name, not title
-5. For names like "John Smith Jr." or "Mary O'Brien", handle properly
-6. Consider that executives sometimes have simpler/shorter formats
+Respond with ONLY a JSON array of email addresses, nothing else.
+Example: ["elizabeth.trejos-castillo@ttu.edu", "e.trejos-castillo@ttu.edu", "etrejos-castillo@ttu.edu"]`;
 
-OUTPUT FORMAT:
-Respond with ONLY a JSON array of 3 email addresses, ordered by likelihood.
-Example: ["john.smith@company.com", "jsmith@company.com", "johnsmith@company.com"]
-
-IMPORTANT: Only return the JSON array, no other text.`;
+      console.log(`🤖 Asking AI to predict emails for ${candidate.fullName} at ${candidate.company}...`);
 
       const response = await this.anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022', // Upgraded to Sonnet for better reasoning
-        max_tokens: 200,
-        temperature: 0.2,
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 300,
+        temperature: 0.3, // Slightly higher for more variety
         messages: [{
           role: 'user',
           content: prompt,
@@ -498,18 +439,30 @@ IMPORTANT: Only return the JSON array, no other text.`;
 
       const content = response.content[0];
       if (content.type === 'text') {
-        // Parse JSON response
-        const jsonMatch = content.text.match(/\[.*\]/s);
+        console.log(`📝 AI response: ${content.text}`);
+        
+        // Parse JSON response - be more flexible with parsing
+        const jsonMatch = content.text.match(/\[[\s\S]*?\]/);
         if (jsonMatch) {
-          const predictedEmails = JSON.parse(jsonMatch[0]) as string[];
-          console.log(`🤖 AI predicted ${predictedEmails.length} emails for ${candidate.fullName}:`, predictedEmails);
-          return predictedEmails.slice(0, 3); // Max 3
+          try {
+            const predictedEmails = JSON.parse(jsonMatch[0]) as string[];
+            const validEmails = predictedEmails.filter(e => e && e.includes('@') && e.includes('.'));
+            
+            if (validEmails.length > 0) {
+              console.log(`✅ AI predicted ${validEmails.length} emails for ${candidate.fullName}:`, validEmails);
+              return validEmails.slice(0, 4); // Return up to 4
+            }
+          } catch (parseError) {
+            console.error(`❌ Failed to parse AI response as JSON:`, parseError);
+          }
+        } else {
+          console.warn(`⚠️ No JSON array found in AI response for ${candidate.fullName}`);
         }
       }
 
       return [];
     } catch (error) {
-      console.error(`Error predicting emails for ${candidate.fullName}:`, error);
+      console.error(`❌ Error predicting emails for ${candidate.fullName}:`, error);
       return [];
     }
   }
