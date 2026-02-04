@@ -5,9 +5,33 @@
  * and queues them for the content pipeline.
  */
 
-import { GmailService, type GmailMessage } from '@arcvest/services';
+import { GmailService } from '@arcvest/services';
 import { createClient } from '@supabase/supabase-js';
 import Anthropic from '@anthropic-ai/sdk';
+
+interface GmailMessage {
+  id: string;
+  threadId: string;
+  from: {
+    email: string;
+    name?: string;
+  };
+  to: {
+    email: string;
+    name?: string;
+  }[];
+  cc?: {
+    email: string;
+    name?: string;
+  }[];
+  subject: string;
+  body: string;
+  bodyHtml?: string;
+  date: Date;
+  labels: string[];
+  isRead: boolean;
+  isInbound: boolean;
+}
 
 // Bloomberg sender domain patterns
 const BLOOMBERG_DOMAINS = [
