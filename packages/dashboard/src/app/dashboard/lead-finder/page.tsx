@@ -138,6 +138,7 @@ export default function LeadFinderPage() {
   const [tierFilter, setTierFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [todayOnly, setTodayOnly] = useState(true);
+  const [sortBy, setSortBy] = useState<'recent' | 'score'>('recent');
 
   const fetchLeads = useCallback(async () => {
     try {
@@ -146,7 +147,8 @@ export default function LeadFinderPage() {
       if (tierFilter !== 'all') params.set('tier', tierFilter);
       if (statusFilter !== 'all') params.set('status', statusFilter);
       if (todayOnly) params.set('today', 'true');
-      params.set('limit', '50');
+      params.set('limit', '200'); // Increased from 50 to 200
+      params.set('sort', sortBy); // Add sort parameter
 
       const response = await fetch(`/api/lead-finder/leads?${params.toString()}`);
       const data = await response.json();
@@ -156,7 +158,7 @@ export default function LeadFinderPage() {
     } finally {
       setLoading(false);
     }
-  }, [tierFilter, statusFilter, todayOnly]);
+  }, [tierFilter, statusFilter, todayOnly, sortBy]);
 
   const fetchRuns = useCallback(async () => {
     try {
@@ -426,6 +428,18 @@ export default function LeadFinderPage() {
               />
               <Label htmlFor="todayOnly">Today only</Label>
             </div>
+            <div className="flex items-center gap-2">
+              <Label>Sort:</Label>
+              <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'recent' | 'score')}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="recent">Most Recent</SelectItem>
+                  <SelectItem value="score">Highest Score</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -512,6 +526,15 @@ export default function LeadFinderPage() {
                             {lead.geo_signal}
                           </span>
                         )}
+                        <span className="flex items-center gap-1 ml-auto">
+                          <Calendar className="h-3 w-3" />
+                          {new Date(lead.created_at).toLocaleString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit'
+                          })}
+                        </span>
                       </div>
                     </div>
 

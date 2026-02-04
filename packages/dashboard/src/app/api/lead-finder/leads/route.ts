@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
     const today = searchParams.get('today') === 'true';
+    const sort = searchParams.get('sort') || 'recent'; // 'recent' or 'score'
 
     // Build query
     let query = supabase
@@ -49,9 +50,16 @@ export async function GET(request: NextRequest) {
           geo_name,
           trigger_focus
         )
-      `)
-      .order('score', { ascending: false })
-      .range(offset, offset + limit - 1);
+      `);
+
+    // Apply sorting
+    if (sort === 'recent') {
+      query = query.order('created_at', { ascending: false });
+    } else {
+      query = query.order('score', { ascending: false });
+    }
+    
+    query = query.range(offset, offset + limit - 1);
 
     // Apply filters
     if (runId) {
