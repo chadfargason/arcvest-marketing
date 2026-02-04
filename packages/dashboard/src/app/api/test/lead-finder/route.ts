@@ -63,6 +63,19 @@ export async function GET(request: NextRequest) {
           }, { status: 400 });
         }
 
+        // Optionally clear all leads first (if clearFirst=true)
+        const clearFirst = request.nextUrl.searchParams.get('clearFirst') === 'true';
+        if (clearFirst) {
+          const { createClient } = await import('@supabase/supabase-js');
+          const supabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_KEY!
+          );
+          
+          await supabase.from('lead_finder_leads').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          console.log('Cleared all existing leads before run');
+        }
+
         // Execute full run
         const result = await runLeadFinder();
 
