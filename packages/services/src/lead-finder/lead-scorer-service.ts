@@ -362,16 +362,17 @@ export class LeadScorerService {
 
   /**
    * Check for existing leads with same person key (deduplication)
+   * Checks ALL leads ever created (no time limit) - once found, never contact again
    */
   async checkDuplicates(personKeys: string[], cooldownDays = 90): Promise<Set<string>> {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - cooldownDays);
+    // Note: cooldownDays parameter kept for API compatibility but NOT USED
+    // We check ALL leads forever to prevent any repeat contact
 
     const { data, error } = await this.supabase
       .from('lead_finder_leads')
       .select('person_key')
-      .in('person_key', personKeys)
-      .gte('created_at', cutoffDate.toISOString());
+      .in('person_key', personKeys);
+      // No date filter - check all leads in history
 
     if (error) {
       console.error('Error checking duplicates:', error);
