@@ -99,7 +99,7 @@ export class LeadFinderOrchestrator {
   }
 
   /**
-   * Determine today's rotation parameters
+   * Determine today's rotation parameters (for scheduled/cron jobs)
    */
   async determineTodayRotation(): Promise<RunConfig> {
     const config = await this.getConfig();
@@ -135,6 +135,47 @@ export class LeadFinderOrchestrator {
       candidateTarget: (config['candidate_target'] as number) || 60,
       recencyDays: (config['recency_days'] as number) || 7,
       leadCooldownDays: (config['lead_cooldown_days'] as number) || 90,
+      emailTones,
+    };
+  }
+
+  /**
+   * Generate random rotation parameters (for manual "Run Now" button)
+   * Each run will randomly select city, trigger, and industry for variety
+   */
+  async generateRandomRotation(): Promise<RunConfig> {
+    const config = await this.getConfig();
+    
+    // Get lists from config
+    const geoList = (config['geo_list'] as Array<{ name: string; aliases: string[] }>) || [];
+    const triggerList = (config['trigger_list'] as string[]) || ['career_move', 'funding_mna', 'expansion'];
+    const industryList = (config['industry_list'] as string[]) || [];
+    const emailTones = (config['email_tones'] as EmailTone[]) || ['congratulatory', 'value_first', 'peer_credibility', 'direct_curious'];
+
+    // Randomly select geo
+    const geo = geoList.length > 0 
+      ? geoList[Math.floor(Math.random() * geoList.length)]
+      : { name: 'Houston', aliases: ['Houston'] };
+
+    // Randomly select trigger
+    const trigger = triggerList[Math.floor(Math.random() * triggerList.length)] || 'career_move';
+
+    // Randomly select industry (or none)
+    const industry = industryList.length > 0 
+      ? industryList[Math.floor(Math.random() * industryList.length)]
+      : undefined;
+
+    console.log(`🎲 Random rotation: ${geo.name} / ${trigger} / ${industry || 'any industry'}`);
+
+    return {
+      geoName: geo.name,
+      geoAliases: geo.aliases,
+      triggerFocus: trigger,
+      industryFocus: industry,
+      dailyLeadTarget: (config['daily_lead_target'] as number) || 20,
+      candidateTarget: (config['candidate_target'] as number) || 60,
+      recencyDays: (config['recency_days'] as number) || 7,
+      leadCooldownDays: (config['lead_cooldown_days'] as number) || 0, // Check all leads for manual runs
       emailTones,
     };
   }

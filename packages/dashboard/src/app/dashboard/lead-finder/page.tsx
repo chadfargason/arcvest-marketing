@@ -295,7 +295,7 @@ export default function LeadFinderPage() {
             Lead Finder
           </h1>
           <p className="text-muted-foreground">
-            AI-powered Texas trigger lead discovery
+            AI-powered Texas trigger lead discovery · Manual runs use random rotation for variety
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -311,7 +311,7 @@ export default function LeadFinderPage() {
               </>
             ) : (
               <>
-                <Play className="mr-2 h-4 w-4" />
+                <Sparkles className="mr-2 h-4 w-4" />
                 Run Now
               </>
             )}

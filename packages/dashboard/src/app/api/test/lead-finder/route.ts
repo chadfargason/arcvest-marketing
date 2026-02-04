@@ -9,9 +9,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 // Import orchestrator dynamically
-async function runLeadFinder() {
+async function runLeadFinder(useRandomRotation = true) {
   const { LeadFinderOrchestrator } = await import('@arcvest/agents');
   const orchestrator = new LeadFinderOrchestrator();
+  
+  // For manual runs, use random rotation to get variety
+  if (useRandomRotation) {
+    const randomConfig = await orchestrator.generateRandomRotation();
+    return orchestrator.executeRun(randomConfig);
+  }
+  
+  // Otherwise use default (daily rotation)
   return orchestrator.executeRun();
 }
 
@@ -19,6 +27,12 @@ async function getTodayConfig() {
   const { LeadFinderOrchestrator } = await import('@arcvest/agents');
   const orchestrator = new LeadFinderOrchestrator();
   return orchestrator.determineTodayRotation();
+}
+
+async function getRandomConfig() {
+  const { LeadFinderOrchestrator } = await import('@arcvest/agents');
+  const orchestrator = new LeadFinderOrchestrator();
+  return orchestrator.generateRandomRotation();
 }
 
 export const runtime = 'nodejs';
@@ -45,9 +59,14 @@ export async function GET(request: NextRequest) {
       }
 
       case 'config': {
-        // Get today's rotation configuration
-        const config = await getTodayConfig();
-        return NextResponse.json({ config });
+        // Show both scheduled (daily rotation) and manual (random) configs
+        const scheduledConfig = await getTodayConfig();
+        const manualConfig = await getRandomConfig();
+        return NextResponse.json({ 
+          scheduled: scheduledConfig,
+          manual: manualConfig,
+          note: 'Scheduled runs use daily rotation. Manual "Run Now" uses random rotation for variety.'
+        });
       }
 
       case 'run': {
