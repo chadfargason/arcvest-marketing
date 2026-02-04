@@ -13,7 +13,6 @@ import {
   getAllVoiceIds,
   getPersonaById,
   getVoiceById,
-  type RSAGenerationResult,
 } from '@arcvest/agents';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
@@ -134,7 +133,18 @@ export async function POST(request: NextRequest) {
  * Save generation results to the database
  */
 async function saveResultsToDatabase(
-  results: RSAGenerationResult[]
+  results: Array<{
+    master: unknown;
+    variations: unknown[];
+    complianceResult: unknown;
+    metadata: {
+      personaId: string;
+      voiceId: string;
+      processedAt: string;
+      totalTokensUsed: number;
+      processingTimeMs: number;
+    };
+  }>
 ): Promise<{ assetGroups: number; assets: number }> {
   let assetGroupsCreated = 0;
   let assetsCreated = 0;
