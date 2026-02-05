@@ -329,11 +329,12 @@ INSTRUCTIONS:
 9. First sentence must grab the reader - rewrite it until it's compelling
 10. No exclamation points, no hedge words, no corporate verbs, no thesaurus abuse
 
-Write the blog post in markdown format with a compelling title (H1), clear sections (H2), and engaging prose-forward content.`;
+Write the blog post in markdown format with a compelling title (H1), clear sections (H2), and engaging prose-forward content.
+- IMPORTANT: Write the COMPLETE blog post from start to finish. Do not stop mid-sentence.`;
 
     const response = await this.anthropic.messages.create({
       model: 'claude-opus-4-5-20251101',
-      max_tokens: 4096,
+      max_tokens: 8000, // Increased from 4096 to ensure full blog posts (1200-1500 words ~= 1600-2000 tokens)
       temperature: 0.7,
       messages: [{ role: 'user', content: prompt }],
     });
@@ -506,7 +507,7 @@ After the blog post, add a section titled "## EDITS MADE" with a bullet list of 
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
             temperature: 0.7,
-            maxOutputTokens: 4096,
+            maxOutputTokens: 8000, // Increased from 4096 to ensure full blog posts
           },
         }),
       }
