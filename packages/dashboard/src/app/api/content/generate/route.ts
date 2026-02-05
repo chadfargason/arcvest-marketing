@@ -91,6 +91,7 @@ Requirements:
 - Do not guarantee any investment outcomes
 - Include a brief disclaimer at the end
 - End with a subtle call-to-action about learning more
+- IMPORTANT: Write the COMPLETE blog post from start to finish. Do not stop mid-sentence.
 
 Write the complete blog post in markdown format.`
           : `Write a complete blog post about "${topic}".
@@ -106,9 +107,10 @@ Requirements:
 - Do not guarantee any investment outcomes
 - Include a brief disclaimer at the end
 - End with a subtle call-to-action about learning more
+- IMPORTANT: Write the COMPLETE blog post from start to finish. Do not stop mid-sentence.
 
 Write the complete blog post in markdown format.`;
-        maxTokens = 4096;
+        maxTokens = 8000; // Increased from 4096 to ensure full blog posts (1200-1500 words ~= 1600-2000 tokens)
         break;
 
       case 'linkedin_post':

@@ -145,11 +145,12 @@ Requirements:
 - Include a brief disclaimer at the end
 - End with a subtle call-to-action about learning more
 
-Write the complete blog post in markdown format.`;
+Write the complete blog post in markdown format.
+- IMPORTANT: Write the COMPLETE blog post from start to finish. Do not stop mid-sentence.`;
 
     const result = await this.generateContent(prompt, {
       systemPrompt: this.getComplianceSystemPrompt(),
-      maxTokens: 4096,
+      maxTokens: 8000, // Increased from 4096 to ensure full blog posts (1200-1500 words ~= 1600-2000 tokens)
       temperature: 0.7,
     });
 
