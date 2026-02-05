@@ -12,6 +12,7 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import Anthropic from '@anthropic-ai/sdk';
 import {
   GoogleSearchService,
   SearchResult,
@@ -64,6 +65,7 @@ export interface RunResult {
 
 export class LeadFinderOrchestrator {
   private supabase: SupabaseClient;
+  private anthropic: Anthropic;
   private searchService: GoogleSearchService;
   private fetcherService: PageFetcherService;
   private extractorAgent: LeadExtractorAgent;
@@ -75,6 +77,9 @@ export class LeadFinderOrchestrator {
       process.env['NEXT_PUBLIC_SUPABASE_URL']!,
       process.env['SUPABASE_SERVICE_KEY']!
     );
+    this.anthropic = new Anthropic({
+      apiKey: process.env['ANTHROPIC_API_KEY']!,
+    });
     this.searchService = new GoogleSearchService();
     this.fetcherService = new PageFetcherService();
     this.extractorAgent = new LeadExtractorAgent();
