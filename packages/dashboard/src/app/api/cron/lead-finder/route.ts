@@ -18,17 +18,27 @@ async function runLeadFinder() {
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+export const maxDuration = 300; // 5 minutes for lead generation
 
 export async function GET(request: NextRequest) {
-  // Verify cron secret
+  // Verify this is from Vercel cron OR has valid authorization
+  const isVercelCron = request.headers.get('x-vercel-cron') === '1';
   const authHeader = request.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
 
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  // Allow if it's from Vercel cron OR has valid authorization header
+  const isAuthorized = isVercelCron || (cronSecret && authHeader === `Bearer ${cronSecret}`);
+
+  if (!isAuthorized) {
+    console.error('Unauthorized cron attempt:', {
+      isVercelCron,
+      hasAuthHeader: !!authHeader,
+      hasCronSecret: !!cronSecret
+    });
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  console.log('Starting lead finder cron job...');
+  console.log('Starting lead finder cron job...', { triggeredBy: isVercelCron ? 'Vercel Cron' : 'Manual' });
 
   try {
     // Check if Serper API is configured

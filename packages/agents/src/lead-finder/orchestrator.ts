@@ -439,7 +439,7 @@ Example: ["elizabeth.trejos-castillo@ttu.edu", "e.trejos-castillo@ttu.edu", "etr
 
       const content = response.content[0];
       if (content.type === 'text') {
-        console.log(`📝 AI response: ${content.text}`);
+        console.log(`📝 AI response for ${candidate.fullName}:`, content.text);
         
         // Parse JSON response - be more flexible with parsing
         const jsonMatch = content.text.match(/\[[\s\S]*?\]/);
@@ -451,15 +451,24 @@ Example: ["elizabeth.trejos-castillo@ttu.edu", "e.trejos-castillo@ttu.edu", "etr
             if (validEmails.length > 0) {
               console.log(`✅ AI predicted ${validEmails.length} emails for ${candidate.fullName}:`, validEmails);
               return validEmails.slice(0, 4); // Return up to 4
+            } else {
+              console.warn(`⚠️ AI returned emails but none were valid for ${candidate.fullName}:`, predictedEmails);
             }
           } catch (parseError) {
-            console.error(`❌ Failed to parse AI response as JSON:`, parseError);
+            console.error(`❌ Failed to parse AI response as JSON for ${candidate.fullName}:`, {
+              error: parseError,
+              response: content.text,
+              match: jsonMatch[0]
+            });
           }
         } else {
-          console.warn(`⚠️ No JSON array found in AI response for ${candidate.fullName}`);
+          console.error(`❌ No JSON array found in AI response for ${candidate.fullName}. Full response:`, content.text);
         }
+      } else {
+        console.error(`❌ Unexpected content type from AI for ${candidate.fullName}:`, content.type);
       }
 
+      console.warn(`⚠️ Returning empty array for ${candidate.fullName} - email prediction failed`);
       return [];
     } catch (error) {
       console.error(`❌ Error predicting emails for ${candidate.fullName}:`, error);
