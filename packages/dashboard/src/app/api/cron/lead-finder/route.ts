@@ -3,7 +3,7 @@
  * 
  * GET /api/cron/lead-finder - Daily lead finder run
  * 
- * Triggered by Vercel cron at 6:30am CT (12:30 UTC)
+ * Triggered by Vercel cron at 12:30pm CT (6:30pm UTC / 18:30 UTC)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
