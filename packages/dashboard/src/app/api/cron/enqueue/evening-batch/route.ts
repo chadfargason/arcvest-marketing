@@ -23,14 +23,18 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
-  // Verify cron secret
+  // Verify cron secret (Vercel cron sends x-vercel-cron: 1)
   const authHeader = request.headers.get('authorization');
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  const vercelCronHeader = request.headers.get('x-vercel-cron');
+  const cronSecret = process.env.CRON_SECRET;
+
+  if (cronSecret && authHeader !== `Bearer ${cronSecret}` && vercelCronHeader !== '1') {
+    console.warn('Unauthorized evening-batch cron attempt.');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const startTime = Date.now();
-  console.log('[Enqueue] Creating evening batch jobs...');
+  console.log(`[Enqueue] Creating evening batch jobs (Trigger: ${vercelCronHeader === '1' ? 'Vercel Cron' : 'Manual'})...`);
 
   try {
     const supabase = await createClient();

@@ -25,11 +25,17 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
-  // Verify cron secret
+  // Verify cron secret (Vercel cron sends x-vercel-cron: 1)
   const authHeader = request.headers.get('authorization');
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  const vercelCronHeader = request.headers.get('x-vercel-cron');
+  const cronSecret = process.env.CRON_SECRET;
+
+  if (cronSecret && authHeader !== `Bearer ${cronSecret}` && vercelCronHeader !== '1') {
+    console.warn('Unauthorized morning-batch cron attempt.');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  console.log(`[Morning Batch] Starting (Trigger: ${vercelCronHeader === '1' ? 'Vercel Cron' : 'Manual'})`);
 
   const startTime = Date.now();
   console.log('[Enqueue] Creating morning batch jobs...');

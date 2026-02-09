@@ -14,16 +14,17 @@ import { createClient } from '@supabase/supabase-js';
  * Called by Vercel Cron every 4 hours
  */
 export async function GET(request: NextRequest) {
-  // Verify cron secret in production
+  // Verify cron secret (Vercel cron sends x-vercel-cron: 1)
   const authHeader = request.headers.get('authorization');
+  const vercelCronHeader = request.headers.get('x-vercel-cron');
   const cronSecret = process.env.CRON_SECRET;
 
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  if (cronSecret && authHeader !== `Bearer ${cronSecret}` && vercelCronHeader !== '1') {
     console.warn('[Ads Sync Cron] Unauthorized request');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  console.log('[Ads Sync Cron] Starting scheduled sync...');
+  console.log(`[Ads Sync Cron] Starting scheduled sync (Trigger: ${vercelCronHeader === '1' ? 'Vercel Cron' : 'Manual'})...`);
 
   try {
     const googleAds = getGoogleAdsClient();
