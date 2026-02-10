@@ -82,6 +82,10 @@ function convertLeadsToCSV(leads: any[]): string {
     'LinkedIn',
     'Website',
     'Other Contact Info',
+    'Draft Email Subject',
+    'Draft Email Body (Plain Text)',
+    'Draft Email Body (HTML)',
+    'Draft Email Tone',
     'Source URL',
     'Source Title',
     'Outreach Status',
@@ -109,6 +113,14 @@ function convertLeadsToCSV(leads: any[]): string {
 
     // Get all email addresses as a comma-separated list
     const allEmails = emails.map((e: any) => e.value).join('; ');
+
+    // Get the latest email draft (highest version number)
+    const emailDrafts = lead.lead_finder_emails || [];
+    const latestDraft = emailDrafts.length > 0 
+      ? emailDrafts.reduce((latest: any, current: any) => 
+          current.version > latest.version ? current : latest
+        )
+      : null;
 
     return [
       lead.id,
@@ -141,6 +153,11 @@ function convertLeadsToCSV(leads: any[]): string {
       escapeCsvField(linkedins.map((l: any) => l.value).join('; ')),
       escapeCsvField(websites.map((w: any) => w.value).join('; ')),
       escapeCsvField(others.map((o: any) => `${o.type}: ${o.value}`).join('; ')),
+      // Draft email content
+      escapeCsvField(latestDraft?.subject || ''),
+      escapeCsvField(latestDraft?.body_plain || ''),
+      escapeCsvField(latestDraft?.body_html || ''),
+      latestDraft?.tone || '',
       // Source & status
       escapeCsvField(lead.source_url),
       escapeCsvField(lead.source_title),
