@@ -38,6 +38,7 @@ import {
   Calendar,
   AlertCircle,
   Play,
+  Download,
 } from 'lucide-react';
 
 interface Lead {
@@ -304,6 +305,15 @@ export default function LeadFinderPage() {
           <Button variant="outline" onClick={fetchLeads} disabled={loading}>
             <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => window.open('/api/lead-finder/export-csv', '_blank')}
+            disabled={loading || leads.length === 0}
+            title="Export all leads to CSV"
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Export CSV
           </Button>
           <Button onClick={handleRunNow} disabled={runningJob}>
             {runningJob ? (
