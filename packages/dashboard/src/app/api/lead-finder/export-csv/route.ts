@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       .select(`
         *,
         lead_finder_runs(geo_name, trigger_focus, run_date),
-        lead_finder_emails(id, subject, tone, version)
+        lead_finder_emails(id, subject, body_plain, body_html, tone, version)
       `)
       .order('created_at', { ascending: false });
 
