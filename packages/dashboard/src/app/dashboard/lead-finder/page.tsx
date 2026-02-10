@@ -308,7 +308,7 @@ export default function LeadFinderPage() {
           <Button 
             variant="outline" 
             onClick={() => window.open('/api/lead-finder/export-csv', '_blank')}
-            disabled={loading || leads.length === 0}
+            disabled={loading}
             title="Export all leads to CSV"
           >
             <Download className="mr-2 h-4 w-4" />
