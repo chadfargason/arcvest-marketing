@@ -18,7 +18,7 @@ async function runLeadFinder() {
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const maxDuration = 300; // 5 minutes for lead generation
+export const maxDuration = 600; // 10 minutes for lead generation (increased from 5 to handle email enrichment)
 
 export async function GET(request: NextRequest) {
   // Verify this is from Vercel cron OR has valid authorization
@@ -51,7 +51,15 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const result = await runLeadFinder();
+    // Set a reasonable timeout with Promise.race to prevent hanging
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Lead finder execution timed out after 9 minutes')), 540000); // 9 minutes
+    });
+
+    const result = await Promise.race([
+      runLeadFinder(),
+      timeoutPromise
+    ]) as Awaited<ReturnType<typeof runLeadFinder>>;
 
     console.log('Lead finder cron completed:', {
       runId: result.runId,
