@@ -37,7 +37,6 @@ import {
   TrendingUp,
   Calendar,
   AlertCircle,
-  Play,
   Download,
 } from 'lucide-react';
 
