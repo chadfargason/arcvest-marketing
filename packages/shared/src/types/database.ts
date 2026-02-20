@@ -48,8 +48,16 @@ export const CAMPAIGN_TYPES = [
   'email',
   'content',
   'other',
+  'meta_traffic',
+  'meta_leads',
+  'meta_awareness',
+  'meta_conversions',
+  'meta_engagement',
 ] as const;
 export type CampaignType = (typeof CAMPAIGN_TYPES)[number];
+
+export const CAMPAIGN_PLATFORMS = ['google', 'meta', 'other'] as const;
+export type CampaignPlatform = (typeof CAMPAIGN_PLATFORMS)[number];
 
 export const CAMPAIGN_STATUSES = ['draft', 'active', 'paused', 'completed'] as const;
 export type CampaignStatus = (typeof CAMPAIGN_STATUSES)[number];
@@ -237,6 +245,19 @@ export interface Campaign {
   // External IDs
   google_ads_campaign_id: string | null;
 
+  // Platform
+  platform: CampaignPlatform;
+
+  // Meta external ID
+  meta_campaign_id: string | null;
+
+  // Budget (Meta uses daily/lifetime)
+  daily_budget: number | null;
+  lifetime_budget: number | null;
+
+  // Objective (Meta campaigns)
+  objective: string | null;
+
   // Notes
   notes: string | null;
 
@@ -253,6 +274,11 @@ export interface CampaignInsert {
   end_date?: string | null;
   target_audience?: string | null;
   google_ads_campaign_id?: string | null;
+  platform?: CampaignPlatform;
+  meta_campaign_id?: string | null;
+  daily_budget?: number | null;
+  lifetime_budget?: number | null;
+  objective?: string | null;
   notes?: string | null;
   metadata?: Record<string, unknown>;
 }
@@ -477,6 +503,107 @@ export interface SystemState {
   key: string;
   value: unknown;
   updated_at: string;
+}
+
+// ===========================================
+// Meta Ads
+// ===========================================
+
+export const META_AD_SET_STATUSES = ['ACTIVE', 'PAUSED', 'DELETED', 'ARCHIVED'] as const;
+export type MetaAdSetStatus = (typeof META_AD_SET_STATUSES)[number];
+
+export const META_INSIGHT_OBJECT_TYPES = ['account', 'campaign', 'adset', 'ad'] as const;
+export type MetaInsightObjectType = (typeof META_INSIGHT_OBJECT_TYPES)[number];
+
+export interface MetaAdSet {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  campaign_id: string;
+  meta_ad_set_id: string;
+  name: string;
+  status: string;
+  daily_budget: number | null;
+  lifetime_budget: number | null;
+  bid_amount: number | null;
+  bid_strategy: string | null;
+  optimization_goal: string | null;
+  targeting: Record<string, unknown>;
+  placements: Record<string, unknown>;
+  start_time: string | null;
+  end_time: string | null;
+}
+
+export interface MetaAdSetInsert {
+  campaign_id: string;
+  meta_ad_set_id: string;
+  name: string;
+  status?: string;
+  daily_budget?: number | null;
+  lifetime_budget?: number | null;
+  bid_amount?: number | null;
+  bid_strategy?: string | null;
+  optimization_goal?: string | null;
+  targeting?: Record<string, unknown>;
+  placements?: Record<string, unknown>;
+  start_time?: string | null;
+  end_time?: string | null;
+}
+
+export interface MetaAd {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  ad_set_id: string;
+  meta_ad_id: string;
+  name: string;
+  status: string;
+  creative: Record<string, unknown>;
+  source_content_id: string | null;
+}
+
+export interface MetaAdInsert {
+  ad_set_id: string;
+  meta_ad_id: string;
+  name: string;
+  status?: string;
+  creative?: Record<string, unknown>;
+  source_content_id?: string | null;
+}
+
+export interface MetaInsight {
+  id: string;
+  meta_object_id: string;
+  object_type: MetaInsightObjectType;
+  date: string;
+  impressions: number;
+  clicks: number;
+  spend: number;
+  reach: number;
+  frequency: number;
+  cpc: number | null;
+  cpm: number | null;
+  ctr: number | null;
+  actions: unknown[];
+  cost_per_action: unknown[];
+  breakdowns: Record<string, unknown>;
+}
+
+export interface MetaInsightInsert {
+  meta_object_id: string;
+  object_type: MetaInsightObjectType;
+  date: string;
+  impressions?: number;
+  clicks?: number;
+  spend?: number;
+  reach?: number;
+  frequency?: number;
+  cpc?: number | null;
+  cpm?: number | null;
+  ctr?: number | null;
+  actions?: unknown[];
+  cost_per_action?: unknown[];
+  breakdowns?: Record<string, unknown>;
 }
 
 // ===========================================
