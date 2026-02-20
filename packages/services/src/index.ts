@@ -39,6 +39,13 @@ export {
   type TrafficSource,
 } from './google-analytics-service';
 export {
+  MetaAdsService,
+  getMetaAdsService,
+  type MetaAdsConfig,
+  type MetaSyncResult,
+  type MetaPerformanceSummary,
+} from './meta-ads-service';
+export {
   WordPressService,
   getWordPressService,
   type WordPressConfig,
