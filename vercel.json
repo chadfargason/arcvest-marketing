@@ -26,6 +26,10 @@
       "schedule": "0 */4 * * *"
     },
     {
+      "path": "/api/cron/meta-ads-sync",
+      "schedule": "30 */4 * * *"
+    },
+    {
       "path": "/api/cron/ads-optimize",
       "schedule": "0 12 * * *"
     },
