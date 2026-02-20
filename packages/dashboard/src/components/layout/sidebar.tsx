@@ -15,6 +15,7 @@ import {
   Settings,
   ClipboardCheck,
   Target,
+  Share2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -25,6 +26,7 @@ const navigation = [
   { name: 'Tasks', href: '/dashboard/tasks', icon: CheckSquare },
   { name: 'Pipeline', href: '/dashboard/pipeline', icon: BarChart3 },
   { name: 'Campaigns', href: '/dashboard/campaigns', icon: Megaphone },
+  { name: 'Meta Ads', href: '/dashboard/meta-ads', icon: Share2 },
   { name: 'Content', href: '/dashboard/content', icon: FileText },
   { name: 'SEO', href: '/dashboard/seo', icon: Search },
   { name: 'Sequences', href: '/dashboard/sequences', icon: Mail },
