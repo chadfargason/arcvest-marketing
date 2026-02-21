@@ -552,20 +552,21 @@ export default function MetaAdsPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b bg-gray-50">
-                      <th className="text-left p-3 font-medium text-sm">Name</th>
-                      <th className="text-left p-3 font-medium text-sm">Status</th>
-                      <th className="text-left p-3 font-medium text-sm">Objective</th>
-                      <th className="text-right p-3 font-medium text-sm">Daily Budget</th>
-                      <th className="text-right p-3 font-medium text-sm">Spend</th>
-                      <th className="text-right p-3 font-medium text-sm">Impressions</th>
-                      <th className="text-right p-3 font-medium text-sm">Clicks</th>
-                      <th className="text-right p-3 font-medium text-sm">CTR</th>
+                      <th className="text-left px-2 py-2 font-medium text-sm">Name</th>
+                      <th className="text-left px-2 py-2 font-medium text-sm">Status</th>
+                      <th className="text-left px-2 py-2 font-medium text-sm">Objective</th>
+                      <th className="text-right px-2 py-2 font-medium text-sm">Budget</th>
+                      <th className="text-right px-2 py-2 font-medium text-sm">Spend</th>
+                      <th className="text-right px-2 py-2 font-medium text-sm">Impr.</th>
+                      <th className="text-right px-2 py-2 font-medium text-sm">Clicks</th>
+                      <th className="text-right px-2 py-2 font-medium text-sm">CPC</th>
+                      <th className="text-right px-2 py-2 font-medium text-sm">CTR</th>
                     </tr>
                   </thead>
                   <tbody>
                     {campaigns.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="text-center p-8 text-muted-foreground">
+                        <td colSpan={9} className="text-center p-8 text-muted-foreground">
                           <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
                           <p className="font-medium">No campaigns found</p>
                           <p className="text-sm mt-1">
@@ -576,41 +577,39 @@ export default function MetaAdsPage() {
                     ) : (
                       campaigns.map((campaign) => (
                         <tr key={campaign.id} className="border-b hover:bg-gray-50 transition-colors">
-                          <td className="p-3">
-                            <span className="font-medium">{campaign.name}</span>
-                            {campaign.meta_campaign_id && (
-                              <p className="text-xs text-muted-foreground mt-0.5">
-                                ID: {campaign.meta_campaign_id}
-                              </p>
-                            )}
+                          <td className="px-2 py-2">
+                            <span className="font-medium text-sm">{campaign.name}</span>
                           </td>
-                          <td className="p-3">
+                          <td className="px-2 py-2">
                             <Badge className={getStatusColor(campaign.status)}>
                               {getStatusLabel(campaign.status)}
                             </Badge>
                           </td>
-                          <td className="p-3">
+                          <td className="px-2 py-2">
                             <span className="text-sm">
                               {campaign.objective
                                 ? campaign.objective.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
                                 : '-'}
                             </span>
                           </td>
-                          <td className="p-3 text-right">
+                          <td className="px-2 py-2 text-right text-sm">
                             {campaign.daily_budget
                               ? formatCurrency(campaign.daily_budget / 100)
                               : '-'}
                           </td>
-                          <td className="p-3 text-right font-medium">
+                          <td className="px-2 py-2 text-right text-sm font-medium">
                             {formatCurrency(campaign.total_cost || 0)}
                           </td>
-                          <td className="p-3 text-right">
+                          <td className="px-2 py-2 text-right text-sm">
                             {formatNumber(campaign.total_impressions || 0)}
                           </td>
-                          <td className="p-3 text-right">
+                          <td className="px-2 py-2 text-right text-sm">
                             {formatNumber(campaign.total_clicks || 0)}
                           </td>
-                          <td className="p-3 text-right">
+                          <td className="px-2 py-2 text-right text-sm">
+                            {campaign.avg_cpc ? formatCurrency(campaign.avg_cpc) : '-'}
+                          </td>
+                          <td className="px-2 py-2 text-right text-sm">
                             {formatPercent(campaign.avg_ctr || 0)}
                           </td>
                         </tr>
