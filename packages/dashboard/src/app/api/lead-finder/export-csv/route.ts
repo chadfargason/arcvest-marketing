@@ -9,6 +9,49 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
+interface ContactPath {
+  type: string;
+  value: string;
+}
+
+interface EmailDraft {
+  id: string;
+  subject: string;
+  body_plain: string;
+  body_html: string;
+  tone: string;
+  version: number;
+}
+
+interface LeadRun {
+  geo_name: string;
+  trigger_focus: string;
+  run_date: string;
+}
+
+interface Lead {
+  id: string;
+  full_name: string;
+  title: string;
+  company: string;
+  geo_signal: string;
+  trigger_type: string;
+  category: string;
+  score: number;
+  tier: string;
+  rationale_short: string;
+  rationale_detail: string;
+  contact_paths: ContactPath[] | null;
+  source_url: string;
+  source_title: string;
+  outreach_status: string;
+  sent_at: string | null;
+  response_at: string | null;
+  created_at: string;
+  lead_finder_runs: LeadRun | null;
+  lead_finder_emails: EmailDraft[] | null;
+}
+
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
@@ -36,7 +79,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Convert to CSV
-    const csv = convertLeadsToCSV(leads);
+    const csv = convertLeadsToCSV(leads as unknown as Lead[]);
 
     // Return as downloadable CSV file
     return new NextResponse(csv, {
@@ -55,7 +98,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-function convertLeadsToCSV(leads: any[]): string {
+function convertLeadsToCSV(leads: Lead[]): string {
   // Define CSV headers
   const headers = [
     'ID',
@@ -100,24 +143,24 @@ function convertLeadsToCSV(leads: any[]): string {
   // Build CSV rows
   const rows = leads.map(lead => {
     // Extract emails from contact_paths
-    const emails = (lead.contact_paths || []).filter((cp: any) => 
+    const emails = (lead.contact_paths || []).filter((cp: ContactPath) =>
       cp.type === 'generic_email' || cp.type === 'predicted_email'
     );
-    
-    const phones = (lead.contact_paths || []).filter((cp: any) => cp.type === 'phone');
-    const linkedins = (lead.contact_paths || []).filter((cp: any) => cp.type === 'linkedin');
-    const websites = (lead.contact_paths || []).filter((cp: any) => cp.type === 'website');
-    const others = (lead.contact_paths || []).filter((cp: any) => 
+
+    const phones = (lead.contact_paths || []).filter((cp: ContactPath) => cp.type === 'phone');
+    const linkedins = (lead.contact_paths || []).filter((cp: ContactPath) => cp.type === 'linkedin');
+    const websites = (lead.contact_paths || []).filter((cp: ContactPath) => cp.type === 'website');
+    const others = (lead.contact_paths || []).filter((cp: ContactPath) =>
       !['generic_email', 'predicted_email', 'phone', 'linkedin', 'website'].includes(cp.type)
     );
 
     // Get all email addresses as a comma-separated list
-    const allEmails = emails.map((e: any) => e.value).join('; ');
+    const allEmails = emails.map((e: ContactPath) => e.value).join('; ');
 
     // Get the latest email draft (highest version number)
     const emailDrafts = lead.lead_finder_emails || [];
-    const latestDraft = emailDrafts.length > 0 
-      ? emailDrafts.reduce((latest: any, current: any) => 
+    const latestDraft = emailDrafts.length > 0
+      ? emailDrafts.reduce((latest: EmailDraft, current: EmailDraft) =>
           current.version > latest.version ? current : latest
         )
       : null;
@@ -149,10 +192,10 @@ function convertLeadsToCSV(leads: any[]): string {
       // All emails combined
       escapeCsvField(allEmails),
       // Other contact info
-      escapeCsvField(phones.map((p: any) => p.value).join('; ')),
-      escapeCsvField(linkedins.map((l: any) => l.value).join('; ')),
-      escapeCsvField(websites.map((w: any) => w.value).join('; ')),
-      escapeCsvField(others.map((o: any) => `${o.type}: ${o.value}`).join('; ')),
+      escapeCsvField(phones.map((p: ContactPath) => p.value).join('; ')),
+      escapeCsvField(linkedins.map((l: ContactPath) => l.value).join('; ')),
+      escapeCsvField(websites.map((w: ContactPath) => w.value).join('; ')),
+      escapeCsvField(others.map((o: ContactPath) => `${o.type}: ${o.value}`).join('; ')),
       // Draft email content
       escapeCsvField(latestDraft?.subject || ''),
       escapeCsvField(latestDraft?.body_plain || ''),
