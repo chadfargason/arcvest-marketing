@@ -789,7 +789,7 @@ export default function MetaAdsPage() {
             <CardHeader>
               <CardTitle>Daily Breakdown</CardTitle>
               <CardDescription>
-                {insights.length} day{insights.length !== 1 ? 's' : ''} of insight data
+                {new Set(insights.map((i) => i.date)).size} day{new Set(insights.map((i) => i.date)).size !== 1 ? 's' : ''} of insight data
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0">
@@ -818,26 +818,38 @@ export default function MetaAdsPage() {
                         </td>
                       </tr>
                     ) : (
-                      insights.map((row) => {
-                        const spend =
-                          typeof row.spend === 'string' ? parseFloat(row.spend) : row.spend || 0;
-                        const ctr =
-                          typeof row.ctr === 'string' ? parseFloat(row.ctr) : row.ctr || 0;
-                        const cpc =
-                          typeof row.cpc === 'string' ? parseFloat(row.cpc) : row.cpc || 0;
+                      // Aggregate insights by date (multiple campaigns per day)
+                      Object.values(
+                        insights.reduce<Record<string, { date: string; impressions: number; reach: number; clicks: number; spend: number }>>((acc, row) => {
+                          const d = row.date;
+                          const spend = typeof row.spend === 'string' ? parseFloat(row.spend) : row.spend || 0;
+                          if (!acc[d]) {
+                            acc[d] = { date: d, impressions: 0, reach: 0, clicks: 0, spend: 0 };
+                          }
+                          acc[d].impressions += row.impressions || 0;
+                          acc[d].reach += row.reach || 0;
+                          acc[d].clicks += row.clicks || 0;
+                          acc[d].spend += spend;
+                          return acc;
+                        }, {})
+                      )
+                        .sort((a, b) => a.date.localeCompare(b.date))
+                        .map((day) => {
+                          const ctr = day.impressions > 0 ? day.clicks / day.impressions : 0;
+                          const cpc = day.clicks > 0 ? day.spend / day.clicks : 0;
 
-                        return (
-                          <tr key={row.id} className="border-b hover:bg-gray-50 transition-colors">
-                            <td className="p-3 font-medium">{formatDate(row.date)}</td>
-                            <td className="p-3 text-right">{formatNumber(row.impressions || 0)}</td>
-                            <td className="p-3 text-right">{formatNumber(row.reach || 0)}</td>
-                            <td className="p-3 text-right">{formatNumber(row.clicks || 0)}</td>
-                            <td className="p-3 text-right font-medium">{formatCurrency(spend)}</td>
-                            <td className="p-3 text-right">{formatPercent(ctr)}</td>
-                            <td className="p-3 text-right">{formatCurrency(cpc)}</td>
-                          </tr>
-                        );
-                      })
+                          return (
+                            <tr key={day.date} className="border-b hover:bg-gray-50 transition-colors">
+                              <td className="p-3 font-medium">{formatDate(day.date)}</td>
+                              <td className="p-3 text-right">{formatNumber(day.impressions)}</td>
+                              <td className="p-3 text-right">{formatNumber(day.reach)}</td>
+                              <td className="p-3 text-right">{formatNumber(day.clicks)}</td>
+                              <td className="p-3 text-right font-medium">{formatCurrency(day.spend)}</td>
+                              <td className="p-3 text-right">{formatPercent(ctr)}</td>
+                              <td className="p-3 text-right">{formatCurrency(cpc)}</td>
+                            </tr>
+                          );
+                        })
                     )}
                   </tbody>
                 </table>
