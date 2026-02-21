@@ -485,23 +485,24 @@ export class MetaAdsService {
       campaignMap.set(lc.meta_campaign_id, lc.id);
     }
 
-    const rows = adSets.map((a) => ({
-      meta_ad_set_id: a.id,
-      campaign_id: campaignMap.get(a.campaign_id) || null,
-      meta_campaign_id: a.campaign_id,
-      name: a.name,
-      status: mapStatus(a.status),
-      daily_budget: a.daily_budget ? parseFloat(a.daily_budget) / 100 : null,
-      lifetime_budget: a.lifetime_budget
-        ? parseFloat(a.lifetime_budget) / 100
-        : null,
-      bid_amount: a.bid_amount ? parseFloat(a.bid_amount) / 100 : null,
-      bid_strategy: a.bid_strategy || null,
-      optimization_goal: a.optimization_goal || null,
-      targeting: a.targeting || null,
-      start_time: a.start_time || null,
-      end_time: a.end_time || null,
-    }));
+    const rows = adSets
+      .filter((a) => campaignMap.has(a.campaign_id))
+      .map((a) => ({
+        meta_ad_set_id: a.id,
+        campaign_id: campaignMap.get(a.campaign_id)!,
+        name: a.name,
+        status: mapStatus(a.status),
+        daily_budget: a.daily_budget ? parseFloat(a.daily_budget) / 100 : null,
+        lifetime_budget: a.lifetime_budget
+          ? parseFloat(a.lifetime_budget) / 100
+          : null,
+        bid_amount: a.bid_amount ? parseFloat(a.bid_amount) / 100 : null,
+        bid_strategy: a.bid_strategy || null,
+        optimization_goal: a.optimization_goal || null,
+        targeting: a.targeting || {},
+        start_time: a.start_time || null,
+        end_time: a.end_time || null,
+      }));
 
     const { error } = await this.supabase
       .from('meta_ad_sets')
@@ -533,14 +534,15 @@ export class MetaAdsService {
       adSetMap.set(la.meta_ad_set_id, la.id);
     }
 
-    const rows = ads.map((a) => ({
-      meta_ad_id: a.id,
-      ad_set_id: adSetMap.get(a.adset_id) || null,
-      meta_ad_set_id: a.adset_id,
-      name: a.name,
-      status: mapStatus(a.status),
-      creative_id: a.creative?.id || null,
-    }));
+    const rows = ads
+      .filter((a) => adSetMap.has(a.adset_id))
+      .map((a) => ({
+        meta_ad_id: a.id,
+        ad_set_id: adSetMap.get(a.adset_id)!,
+        name: a.name,
+        status: mapStatus(a.status),
+        creative: a.creative ? { id: a.creative.id } : {},
+      }));
 
     const { error } = await this.supabase
       .from('meta_ads')
@@ -564,7 +566,7 @@ export class MetaAdsService {
     // Upsert to meta_insights
     const insightRows = insights.map((i) => ({
       meta_object_id: i.campaign_id || i.adset_id || i.ad_id || '',
-      object_type: 'campaign',
+      object_type: 'campaign' as const,
       date: i.date_start,
       impressions: parseInt(i.impressions, 10) || 0,
       clicks: parseInt(i.clicks, 10) || 0,
@@ -575,9 +577,7 @@ export class MetaAdsService {
       cpm: i.cpm ? parseFloat(i.cpm) : 0,
       ctr: i.ctr ? parseFloat(i.ctr) : 0,
       actions: i.actions || [],
-      cost_per_action_type: i.cost_per_action_type || [],
-      date_start: i.date_start,
-      date_stop: i.date_stop,
+      cost_per_action: i.cost_per_action_type || [],
     }));
 
     const { error: insightError } = await this.supabase

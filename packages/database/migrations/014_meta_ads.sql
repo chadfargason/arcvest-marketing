@@ -41,7 +41,7 @@ ALTER TABLE campaigns
 
 -- Indexes for new campaign columns
 CREATE INDEX IF NOT EXISTS idx_campaigns_platform ON campaigns(platform);
-CREATE INDEX IF NOT EXISTS idx_campaigns_meta_campaign_id ON campaigns(meta_campaign_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_campaigns_meta_campaign_id ON campaigns(meta_campaign_id);
 
 -- ============================================
 -- META AD SETS TABLE
