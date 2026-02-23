@@ -24,19 +24,47 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  console.log(`[Analytics Cron] Starting scheduled sync (Trigger: ${vercelCronHeader === '1' ? 'Vercel Cron' : 'Manual'})...`);
+  const isTest = request.nextUrl.searchParams.get('test') === 'true';
+
+  console.log(`[Analytics Cron] Starting ${isTest ? 'connection test' : 'scheduled sync'} (Trigger: ${vercelCronHeader === '1' ? 'Vercel Cron' : 'Manual'})...`);
 
   try {
     // Check if GA4 is configured
+    const configStatus = {
+      GOOGLE_ANALYTICS_PROPERTY_ID: !!process.env.GOOGLE_ANALYTICS_PROPERTY_ID,
+      GOOGLE_CLIENT_ID: !!process.env.GOOGLE_CLIENT_ID,
+      GOOGLE_CLIENT_SECRET: !!process.env.GOOGLE_CLIENT_SECRET,
+      GOOGLE_REFRESH_TOKEN: !!process.env.GOOGLE_REFRESH_TOKEN,
+    };
+
     if (!process.env.GOOGLE_ANALYTICS_PROPERTY_ID) {
       console.log('[Analytics Cron] GA4 not configured, skipping sync');
       return NextResponse.json({
         success: false,
         message: 'GA4 not configured',
+        config: configStatus,
       });
     }
 
     const ga4 = getGA4Client();
+
+    // Connection test mode - just verify we can fetch data
+    if (isTest) {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+      const overview = await ga4.getOverviewMetrics(yesterdayStr, yesterdayStr);
+      return NextResponse.json({
+        success: true,
+        mode: 'test',
+        config: configStatus,
+        propertyId: process.env.GOOGLE_ANALYTICS_PROPERTY_ID,
+        testData: overview,
+        message: 'GA4 connection successful - OAuth token is valid',
+      });
+    }
+
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -58,9 +86,12 @@ export async function GET(request: NextRequest) {
     for (const metric of dailyMetrics) {
       const { error } = await supabase.from('daily_metrics').upsert({
         date: metric.date,
-        website_sessions: metric.sessions,
-        website_users: metric.users,
-        website_pageviews: metric.pageviews,
+        sessions: metric.sessions,
+        users: metric.users,
+        pageviews: metric.pageviews,
+        new_users: overview.newUsers,
+        bounce_rate: overview.bounceRate,
+        avg_session_duration: Math.round(overview.avgSessionDuration),
         updated_at: new Date().toISOString(),
       }, {
         onConflict: 'date',

@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch GA4 data if configured
     let ga4Data = null;
+    let ga4Error: string | null = null;
     try {
       const ga4 = getGA4Client();
       const [overview, dailyTraffic, trafficSources, topPages] = await Promise.all([
@@ -37,8 +38,10 @@ export async function GET(request: NextRequest) {
         trafficSources: trafficSources.slice(0, 10),
         topPages,
       };
-    } catch (ga4Error) {
-      console.warn('GA4 data fetch failed (may not be configured):', ga4Error);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      ga4Error = message;
+      console.error('GA4 data fetch failed:', message);
     }
 
     // Fetch Google Ads data if configured
@@ -237,6 +240,8 @@ export async function GET(request: NextRequest) {
         costPerLead,
         conversionRate,
       },
+      // GA4 status
+      ga4Error,
       // GA4 website traffic data
       websiteTraffic: ga4Data ? {
         sessions: ga4Data.overview.sessions,

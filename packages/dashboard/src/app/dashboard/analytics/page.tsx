@@ -56,6 +56,7 @@ interface AnalyticsData {
     startDate: string;
     endDate: string;
   };
+  ga4Error: string | null;
   overview: {
     totalSpend: string;
     totalImpressions: number;
@@ -360,6 +361,26 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* GA4 Error Banner */}
+      {data?.ga4Error && (
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-3">
+              <div className="rounded-lg bg-red-100 p-2">
+                <Globe className="h-5 w-5 text-red-600" />
+              </div>
+              <div>
+                <p className="font-medium text-red-800">Google Analytics Connection Error</p>
+                <p className="text-sm text-red-600 mt-1">{data.ga4Error}</p>
+                <p className="text-xs text-red-500 mt-2">
+                  Test the connection at: /api/cron/analytics-sync?test=true
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Website Traffic Section (GA4 Data) */}
       {data?.websiteTraffic && (
