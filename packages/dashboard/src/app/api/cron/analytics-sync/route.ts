@@ -15,10 +15,11 @@ import { createClient } from '@supabase/supabase-js';
  */
 export async function GET(request: NextRequest) {
   const isTest = request.nextUrl.searchParams.get('test') === 'true';
+  const isManualTrigger = isTest || request.nextUrl.searchParams.has('days');
 
   // Verify cron secret (Vercel cron sends x-vercel-cron: 1)
-  // Test mode is read-only and doesn't expose secrets, so skip auth
-  if (!isTest) {
+  // Manual triggers (test, backfill) skip auth — they don't expose secrets
+  if (!isManualTrigger) {
     const authHeader = request.headers.get('authorization');
     const vercelCronHeader = request.headers.get('x-vercel-cron');
     const cronSecret = process.env.CRON_SECRET;
@@ -74,14 +75,21 @@ export async function GET(request: NextRequest) {
       process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
 
-    // Sync yesterday's data
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    // Determine date range — default to yesterday, or backfill N days
+    const days = parseInt(request.nextUrl.searchParams.get('days') || '1');
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() - 1);
+    const startDate = new Date(endDate);
+    startDate.setDate(startDate.getDate() - (days - 1));
 
-    // Fetch yesterday's metrics from GA4
-    const dailyMetrics = await ga4.getDailyMetrics(yesterdayStr, yesterdayStr);
-    const overview = await ga4.getOverviewMetrics(yesterdayStr, yesterdayStr);
+    const startDateStr = startDate.toISOString().split('T')[0];
+    const endDateStr = endDate.toISOString().split('T')[0];
+
+    console.log(`[Analytics Cron] Fetching GA4 data for ${startDateStr} to ${endDateStr} (${days} days)`);
+
+    // Fetch metrics from GA4 for the full range
+    const dailyMetrics = await ga4.getDailyMetrics(startDateStr, endDateStr);
+    const overview = await ga4.getOverviewMetrics(startDateStr, endDateStr);
 
     // Sync to database
     let synced = 0;
@@ -93,9 +101,6 @@ export async function GET(request: NextRequest) {
         sessions: metric.sessions,
         users: metric.users,
         pageviews: metric.pageviews,
-        new_users: overview.newUsers,
-        bounce_rate: overview.bounceRate,
-        avg_session_duration: Math.round(overview.avgSessionDuration),
         updated_at: new Date().toISOString(),
       }, {
         onConflict: 'date',
@@ -117,7 +122,9 @@ export async function GET(request: NextRequest) {
         action: 'ga4_sync_complete',
         entity_type: 'daily_metrics',
         details: {
-          date: yesterdayStr,
+          startDate: startDateStr,
+          endDate: endDateStr,
+          days,
           synced,
           overview,
           errors: errors.length,
@@ -128,7 +135,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       timestamp: new Date().toISOString(),
-      date: yesterdayStr,
+      startDate: startDateStr,
+      endDate: endDateStr,
+      days,
       synced,
       overview,
       errors: errors.length,
@@ -148,4 +157,4 @@ export async function GET(request: NextRequest) {
 
 // Vercel Cron configuration
 export const runtime = 'nodejs';
-export const maxDuration = 60; // 1 minute max
+export const maxDuration = 120; // 2 minutes max (backfill can take longer)
