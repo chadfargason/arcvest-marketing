@@ -37,6 +37,7 @@ export async function GET(request: NextRequest) {
     const endDateStr = endDate.toISOString().split('T')[0];
 
     const enriched: EnrichedCampaign[] = [];
+    let googleAdsError: string | null = null;
 
     // --- Google Ads: fetch live from API ---
     try {
@@ -62,7 +63,8 @@ export async function GET(request: NextRequest) {
         });
       }
     } catch (err) {
-      console.warn('[Ad Performance] Google Ads API unavailable:', err instanceof Error ? err.message : err);
+      googleAdsError = err instanceof Error ? err.message : String(err);
+      console.error('[Ad Performance] Google Ads API error:', googleAdsError);
     }
 
     // --- Meta Ads: fetch from database ---
@@ -142,6 +144,14 @@ export async function GET(request: NextRequest) {
         all: summarize(enriched),
         google: summarize(googleCampaigns),
         meta: summarize(metaCampaigns),
+      },
+      googleAdsError,
+      googleAdsConfig: {
+        GOOGLE_ADS_CUSTOMER_ID: !!process.env.GOOGLE_ADS_CUSTOMER_ID,
+        GOOGLE_ADS_DEVELOPER_TOKEN: !!process.env.GOOGLE_ADS_DEVELOPER_TOKEN,
+        GOOGLE_CLIENT_ID: !!process.env.GOOGLE_CLIENT_ID,
+        GOOGLE_CLIENT_SECRET: !!process.env.GOOGLE_CLIENT_SECRET,
+        GOOGLE_REFRESH_TOKEN: !!process.env.GOOGLE_REFRESH_TOKEN,
       },
     });
   } catch (error) {
