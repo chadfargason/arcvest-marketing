@@ -14,19 +14,23 @@ import { createClient } from '@supabase/supabase-js';
  * Called by Vercel Cron daily
  */
 export async function GET(request: NextRequest) {
-  // Verify cron secret (Vercel cron sends x-vercel-cron: 1)
-  const authHeader = request.headers.get('authorization');
-  const vercelCronHeader = request.headers.get('x-vercel-cron');
-  const cronSecret = process.env.CRON_SECRET;
-
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}` && vercelCronHeader !== '1') {
-    console.warn('[Analytics Cron] Unauthorized request');
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const isTest = request.nextUrl.searchParams.get('test') === 'true';
 
-  console.log(`[Analytics Cron] Starting ${isTest ? 'connection test' : 'scheduled sync'} (Trigger: ${vercelCronHeader === '1' ? 'Vercel Cron' : 'Manual'})...`);
+  // Verify cron secret (Vercel cron sends x-vercel-cron: 1)
+  // Test mode is read-only and doesn't expose secrets, so skip auth
+  if (!isTest) {
+    const authHeader = request.headers.get('authorization');
+    const vercelCronHeader = request.headers.get('x-vercel-cron');
+    const cronSecret = process.env.CRON_SECRET;
+
+    if (cronSecret && authHeader !== `Bearer ${cronSecret}` && vercelCronHeader !== '1') {
+      console.warn('[Analytics Cron] Unauthorized request');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+  }
+
+  const trigger = request.headers.get('x-vercel-cron') === '1' ? 'Vercel Cron' : 'Manual';
+  console.log(`[Analytics Cron] Starting ${isTest ? 'connection test' : 'scheduled sync'} (Trigger: ${trigger})...`);
 
   try {
     // Check if GA4 is configured
