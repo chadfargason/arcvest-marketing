@@ -119,7 +119,7 @@ export class GoogleAdsClient {
     const accessToken = await this.getAccessToken();
 
     const response = await fetch(
-      `https://googleads.googleapis.com/v18/customers/${this.customerId}/googleAds:searchStream`,
+      `https://googleads.googleapis.com/v23/customers/${this.customerId}/googleAds:searchStream`,
       {
         method: 'POST',
         headers: {
