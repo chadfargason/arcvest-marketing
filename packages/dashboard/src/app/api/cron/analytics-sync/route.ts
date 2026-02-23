@@ -101,7 +101,6 @@ export async function GET(request: NextRequest) {
         sessions: metric.sessions,
         users: metric.users,
         pageviews: metric.pageviews,
-        updated_at: new Date().toISOString(),
       }, {
         onConflict: 'date',
       });
@@ -141,6 +140,7 @@ export async function GET(request: NextRequest) {
       synced,
       overview,
       errors: errors.length,
+      firstError: errors[0] || null,
     });
   } catch (error) {
     console.error('[Analytics Cron] Failed:', error);
