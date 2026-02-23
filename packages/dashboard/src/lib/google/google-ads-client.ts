@@ -52,6 +52,7 @@ export interface DailyMetrics {
 
 export class GoogleAdsClient {
   private customerId: string;
+  private loginCustomerId: string;
   private developerToken: string;
   private accessToken: string | null = null;
   private tokenExpiry: number = 0;
@@ -70,6 +71,12 @@ export class GoogleAdsClient {
     // Remove dashes from customer ID if present
     this.customerId = customerId.replace(/-/g, '');
     this.developerToken = developerToken;
+
+    // Manager (MCC) account ID — required when accessing client accounts through a manager
+    const loginCustomerId = process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID;
+    this.loginCustomerId = loginCustomerId
+      ? loginCustomerId.replace(/-/g, '')
+      : this.customerId;
   }
 
   /**
@@ -125,6 +132,7 @@ export class GoogleAdsClient {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'developer-token': this.developerToken,
+          'login-customer-id': this.loginCustomerId,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ query }),
