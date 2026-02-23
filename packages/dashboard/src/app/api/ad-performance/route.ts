@@ -148,10 +148,15 @@ export async function GET(request: NextRequest) {
       googleAdsError,
       googleAdsConfig: {
         GOOGLE_ADS_CUSTOMER_ID: !!process.env.GOOGLE_ADS_CUSTOMER_ID,
+        GOOGLE_ADS_LOGIN_CUSTOMER_ID: !!process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID,
         GOOGLE_ADS_DEVELOPER_TOKEN: !!process.env.GOOGLE_ADS_DEVELOPER_TOKEN,
-        GOOGLE_CLIENT_ID: !!process.env.GOOGLE_CLIENT_ID,
-        GOOGLE_CLIENT_SECRET: !!process.env.GOOGLE_CLIENT_SECRET,
-        GOOGLE_REFRESH_TOKEN: !!process.env.GOOGLE_REFRESH_TOKEN,
+        GOOGLE_ADS_CLIENT_ID: !!process.env.GOOGLE_ADS_CLIENT_ID,
+        GOOGLE_ADS_CLIENT_SECRET: !!process.env.GOOGLE_ADS_CLIENT_SECRET,
+        GOOGLE_ADS_REFRESH_TOKEN: !!process.env.GOOGLE_ADS_REFRESH_TOKEN,
+        GOOGLE_CLIENT_ID_shared: !!process.env.GOOGLE_CLIENT_ID,
+        GOOGLE_CLIENT_SECRET_shared: !!process.env.GOOGLE_CLIENT_SECRET,
+        GOOGLE_REFRESH_TOKEN_shared: !!process.env.GOOGLE_REFRESH_TOKEN,
+        using: process.env.GOOGLE_ADS_CLIENT_ID ? 'ads-specific' : 'shared',
       },
     });
   } catch (error) {

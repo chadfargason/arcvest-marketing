@@ -88,12 +88,13 @@ export class GoogleAdsClient {
       return this.accessToken;
     }
 
-    const clientId = process.env.GOOGLE_CLIENT_ID;
-    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
+    // Prefer Google Ads-specific credentials, fall back to shared Google OAuth
+    const clientId = process.env.GOOGLE_ADS_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_ADS_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET;
+    const refreshToken = process.env.GOOGLE_ADS_REFRESH_TOKEN || process.env.GOOGLE_REFRESH_TOKEN;
 
     if (!clientId || !clientSecret || !refreshToken) {
-      throw new Error('Google OAuth credentials not configured');
+      throw new Error('Google Ads OAuth credentials not configured. Set GOOGLE_ADS_CLIENT_ID, GOOGLE_ADS_CLIENT_SECRET, GOOGLE_ADS_REFRESH_TOKEN (or shared GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN)');
     }
 
     const response = await fetch('https://oauth2.googleapis.com/token', {
