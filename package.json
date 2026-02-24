@@ -17,7 +17,9 @@
     "db:seed": "npm run seed --workspace=@arcvest/database",
     "agents:start": "npm run start --workspace=@arcvest/agents",
     "dashboard:dev": "npm run dev --workspace=@arcvest/dashboard",
-    "dashboard:build": "npm run build --workspace=@arcvest/dashboard"
+    "dashboard:build": "npm run build --workspace=@arcvest/dashboard",
+    "landing:dev": "npm run dev --workspace=@arcvest/landing",
+    "landing:build": "npm run build --workspace=@arcvest/landing"
   },
   "devDependencies": {
     "pg": "^8.17.0",

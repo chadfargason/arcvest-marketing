@@ -34,7 +34,11 @@
         "META_PIXEL_ID",
         "META_PAGE_ID",
         "META_ACCESS_TOKEN",
-        "META_API_VERSION"
+        "META_API_VERSION",
+        "GHL_API_KEY",
+        "GHL_LOCATION_ID",
+        "GHL_CALENDAR_ID",
+        "NEXT_PUBLIC_GTAG_ID"
       ],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
