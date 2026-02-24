@@ -41,10 +41,9 @@ export async function POST(request: NextRequest) {
     for (const metric of dailyMetrics) {
       const { error } = await supabase.from('daily_metrics').upsert({
         date: metric.date,
-        website_sessions: metric.sessions,
-        website_users: metric.users,
-        website_pageviews: metric.pageviews,
-        updated_at: new Date().toISOString(),
+        sessions: metric.sessions,
+        users: metric.users,
+        pageviews: metric.pageviews,
       }, {
         onConflict: 'date',
       });
