@@ -77,6 +77,62 @@ export async function PUT(
       return NextResponse.json({ error: 'Experiment not found' }, { status: 404 });
     }
 
+    // Handle variation unpause for live/optimizing experiments
+    if (body.variation_id && body.action === 'unpause') {
+      if (!['live', 'optimizing'].includes(existing.status)) {
+        return NextResponse.json(
+          { error: 'Can only unpause variations on live or optimizing experiments' },
+          { status: 400 }
+        );
+      }
+
+      const { data: variation } = await supabase
+        .from('experiment_variations')
+        .select('*')
+        .eq('id', body.variation_id)
+        .eq('experiment_id', id)
+        .single();
+
+      if (!variation) {
+        return NextResponse.json({ error: 'Variation not found' }, { status: 404 });
+      }
+
+      if (!['paused', 'loser'].includes(variation.status)) {
+        return NextResponse.json(
+          { error: 'Can only unpause paused or loser variations' },
+          { status: 400 }
+        );
+      }
+
+      // Re-enable ad group in Google Ads
+      if (variation.google_ad_group_id) {
+        const googleAds = getGoogleAdsClient();
+        const customerId = process.env.GOOGLE_ADS_CUSTOMER_ID!.replace(/-/g, '');
+        const adGroupResource = `customers/${customerId}/adGroups/${variation.google_ad_group_id}`;
+        await googleAds.enableAdGroup(adGroupResource);
+      }
+
+      // Update variation status
+      await supabase
+        .from('experiment_variations')
+        .update({ status: 'active' })
+        .eq('id', body.variation_id);
+
+      // Log the action
+      await supabase.from('experiment_logs').insert({
+        experiment_id: id,
+        action: 'manual_unpause',
+        details: {
+          variation_id: body.variation_id,
+          variation_number: variation.variation_number,
+          previous_status: variation.status,
+          explanation: `Manually unpaused Variation ${variation.variation_number}`,
+        },
+      });
+
+      return NextResponse.json({ success: true });
+    }
+
     if (!['draft', 'ready'].includes(existing.status)) {
       return NextResponse.json(
         { error: 'Can only update experiments in draft or ready status' },

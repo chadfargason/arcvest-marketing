@@ -542,6 +542,19 @@ export class GoogleAdsClient {
   }
 
   /**
+   * Enable an ad group
+   */
+  async enableAdGroup(adGroupResourceName: string): Promise<void> {
+    await this.runMutate('adGroups', [
+      {
+        update: { resourceName: adGroupResourceName, status: 'ENABLED' },
+        updateMask: 'status',
+      },
+    ]);
+    console.log('[GoogleAdsClient] Enabled ad group:', adGroupResourceName);
+  }
+
+  /**
    * Remove a campaign (set status to REMOVED)
    */
   async removeCampaign(campaignResourceName: string): Promise<void> {

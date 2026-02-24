@@ -12,7 +12,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import {
   FlaskConical, Plus, Play, Pause, Trophy, RefreshCw, Loader2,
-  Trash2, Pencil, Check, X, ArrowLeft, DollarSign, Eye,
+  Trash2, Pencil, Check, X, XCircle, ArrowLeft, DollarSign, Eye,
   MousePointerClick, TrendingUp, ChevronRight, ChevronLeft,
 } from 'lucide-react';
 import {
@@ -186,6 +186,7 @@ export default function ExperimentsPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [unpausingVariation, setUnpausingVariation] = useState<string | null>(null);
 
   // ============================================
   // DATA FETCHING
@@ -391,6 +392,23 @@ export default function ExperimentsPage() {
     }
   };
 
+  const handleUnpause = async (experimentId: string, variationId: string) => {
+    setUnpausingVariation(variationId);
+    try {
+      const res = await fetch(`/api/experiments/${experimentId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ variation_id: variationId, action: 'unpause' }),
+      });
+      if (!res.ok) throw new Error('Unpause failed');
+      await fetchExperimentDetail(experimentId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to unpause');
+    } finally {
+      setUnpausingVariation(null);
+    }
+  };
+
   const handleDelete = async (id: string) => {
     setActionLoading('delete');
     try {
@@ -416,6 +434,7 @@ export default function ExperimentsPage() {
         loading={detailLoading}
         syncing={syncing}
         actionLoading={actionLoading}
+        unpausingVariation={unpausingVariation}
         onBack={() => {
           setSelectedExperiment(null);
           fetchExperiments();
@@ -425,6 +444,7 @@ export default function ExperimentsPage() {
         onResume={() => handleResume(selectedExperiment.id)}
         onComplete={(winnerId) => handleComplete(selectedExperiment.id, winnerId)}
         onDelete={() => handleDelete(selectedExperiment.id)}
+        onUnpause={(variationId) => handleUnpause(selectedExperiment.id, variationId)}
       />
     );
   }
@@ -903,23 +923,27 @@ function ExperimentDetail({
   loading,
   syncing,
   actionLoading,
+  unpausingVariation,
   onBack,
   onSync,
   onPause,
   onResume,
   onComplete,
   onDelete,
+  onUnpause,
 }: {
   experiment: Experiment;
   loading: boolean;
   syncing: boolean;
   actionLoading: string | null;
+  unpausingVariation: string | null;
   onBack: () => void;
   onSync: () => void;
   onPause: () => void;
   onResume: () => void;
   onComplete: (winnerId?: string) => void;
   onDelete: () => void;
+  onUnpause: (variationId: string) => void;
 }) {
   const [sortBy, setSortBy] = useState<string>('variation_number');
 
@@ -1104,14 +1128,31 @@ function ExperimentDetail({
                     <td className="px-4 py-3 text-right">{formatCurrency(Number(v.cost))}</td>
                     {(isLive || isPaused) && (
                       <td className="px-4 py-3">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onComplete(v.id)}
-                          title="Declare winner"
-                        >
-                          <Trophy className="h-3 w-3" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          {isLive && ['paused', 'loser'].includes(v.status) && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => onUnpause(v.id)}
+                              disabled={unpausingVariation === v.id}
+                              title="Unpause variation"
+                            >
+                              {unpausingVariation === v.id ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <Play className="h-3 w-3 text-green-600" />
+                              )}
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onComplete(v.id)}
+                            title="Declare winner"
+                          >
+                            <Trophy className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </td>
                     )}
                   </tr>
@@ -1170,12 +1211,21 @@ function ExperimentDetail({
                     {log.action === 'completed' && <Trophy className="h-4 w-4 text-yellow-500" />}
                     {log.action === 'synced' && <RefreshCw className="h-4 w-4 text-gray-500" />}
                     {log.action === 'generated' && <FlaskConical className="h-4 w-4 text-purple-500" />}
-                    {!['deployed', 'paused', 'resumed', 'completed', 'synced', 'generated'].includes(log.action) && (
+                    {log.action === 'optimizer_paused_variation' && <XCircle className="h-4 w-4 text-red-500" />}
+                    {log.action === 'optimizer_declared_winner' && <Trophy className="h-4 w-4 text-emerald-500" />}
+                    {log.action === 'optimizer_synced' && <RefreshCw className="h-4 w-4 text-blue-500" />}
+                    {log.action === 'manual_unpause' && <Play className="h-4 w-4 text-green-500" />}
+                    {!['deployed', 'paused', 'resumed', 'completed', 'synced', 'generated',
+                      'optimizer_paused_variation', 'optimizer_declared_winner', 'optimizer_synced', 'manual_unpause',
+                    ].includes(log.action) && (
                       <Check className="h-4 w-4 text-gray-400" />
                     )}
                   </div>
                   <div className="flex-1">
-                    <p className="text-gray-700 capitalize">{log.action}</p>
+                    <p className="text-gray-700 capitalize">{log.action.replace(/_/g, ' ')}</p>
+                    {typeof log.details?.explanation === 'string' && (
+                      <p className="text-gray-500 text-xs mt-0.5">{log.details.explanation}</p>
+                    )}
                     <p className="text-gray-400 text-xs">{formatDate(log.created_at)}</p>
                   </div>
                 </div>
