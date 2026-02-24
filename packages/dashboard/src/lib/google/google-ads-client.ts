@@ -384,9 +384,9 @@ export class GoogleAdsClient {
     };
 
     if (bidStrategy === 'maximize_clicks') {
-      campaignData.maximizeClicks = {};
+      campaignData.maximizeClicks = { cpcBidCeilingMicros: '0' };
     } else if (bidStrategy === 'maximize_conversions') {
-      campaignData.maximizeConversions = {};
+      campaignData.maximizeConversions = { targetCpaMicros: '0' };
     } else if (bidStrategy === 'target_cpa' && targetCpa) {
       campaignData.targetCpa = { targetCpaMicros: String(targetCpa * 1_000_000) };
     }
