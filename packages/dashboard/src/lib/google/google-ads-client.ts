@@ -381,6 +381,7 @@ export class GoogleAdsClient {
         targetSearchNetwork: true,
         targetContentNetwork: false,
       },
+      containsEuPoliticalAdvertising: false,
     };
 
     if (bidStrategy === 'maximize_clicks') {
