@@ -50,6 +50,21 @@ export interface DailyMetrics {
   conversions: number;
 }
 
+export interface MutateResult {
+  resourceName: string;
+}
+
+export interface AdGroupMetrics {
+  adGroupId: string;
+  adGroupName: string;
+  impressions: number;
+  clicks: number;
+  cost: number;
+  conversions: number;
+  ctr: number;
+  cpc: number;
+}
+
 export class GoogleAdsClient {
   private customerId: string;
   private loginCustomerId: string;
@@ -116,6 +131,9 @@ export class GoogleAdsClient {
 
     this.accessToken = data.access_token;
     this.tokenExpiry = Date.now() + (data.expires_in * 1000);
+
+    // Log scopes for debugging
+    console.log('[GoogleAdsClient] Token scopes:', data.scope);
 
     return this.accessToken as string;
   }
@@ -283,6 +301,335 @@ export class GoogleAdsClient {
     }
 
     return Array.from(dateMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  // ============================================
+  // MUTATE (WRITE) METHODS
+  // ============================================
+
+  /**
+   * Run a mutate operation against the Google Ads API
+   */
+  private async runMutate(
+    resource: string,
+    operations: Array<Record<string, unknown>>
+  ): Promise<MutateResult[]> {
+    const accessToken = await this.getAccessToken();
+
+    const response = await fetch(
+      `https://googleads.googleapis.com/v23/customers/${this.customerId}/${resource}:mutate`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'developer-token': this.developerToken,
+          'login-customer-id': this.loginCustomerId,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ operations }),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Google Ads mutate error (${resource}): ${error}`);
+    }
+
+    const data = await response.json();
+    const results: MutateResult[] = (data.results || []).map(
+      (r: { resourceName?: string }) => ({
+        resourceName: r.resourceName || '',
+      })
+    );
+    return results;
+  }
+
+  /**
+   * Create a shared campaign budget
+   */
+  async createCampaignBudget(amountMicros: number): Promise<string> {
+    const results = await this.runMutate('campaignBudgets', [
+      {
+        create: {
+          amountMicros: String(amountMicros),
+          deliveryMethod: 'STANDARD',
+          explicitlyShared: false,
+        },
+      },
+    ]);
+    console.log('[GoogleAdsClient] Created campaign budget:', results[0].resourceName);
+    return results[0].resourceName;
+  }
+
+  /**
+   * Create a search campaign
+   */
+  async createCampaign(
+    name: string,
+    budgetResourceName: string,
+    bidStrategy: 'maximize_clicks' | 'maximize_conversions' | 'target_cpa',
+    targetCpa?: number,
+    status: 'PAUSED' | 'ENABLED' = 'PAUSED'
+  ): Promise<string> {
+    const campaignData: Record<string, unknown> = {
+      name,
+      advertisingChannelType: 'SEARCH',
+      status,
+      campaignBudget: budgetResourceName,
+      networkSettings: {
+        targetGoogleSearch: true,
+        targetSearchNetwork: true,
+        targetContentNetwork: false,
+      },
+    };
+
+    if (bidStrategy === 'maximize_clicks') {
+      campaignData.maximizeClicks = {};
+    } else if (bidStrategy === 'maximize_conversions') {
+      campaignData.maximizeConversions = {};
+    } else if (bidStrategy === 'target_cpa' && targetCpa) {
+      campaignData.targetCpa = { targetCpaMicros: String(targetCpa * 1_000_000) };
+    }
+
+    const results = await this.runMutate('campaigns', [{ create: campaignData }]);
+    console.log('[GoogleAdsClient] Created campaign:', results[0].resourceName);
+    return results[0].resourceName;
+  }
+
+  /**
+   * Set location targeting for a campaign
+   */
+  async setCampaignLocationTargeting(
+    campaignResourceName: string,
+    locationIds: string[]
+  ): Promise<void> {
+    if (locationIds.length === 0) return;
+
+    const operations = locationIds.map((locId) => ({
+      create: {
+        campaign: campaignResourceName,
+        type: 'LOCATION',
+        location: {
+          geoTargetConstant: `geoTargetConstants/${locId}`,
+        },
+      },
+    }));
+
+    await this.runMutate('campaignCriteria', operations);
+    console.log('[GoogleAdsClient] Set location targeting:', locationIds.length, 'locations');
+  }
+
+  /**
+   * Create an ad group within a campaign
+   */
+  async createAdGroup(campaignResourceName: string, name: string): Promise<string> {
+    const results = await this.runMutate('adGroups', [
+      {
+        create: {
+          campaign: campaignResourceName,
+          name,
+          status: 'ENABLED',
+          type: 'SEARCH_STANDARD',
+        },
+      },
+    ]);
+    console.log('[GoogleAdsClient] Created ad group:', results[0].resourceName);
+    return results[0].resourceName;
+  }
+
+  /**
+   * Create a responsive search ad in an ad group
+   */
+  async createResponsiveSearchAd(
+    adGroupResourceName: string,
+    headlines: Array<{ text: string; pinPosition?: number }>,
+    descriptions: Array<{ text: string; pinPosition?: number }>,
+    finalUrl: string
+  ): Promise<string> {
+    const rsaHeadlines = headlines.map((h) => {
+      const asset: Record<string, unknown> = { text: h.text };
+      if (h.pinPosition) asset.pinnedField = `HEADLINE_${h.pinPosition}`;
+      return asset;
+    });
+
+    const rsaDescriptions = descriptions.map((d) => {
+      const asset: Record<string, unknown> = { text: d.text };
+      if (d.pinPosition) asset.pinnedField = `DESCRIPTION_${d.pinPosition}`;
+      return asset;
+    });
+
+    const results = await this.runMutate('adGroupAds', [
+      {
+        create: {
+          adGroup: adGroupResourceName,
+          status: 'ENABLED',
+          ad: {
+            responsiveSearchAd: {
+              headlines: rsaHeadlines,
+              descriptions: rsaDescriptions,
+            },
+            finalUrls: [finalUrl],
+          },
+        },
+      },
+    ]);
+    console.log('[GoogleAdsClient] Created RSA:', results[0].resourceName);
+    return results[0].resourceName;
+  }
+
+  /**
+   * Add keywords to an ad group
+   */
+  async addKeywords(
+    adGroupResourceName: string,
+    keywords: string[],
+    matchType: 'BROAD' | 'PHRASE' | 'EXACT'
+  ): Promise<void> {
+    if (keywords.length === 0) return;
+
+    const operations = keywords.map((keyword) => ({
+      create: {
+        adGroup: adGroupResourceName,
+        status: 'ENABLED',
+        keyword: {
+          text: keyword,
+          matchType,
+        },
+      },
+    }));
+
+    await this.runMutate('adGroupCriteria', operations);
+    console.log('[GoogleAdsClient] Added', keywords.length, 'keywords');
+  }
+
+  /**
+   * Enable a campaign
+   */
+  async enableCampaign(campaignResourceName: string): Promise<void> {
+    await this.runMutate('campaigns', [
+      {
+        update: { resourceName: campaignResourceName, status: 'ENABLED' },
+        updateMask: 'status',
+      },
+    ]);
+    console.log('[GoogleAdsClient] Enabled campaign:', campaignResourceName);
+  }
+
+  /**
+   * Pause a campaign
+   */
+  async pauseCampaign(campaignResourceName: string): Promise<void> {
+    await this.runMutate('campaigns', [
+      {
+        update: { resourceName: campaignResourceName, status: 'PAUSED' },
+        updateMask: 'status',
+      },
+    ]);
+    console.log('[GoogleAdsClient] Paused campaign:', campaignResourceName);
+  }
+
+  /**
+   * Pause an ad group
+   */
+  async pauseAdGroup(adGroupResourceName: string): Promise<void> {
+    await this.runMutate('adGroups', [
+      {
+        update: { resourceName: adGroupResourceName, status: 'PAUSED' },
+        updateMask: 'status',
+      },
+    ]);
+    console.log('[GoogleAdsClient] Paused ad group:', adGroupResourceName);
+  }
+
+  /**
+   * Remove a campaign (set status to REMOVED)
+   */
+  async removeCampaign(campaignResourceName: string): Promise<void> {
+    await this.runMutate('campaigns', [
+      {
+        update: { resourceName: campaignResourceName, status: 'REMOVED' },
+        updateMask: 'status',
+      },
+    ]);
+    console.log('[GoogleAdsClient] Removed campaign:', campaignResourceName);
+  }
+
+  /**
+   * Get metrics for all ad groups within a campaign
+   */
+  async getAdGroupMetrics(
+    campaignId: string,
+    startDate: string,
+    endDate: string
+  ): Promise<AdGroupMetrics[]> {
+    const query = `
+      SELECT
+        ad_group.id,
+        ad_group.name,
+        metrics.impressions,
+        metrics.clicks,
+        metrics.cost_micros,
+        metrics.conversions,
+        metrics.ctr,
+        metrics.average_cpc
+      FROM ad_group
+      WHERE campaign.id = ${campaignId}
+        AND segments.date BETWEEN '${startDate}' AND '${endDate}'
+        AND ad_group.status != 'REMOVED'
+    `;
+
+    const response = await this.runQuery(query);
+
+    const groupMap = new Map<string, AdGroupMetrics>();
+
+    for (const row of response.results || []) {
+      const rawRow = row as Record<string, unknown>;
+      const adGroup = rawRow.adGroup as { id?: string; name?: string } | undefined;
+      const metrics = rawRow.metrics as {
+        impressions?: string;
+        clicks?: string;
+        costMicros?: string;
+        conversions?: number;
+        ctr?: number;
+        averageCpc?: string;
+      } | undefined;
+
+      const agId = adGroup?.id || '';
+      const existing = groupMap.get(agId);
+
+      const impressions = parseInt(metrics?.impressions || '0');
+      const clicks = parseInt(metrics?.clicks || '0');
+      const costMicros = parseInt(metrics?.costMicros || '0');
+      const conversions = metrics?.conversions || 0;
+
+      if (existing) {
+        existing.impressions += impressions;
+        existing.clicks += clicks;
+        existing.cost += costMicros / 1_000_000;
+        existing.conversions += conversions;
+      } else {
+        groupMap.set(agId, {
+          adGroupId: agId,
+          adGroupName: adGroup?.name || 'Unknown',
+          impressions,
+          clicks,
+          cost: costMicros / 1_000_000,
+          conversions,
+          ctr: 0,
+          cpc: 0,
+        });
+      }
+    }
+
+    return Array.from(groupMap.values()).map((ag) => ({
+      ...ag,
+      ctr: ag.impressions > 0
+        ? Number(((ag.clicks / ag.impressions) * 100).toFixed(2))
+        : 0,
+      cpc: ag.clicks > 0
+        ? Number((ag.cost / ag.clicks).toFixed(2))
+        : 0,
+    }));
   }
 
   /**

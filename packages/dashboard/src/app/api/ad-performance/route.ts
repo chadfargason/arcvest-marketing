@@ -42,6 +42,13 @@ export async function GET(request: NextRequest) {
     // --- Google Ads: fetch live from API ---
     try {
       const googleAds = getGoogleAdsClient();
+      // Debug: log the config being used
+      console.log('[Ad Performance] Google Ads config:', {
+        customerId: process.env.GOOGLE_ADS_CUSTOMER_ID,
+        loginCustomerId: process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID || '(not set, using customer ID)',
+        developerToken: process.env.GOOGLE_ADS_DEVELOPER_TOKEN ? 'set' : 'missing',
+        usingAdsCredentials: !!process.env.GOOGLE_ADS_CLIENT_ID,
+      });
       const googleCampaigns = await googleAds.getCampaignPerformance(since, endDateStr);
 
       for (const c of googleCampaigns) {
@@ -63,7 +70,9 @@ export async function GET(request: NextRequest) {
         });
       }
     } catch (err) {
-      googleAdsError = err instanceof Error ? err.message : String(err);
+      googleAdsError = (err instanceof Error ? err.message : String(err))
+        + ' | loginCustomerId=' + (process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID || 'NOT SET')
+        + ' | customerId=' + (process.env.GOOGLE_ADS_CUSTOMER_ID || 'NOT SET');
       console.error('[Ad Performance] Google Ads API error:', googleAdsError);
     }
 
@@ -115,6 +124,43 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // --- Daily spend for chart (always 90 days) ---
+    const chartStartDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+    const chartStartStr = chartStartDate.toISOString().split('T')[0];
+
+    // Build date map for all 90 days
+    const dailySpendMap = new Map<string, { date: string; google: number; meta: number }>();
+    for (let d = new Date(chartStartDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+      const ds = d.toISOString().split('T')[0];
+      dailySpendMap.set(ds, { date: ds, google: 0, meta: 0 });
+    }
+
+    // Google Ads daily spend
+    try {
+      const googleAds = getGoogleAdsClient();
+      const googleDaily = await googleAds.getDailyMetrics(chartStartStr, endDateStr);
+      for (const row of googleDaily) {
+        const entry = dailySpendMap.get(row.date);
+        if (entry) entry.google = row.cost;
+      }
+    } catch {
+      // Google Ads daily fetch failed — leave zeros
+    }
+
+    // Meta daily spend from meta_insights
+    const { data: metaDailyInsights } = await supabase
+      .from('meta_insights')
+      .select('date, spend')
+      .eq('object_type', 'campaign')
+      .gte('date', chartStartStr);
+
+    for (const row of metaDailyInsights || []) {
+      const entry = dailySpendMap.get(row.date);
+      if (entry) entry.meta += parseFloat(row.spend as string || '0');
+    }
+
+    const dailySpend = Array.from(dailySpendMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+
     // Platform summary
     const googleCampaigns = enriched.filter(c => c.platform === 'google');
     const metaCampaigns = enriched.filter(c => c.platform === 'meta');
@@ -145,6 +191,7 @@ export async function GET(request: NextRequest) {
         google: summarize(googleCampaigns),
         meta: summarize(metaCampaigns),
       },
+      dailySpend,
       googleAdsError,
       googleAdsConfig: {
         GOOGLE_ADS_CUSTOMER_ID: !!process.env.GOOGLE_ADS_CUSTOMER_ID,

@@ -17,6 +17,7 @@ import {
   ClipboardCheck,
   Target,
   Share2,
+  FlaskConical,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -29,8 +30,9 @@ const navigation = [
   { name: 'Campaigns', href: '/dashboard/campaigns', icon: Megaphone },
   { name: 'Meta Ads', href: '/dashboard/meta-ads', icon: Share2 },
   { name: 'Ad Performance', href: '/dashboard/ad-performance', icon: BarChart2 },
+  { name: 'Experiments', href: '/dashboard/experiments', icon: FlaskConical },
   { name: 'Content', href: '/dashboard/content', icon: FileText },
-  { name: 'SEO', href: '/dashboard/seo', icon: Search },
+  { name: 'Search Console', href: '/dashboard/search-console', icon: Search },
   { name: 'Sequences', href: '/dashboard/sequences', icon: Mail },
   { name: 'Approvals', href: '/dashboard/approvals', icon: ClipboardCheck },
   { name: 'Agents', href: '/dashboard/agents', icon: Bot },

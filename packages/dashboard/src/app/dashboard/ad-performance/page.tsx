@@ -26,6 +26,16 @@ import {
   Calendar,
   ArrowUpDown,
 } from 'lucide-react';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 
 // ---------------------------------------------------------------------------
 // Interfaces
@@ -67,6 +77,12 @@ interface PlatformSummary {
   roas: number;
 }
 
+interface DailySpend {
+  date: string;
+  google: number;
+  meta: number;
+}
+
 interface AdPerformanceData {
   campaigns: AdCampaign[];
   summary: {
@@ -74,6 +90,7 @@ interface AdPerformanceData {
     google: PlatformSummary;
     meta: PlatformSummary;
   };
+  dailySpend: DailySpend[];
 }
 
 type SortOption =
@@ -529,6 +546,56 @@ export default function AdPerformancePage() {
       {/* ------------------------------------------------------------------- */}
       {/* Key Metrics Comparison (quick glance)                               */}
       {/* ------------------------------------------------------------------- */}
+      {/* ------------------------------------------------------------------- */}
+      {/* Daily Spend Chart (90 days)                                        */}
+      {/* ------------------------------------------------------------------- */}
+      {data?.dailySpend && data.dailySpend.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Daily Ad Spend</CardTitle>
+            <CardDescription>
+              Google and Meta spend by day (last 90 days)
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={350}>
+              <BarChart data={data.dailySpend} stackOffset="none">
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={(d: string) => {
+                    const date = new Date(d);
+                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                  }}
+                  tick={{ fontSize: 11 }}
+                  interval="preserveStartEnd"
+                  minTickGap={40}
+                />
+                <YAxis
+                  tick={{ fontSize: 12 }}
+                  tickFormatter={(v: number) => `$${v}`}
+                />
+                <Tooltip
+                  formatter={(value: number, name: string) => [
+                    formatCurrency(value),
+                    name === 'google' ? 'Google' : 'Meta',
+                  ]}
+                  labelFormatter={(d: string) => {
+                    const date = new Date(d);
+                    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                  }}
+                />
+                <Legend
+                  formatter={(value: string) => (value === 'google' ? 'Google Ads' : 'Meta Ads')}
+                />
+                <Bar dataKey="meta" stackId="spend" fill="#3b82f6" radius={[0, 0, 0, 0]} />
+                <Bar dataKey="google" stackId="spend" fill="#10b981" radius={[2, 2, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
+
       {data && data.campaigns.length > 0 && summary.google.campaigns > 0 && summary.meta.campaigns > 0 && (
         <Card>
           <CardHeader>
