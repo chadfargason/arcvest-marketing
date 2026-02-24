@@ -1,5 +1,6 @@
 /**
- * Temporary endpoint to pin brand headlines to position 1 on RSAs.
+ * Temporary endpoint to replace RSAs with pinned brand headlines.
+ * Removes old ads and creates new ones with HEADLINE_1 pinned.
  * DELETE AFTER USE.
  */
 
@@ -27,38 +28,15 @@ async function getAccessToken() {
   return data.access_token;
 }
 
-interface RSAHeadline {
-  text: string;
-  pinnedField?: string;
-}
-
-interface RSADescription {
-  text: string;
-  pinnedField?: string;
-}
-
-async function updateAdPins(
+async function mutate(
+  resource: string,
+  operations: unknown[],
   customerId: string,
   loginCustomerId: string,
   accessToken: string,
-  adGroupAdResourceName: string,
-  headlines: RSAHeadline[],
-  descriptions: RSADescription[],
-  finalUrl: string,
-  brandHeadlineText: string,
 ) {
-  // Set pin on brand headline
-  const updatedHeadlines = headlines.map(h => {
-    if (h.text === brandHeadlineText) {
-      return { text: h.text, pinnedField: 'HEADLINE_1' };
-    }
-    return { text: h.text };
-  });
-
-  const updatedDescriptions = descriptions.map(d => ({ text: d.text }));
-
   const response = await fetch(
-    `https://googleads.googleapis.com/v23/customers/${customerId}/adGroupAds:mutate`,
+    `https://googleads.googleapis.com/v23/customers/${customerId}/${resource}:mutate`,
     {
       method: 'POST',
       headers: {
@@ -67,22 +45,7 @@ async function updateAdPins(
         'login-customer-id': loginCustomerId,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        operations: [{
-          update: {
-            resourceName: adGroupAdResourceName,
-            ad: {
-              resourceName: adGroupAdResourceName.replace(/adGroupAds\/\d+~/, 'ads/'),
-              responsiveSearchAd: {
-                headlines: updatedHeadlines,
-                descriptions: updatedDescriptions,
-              },
-              finalUrls: [finalUrl],
-            },
-          },
-          updateMask: 'ad.responsive_search_ad.headlines,ad.responsive_search_ad.descriptions,ad.final_urls',
-        }],
-      }),
+      body: JSON.stringify({ operations }),
     }
   );
 
@@ -94,73 +57,125 @@ async function updateAdPins(
   return await response.json();
 }
 
+interface AdConfig {
+  adGroupResourceName: string;
+  oldAdGroupAdResourceName: string;
+  brandHeadlineText: string;
+  headlines: string[];
+  descriptions: string[];
+}
+
+async function replaceAdWithPins(
+  config: AdConfig,
+  customerId: string,
+  loginCustomerId: string,
+  accessToken: string,
+) {
+  // Step 1: Remove old ad
+  const removeResult = await mutate(
+    'adGroupAds',
+    [{ remove: config.oldAdGroupAdResourceName }],
+    customerId, loginCustomerId, accessToken,
+  );
+
+  if ('error' in removeResult) {
+    return { step: 'remove', error: removeResult.error };
+  }
+
+  // Step 2: Create new ad with pinned brand headline
+  const headlines = config.headlines.map(text => {
+    if (text === config.brandHeadlineText) {
+      return { text, pinnedField: 'HEADLINE_1' };
+    }
+    return { text };
+  });
+
+  const descriptions = config.descriptions.map(text => ({ text }));
+
+  const createResult = await mutate(
+    'adGroupAds',
+    [{
+      create: {
+        adGroup: config.adGroupResourceName,
+        status: 'ENABLED',
+        ad: {
+          responsiveSearchAd: {
+            headlines,
+            descriptions,
+          },
+          finalUrls: ['https://arcvest.com/'],
+        },
+      },
+    }],
+    customerId, loginCustomerId, accessToken,
+  );
+
+  return { remove: removeResult, create: createResult };
+}
+
 export async function POST() {
   try {
     const customerId = (process.env.GOOGLE_ADS_CUSTOMER_ID || '').replace(/-/g, '');
     const loginCustomerId = (process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID || customerId).replace(/-/g, '');
     const accessToken = await getAccessToken();
 
-    // Pre-Retiree Planning ad
-    const preRetireeResult = await updateAdPins(
-      customerId, loginCustomerId, accessToken,
-      'customers/9110037605/adGroupAds/196485118511~798265610296',
-      [
-        { text: 'ArcVest: Plan Retirement' },
-        { text: 'Master Retirement Tips' },
-        { text: 'Social Security Basics' },
-        { text: 'Get Your Retirement Plan' },
-        { text: 'Fee-Only Advisor Benefits' },
-        { text: '401k Rollover Advice' },
-        { text: 'Tax-Smart Withdrawals' },
-        { text: 'Retire With Confidence?' },
-        { text: 'Fiduciary Planning Help' },
-        { text: 'Healthcare Cost Insights' },
-        { text: 'What Retirement Means' },
-        { text: 'Avoid Commission Conflicts' },
-        { text: 'Income Strategy Insights' },
-        { text: 'Know Your Retirement Age' },
-        { text: 'Free Consultation Booking' },
+    const preRetireeResult = await replaceAdWithPins({
+      adGroupResourceName: 'customers/9110037605/adGroups/196485118511',
+      oldAdGroupAdResourceName: 'customers/9110037605/adGroupAds/196485118511~798265610296',
+      brandHeadlineText: 'ArcVest: Plan Retirement',
+      headlines: [
+        'ArcVest: Plan Retirement',
+        'Master Retirement Tips',
+        'Social Security Basics',
+        'Get Your Retirement Plan',
+        'Fee-Only Advisor Benefits',
+        '401k Rollover Advice',
+        'Tax-Smart Withdrawals',
+        'Retire With Confidence?',
+        'Fiduciary Planning Help',
+        'Healthcare Cost Insights',
+        'What Retirement Means',
+        'Avoid Commission Conflicts',
+        'Income Strategy Insights',
+        'Know Your Retirement Age',
+        'Free Consultation Booking',
       ],
-      [
-        { text: 'Learn value of fee-only advice. Get your personal roadmap today.' },
-        { text: 'Understand Social Security timing for income. Access free resources.' },
-        { text: 'Build confidence with evidence-based plans. No conflicts of interest.' },
-        { text: 'Get tax-efficient withdrawal tips from fiduciary experts. Start today.' },
+      descriptions: [
+        'Learn value of fee-only advice. Get your personal roadmap today.',
+        'Understand Social Security timing for income. Access free resources.',
+        'Build confidence with evidence-based plans. No conflicts of interest.',
+        'Get tax-efficient withdrawal tips from fiduciary experts. Start today.',
       ],
-      'https://arcvest.com/',
-      'ArcVest: Plan Retirement',
-    );
+    }, customerId, loginCustomerId, accessToken);
 
-    // HNW Fee-Conscious ad
-    const hnwResult = await updateAdPins(
-      customerId, loginCustomerId, accessToken,
-      'customers/9110037605/adGroupAds/199292097331~798342546128',
-      [
-        { text: 'ArcVest Wealth Mgmt' },
-        { text: 'Say No to Hidden Fees' },
-        { text: 'Fee-Only Fiduciary' },
-        { text: 'Your Wealth, Your Way' },
-        { text: 'Top Net Worth Advisors' },
-        { text: 'No Conflicts Ever' },
-        { text: 'Transparent Pricing' },
-        { text: 'Institutional Advice' },
-        { text: 'Optimize Your Taxes' },
-        { text: 'Expert Estate Planning' },
-        { text: 'Compare Fees Today' },
-        { text: 'Get Started Now' },
-        { text: 'Evidence-Based Advice' },
-        { text: 'Start Your Legacy Now' },
-        { text: 'Wealth Mgmt $2M+' },
+    const hnwResult = await replaceAdWithPins({
+      adGroupResourceName: 'customers/9110037605/adGroups/199292097331',
+      oldAdGroupAdResourceName: 'customers/9110037605/adGroupAds/199292097331~798342546128',
+      brandHeadlineText: 'ArcVest Wealth Mgmt',
+      headlines: [
+        'ArcVest Wealth Mgmt',
+        'Say No to Hidden Fees',
+        'Fee-Only Fiduciary',
+        'Your Wealth, Your Way',
+        'Top Net Worth Advisors',
+        'No Conflicts Ever',
+        'Transparent Pricing',
+        'Institutional Advice',
+        'Optimize Your Taxes',
+        'Expert Estate Planning',
+        'Compare Fees Today',
+        'Get Started Now',
+        'Evidence-Based Advice',
+        'Start Your Legacy Now',
+        'Wealth Mgmt $2M+',
       ],
-      [
-        { text: 'Stop overpaying with conflicted advisors. Choose ArcVest fee-only advice.' },
-        { text: 'ArcVest: Transparent pricing, no hidden fees. Get your consultation today.' },
-        { text: 'Get top-tier fiduciary advice with ArcVest. Compare fees now.' },
-        { text: 'ArcVest fee-only fiduciaries for $2M+ wealth. Start your consultation.' },
+      descriptions: [
+        'Stop overpaying with conflicted advisors. Choose ArcVest fee-only advice.',
+        'ArcVest: Transparent pricing, no hidden fees. Get your consultation today.',
+        'Get top-tier fiduciary advice with ArcVest. Compare fees now.',
+        'ArcVest fee-only fiduciaries for $2M+ wealth. Start your consultation.',
       ],
-      'https://arcvest.com/',
-      'ArcVest Wealth Mgmt',
-    );
+    }, customerId, loginCustomerId, accessToken);
 
     return NextResponse.json({
       preRetiree: preRetireeResult,
