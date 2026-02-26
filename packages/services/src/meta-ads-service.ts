@@ -269,6 +269,255 @@ export class MetaAdsService {
     return items;
   }
 
+  /**
+   * Single POST request to the Graph API.
+   * Sends params as form-urlencoded (Meta API standard for writes).
+   */
+  private async graphPost<T = Record<string, unknown>>(
+    path: string,
+    params: Record<string, unknown> = {},
+  ): Promise<T> {
+    if (!this.config) {
+      throw new Error('MetaAdsService not configured. Call initialize() first.');
+    }
+
+    const url = `${this.baseUrl}${path}`;
+    const body = new URLSearchParams();
+    body.set('access_token', this.config.accessToken);
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== undefined && value !== null) {
+        body.set(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
+      }
+    }
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString(),
+    });
+    const json = (await res.json()) as T & { error?: { message: string; type: string; code: number; fbtrace_id: string } };
+
+    if (json.error) {
+      throw new Error(
+        `Meta API error [${json.error.code}]: ${json.error.message} (type: ${json.error.type}, fbtrace: ${json.error.fbtrace_id})`,
+      );
+    }
+
+    return json;
+  }
+
+  // -----------------------------------------------------------------------
+  // Write methods — Campaign Management
+  // -----------------------------------------------------------------------
+
+  /**
+   * Create a campaign in the configured ad account.
+   */
+  async createCampaign(params: {
+    name: string;
+    objective: string;
+    dailyBudget: number;
+    specialAdCategories: string[];
+    status?: string;
+  }): Promise<{ id: string }> {
+    if (!this.config) {
+      throw new Error('MetaAdsService not configured. Call initialize() first.');
+    }
+
+    return this.graphPost<{ id: string }>(
+      `/${this.config.adAccountId}/campaigns`,
+      {
+        name: params.name,
+        objective: params.objective,
+        daily_budget: params.dailyBudget,
+        special_ad_categories: params.specialAdCategories,
+        status: params.status || 'PAUSED',
+      },
+    );
+  }
+
+  /**
+   * Create an ad set within a campaign.
+   */
+  async createAdSet(params: {
+    campaignId: string;
+    name: string;
+    dailyBudget: number;
+    optimizationGoal: string;
+    targeting: Record<string, unknown>;
+    billingEvent: string;
+    startTime?: string;
+    status?: string;
+    promotedObject?: Record<string, unknown>;
+  }): Promise<{ id: string }> {
+    if (!this.config) {
+      throw new Error('MetaAdsService not configured. Call initialize() first.');
+    }
+
+    const body: Record<string, unknown> = {
+      campaign_id: params.campaignId,
+      name: params.name,
+      daily_budget: params.dailyBudget,
+      optimization_goal: params.optimizationGoal,
+      targeting: params.targeting,
+      billing_event: params.billingEvent,
+      status: params.status || 'PAUSED',
+    };
+
+    if (params.startTime) body.start_time = params.startTime;
+    if (params.promotedObject) body.promoted_object = params.promotedObject;
+
+    return this.graphPost<{ id: string }>(
+      `/${this.config.adAccountId}/adsets`,
+      body,
+    );
+  }
+
+  /**
+   * Upload an ad image from a URL.
+   */
+  async uploadImage(imageUrl: string): Promise<{ hash: string }> {
+    if (!this.config) {
+      throw new Error('MetaAdsService not configured. Call initialize() first.');
+    }
+
+    const result = await this.graphPost<{ images: Record<string, { hash: string }> }>(
+      `/${this.config.adAccountId}/adimages`,
+      { url: imageUrl },
+    );
+
+    // Meta returns { images: { filename: { hash: "..." } } }
+    const firstKey = Object.keys(result.images)[0];
+    return { hash: result.images[firstKey].hash };
+  }
+
+  /**
+   * Create an ad creative (link ad with optional lead form).
+   */
+  async createAdCreative(params: {
+    name: string;
+    pageId: string;
+    headline: string;
+    primaryText: string;
+    description: string;
+    linkUrl: string;
+    ctaType: string;
+    leadFormId?: string;
+    imageHash?: string;
+  }): Promise<{ id: string }> {
+    if (!this.config) {
+      throw new Error('MetaAdsService not configured. Call initialize() first.');
+    }
+
+    const linkData: Record<string, unknown> = {
+      link: params.linkUrl,
+      message: params.primaryText,
+      name: params.headline,
+      description: params.description,
+      call_to_action: { type: params.ctaType },
+    };
+
+    if (params.imageHash) {
+      linkData.image_hash = params.imageHash;
+    }
+
+    if (params.leadFormId) {
+      linkData.call_to_action = {
+        type: params.ctaType,
+        value: { lead_gen_form_id: params.leadFormId },
+      };
+    }
+
+    return this.graphPost<{ id: string }>(
+      `/${this.config.adAccountId}/adcreatives`,
+      {
+        name: params.name,
+        object_story_spec: {
+          page_id: params.pageId,
+          link_data: linkData,
+        },
+      },
+    );
+  }
+
+  /**
+   * Create an ad in an ad set with a given creative.
+   */
+  async createAd(params: {
+    adSetId: string;
+    creativeId: string;
+    name: string;
+    status?: string;
+  }): Promise<{ id: string }> {
+    if (!this.config) {
+      throw new Error('MetaAdsService not configured. Call initialize() first.');
+    }
+
+    return this.graphPost<{ id: string }>(
+      `/${this.config.adAccountId}/ads`,
+      {
+        adset_id: params.adSetId,
+        creative: { creative_id: params.creativeId },
+        name: params.name,
+        status: params.status || 'PAUSED',
+      },
+    );
+  }
+
+  /**
+   * Create an instant lead generation form on a Facebook Page.
+   */
+  async createLeadForm(params: {
+    pageId: string;
+    formName: string;
+    questions: Array<{ type: string; key?: string; label?: string; options?: Array<{ value: string; key: string }> }>;
+    privacyPolicyUrl: string;
+    thankYouTitle: string;
+    thankYouBody: string;
+    formType?: string;
+  }): Promise<{ id: string }> {
+    if (!this.config) {
+      throw new Error('MetaAdsService not configured. Call initialize() first.');
+    }
+
+    return this.graphPost<{ id: string }>(
+      `/${params.pageId}/leadgen_forms`,
+      {
+        name: params.formName,
+        questions: params.questions,
+        privacy_policy: { url: params.privacyPolicyUrl },
+        thank_you_page: {
+          title: params.thankYouTitle,
+          body: params.thankYouBody,
+        },
+        follow_up_action_url: params.privacyPolicyUrl,
+        locale: 'EN_US',
+        ...(params.formType ? { form_type: params.formType } : {}),
+      },
+    );
+  }
+
+  /**
+   * Retrieve submitted leads from a lead form.
+   * @param formId - The lead form ID
+   * @param since - Optional Unix timestamp to filter leads after this time
+   */
+  async getLeads(
+    formId: string,
+    since?: number,
+  ): Promise<Array<{ id: string; created_time: string; field_data: Array<{ name: string; values: string[] }> }>> {
+    type LeadEntry = { id: string; created_time: string; field_data: Array<{ name: string; values: string[] }> };
+
+    const params: Record<string, string> = {
+      fields: 'id,created_time,field_data',
+    };
+    if (since) {
+      params.filtering = JSON.stringify([{ field: 'time_created', operator: 'GREATER_THAN', value: since }]);
+    }
+
+    return this.graphGetAll<LeadEntry>(`/${formId}/leads`, params);
+  }
+
   // -----------------------------------------------------------------------
   // Graph API read methods
   // -----------------------------------------------------------------------
