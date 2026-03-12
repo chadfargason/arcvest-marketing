@@ -476,7 +476,7 @@ async function processSelectDaily(payload: Record<string, unknown>, logger: Inst
     const selector = getDailySelectionService();
     const result = await selector.selectDaily({
       targetCount,
-      minScore: 45, // Lowered from 55 to allow more ideas to be selected
+      minScore: 30, // Lowered to match actual score distribution (most ideas score 25-40 via Haiku)
       maxPerSource: 3,
     });
 
