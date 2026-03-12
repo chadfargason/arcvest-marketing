@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { runNewsScan } from '@/lib/news-sourcer';
+import { runNewsScan, fetchAllNews } from '@/lib/news-sourcer';
 import { createClient } from '@/lib/supabase/server';
+import { createHash } from 'crypto';
 
 /**
  * Cron endpoint for daily news scan
@@ -78,6 +79,39 @@ export async function GET(request: NextRequest) {
         },
       });
     }
+
+    // Also insert all found articles into idea_queue for the scoring pipeline
+    const allArticles = await fetchAllNews({ hoursBack: 24 });
+    let savedToQueue = 0;
+    for (const article of allArticles) {
+      const hash = createHash('md5')
+        .update(`${article.title}|${article.link}|${article.sourceName}`)
+        .digest('hex');
+
+      const { error: iqError } = await supabase
+        .from('idea_queue')
+        .upsert({
+          source_id: article.sourceId,
+          source_name: article.sourceName,
+          source_type: 'rss',
+          title: article.title,
+          summary: article.description || null,
+          full_content: article.content || null,
+          original_url: article.link,
+          content_hash: hash,
+          status: 'pending',
+          discovered_at: article.pubDate.toISOString(),
+          tags: [],
+          metadata: { category: article.category },
+        }, {
+          onConflict: 'content_hash',
+          ignoreDuplicates: true,
+        });
+
+      if (!iqError) savedToQueue++;
+    }
+
+    console.log(`[Cron News Scan] Saved ${savedToQueue} articles to idea queue`);
 
     // Also add to approval queue if we want human review
     if (result.selectedStories.length > 0) {

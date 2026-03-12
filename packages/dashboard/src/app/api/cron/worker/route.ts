@@ -17,7 +17,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getMultiAIPipeline, type PipelineCheckpoint, type PipelineStep } from '@/lib/content-pipeline';
 import { getIdeaScorer, getDailySelectionService, getSourceRegistry, initializeAdapters, PipelineLogger } from '@arcvest/services';
-import { runNewsScan } from '@/lib/news-sourcer';
+import { runNewsScan, fetchAllNews } from '@/lib/news-sourcer';
+import { createHash } from 'crypto';
 
 export const maxDuration = 300; // 5 minutes max
 
@@ -267,35 +268,78 @@ async function processNewsScan(supabase: ReturnType<typeof createClient> extends
     logger.info('Starting news scan', 'scan_start');
     logger.startStep();
 
-    const result = await runNewsScan({
-      highPriorityOnly: false,
-      hoursBack: 24,
-      minScore: 65,
-      maxToSelect: 3,
+    // Fetch raw articles from all RSS sources
+    const articles = await fetchAllNews({ hoursBack: 24 });
+
+    logger.info(`Fetched ${articles.length} articles from RSS feeds`, 'fetch_complete', {
+      articlesFound: articles.length,
     });
 
-    logger.info(`Found ${result.articlesFound} articles, selected ${result.selectedStories.length}`, 'scan_complete', {
-      articlesFound: result.articlesFound,
-      selectedCount: result.selectedStories.length,
-      processingTimeMs: result.processingTimeMs,
+    // Insert all articles into idea_queue as 'pending' for the scoring pipeline
+    let saved = 0;
+    let duplicates = 0;
+    const errors: string[] = [];
+
+    for (const article of articles) {
+      const hash = createHash('md5')
+        .update(`${article.title}|${article.link}|${article.sourceName}`)
+        .digest('hex');
+
+      const { error } = await supabase
+        .from('idea_queue')
+        .upsert({
+          source_id: article.sourceId,
+          source_name: article.sourceName,
+          source_type: 'rss',
+          title: article.title,
+          summary: article.description || null,
+          full_content: article.content || null,
+          original_url: article.link,
+          content_hash: hash,
+          status: 'pending',
+          discovered_at: article.pubDate.toISOString(),
+          tags: [],
+          metadata: { category: article.category },
+        }, {
+          onConflict: 'content_hash',
+          ignoreDuplicates: true,
+        });
+
+      if (error) {
+        if (error.code === '23505') {
+          duplicates++;
+        } else {
+          errors.push(`${article.title}: ${error.message}`);
+        }
+      } else {
+        saved++;
+      }
+    }
+
+    logger.info(`Inserted ${saved} new ideas, ${duplicates} duplicates, ${errors.length} errors`, 'insert_complete', {
+      saved,
+      duplicates,
+      errors: errors.slice(0, 5),
     });
 
-    // Log the scan
+    // Log the scan to activity_log
     await supabase.from('activity_log').insert({
       type: 'news_scan',
-      description: `News scan completed. Found ${result.articlesFound} articles, selected ${result.selectedStories.length}.`,
+      description: `News scan completed. Found ${articles.length} articles, saved ${saved} new ideas to queue.`,
       metadata: {
-        articlesFound: result.articlesFound,
-        selectedCount: result.selectedStories.length,
-        processingTimeMs: result.processingTimeMs,
+        articlesFound: articles.length,
+        saved,
+        duplicates,
+        errorCount: errors.length,
       },
     });
 
     return {
       success: true,
       data: {
-        articlesFound: result.articlesFound,
-        selectedCount: result.selectedStories.length
+        articlesFound: articles.length,
+        saved,
+        duplicates,
       }
     };
   } catch (error) {
