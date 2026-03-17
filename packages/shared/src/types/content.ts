@@ -7,6 +7,18 @@
 // Content Constants
 // ===========================================
 
+// ===========================================
+// Content Categories
+// ===========================================
+
+export const CONTENT_CATEGORIES = [
+  'market_commentary',
+  'macro_capital_flows',
+  'real_economy',
+  'investor_strategies',
+] as const;
+export type ContentCategory = (typeof CONTENT_CATEGORIES)[number];
+
 export const CONTENT_TYPES = [
   'blog_post',
   'linkedin_post',
@@ -46,6 +58,7 @@ export interface ContentCalendarEntry {
 
   // Content
   content_type: ContentType;
+  content_category: ContentCategory | null;
   title: string | null;
   topic: string | null;
   keywords: string[];
@@ -78,6 +91,7 @@ export interface ContentCalendarEntryInsert {
   scheduled_date?: string | null;
   status?: ContentStatus;
   content_type: ContentType;
+  content_category?: ContentCategory | null;
   title?: string | null;
   topic?: string | null;
   keywords?: string[];
@@ -91,6 +105,7 @@ export interface ContentCalendarEntryInsert {
 export interface ContentCalendarEntryUpdate {
   scheduled_date?: string | null;
   status?: ContentStatus;
+  content_category?: ContentCategory | null;
   title?: string | null;
   topic?: string | null;
   keywords?: string[];

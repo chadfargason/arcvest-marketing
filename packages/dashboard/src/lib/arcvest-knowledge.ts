@@ -3,9 +3,20 @@
  *
  * This content is injected into all AI prompts for content generation
  * to ensure consistent brand voice, messaging, and compliance.
+ *
+ * Split into:
+ * - ARCVEST_KNOWLEDGE_BASE: Brand voice, compliance, anti-slop, do's/don'ts (universal)
+ * - ARCVEST_KEY_MESSAGES: The 5 philosophy points (only for investor_strategies)
+ * - ARCVEST_KNOWLEDGE: Full combined version (backward compatible)
  */
 
-export const ARCVEST_KNOWLEDGE = `
+import type { ContentCategory } from '@arcvest/shared';
+
+/**
+ * Universal knowledge base — brand voice, compliance, writing style, do's/don'ts.
+ * Applied to ALL content categories.
+ */
+export const ARCVEST_KNOWLEDGE_BASE = `
 # ArcVest Knowledge Base
 ## For AI-Assisted Content Generation
 
@@ -50,22 +61,13 @@ Our readers are smart. They may not have finance backgrounds, but they can follo
 ### Writing Style
 
 **Use Active Voice**
-- ✅ "The data shows that active managers underperform."
-- ❌ "It has been shown by the data that underperformance is exhibited by active managers."
+- "The data shows that active managers underperform."
 
 **Lead with the Insight**
 Don't bury the lede. Start with the compelling conclusion, then support it.
 
 **Embrace Specific Numbers**
-- ✅ "Over the past 20 years, 92% of large-cap active funds underperformed the S&P 500."
-- ❌ "Most active funds underperform over time."
-
-**Use Concrete Metaphors and Frameworks**
-We've developed powerful conceptual tools:
-- "The Fee Extraction Machine" (how the industry siphons wealth)
-- "The 2% you never notice" (death by a thousand basis points)
-- "Buying the haystack" vs. "finding the needle" (index vs. active)
-- The casino analogy (active trading as gambling with worse odds)
+- "Over the past 20 years, 92% of large-cap active funds underperformed the S&P 500."
 
 **Avoid Jargon When Possible; Define It When Necessary**
 If a technical term is essential, explain it on first use. But often, plain language works better.
@@ -75,6 +77,78 @@ Dense blocks of text lose readers. One idea per paragraph. Make the logical flow
 
 ---
 
+## Target Audience
+
+### Primary Audience: The "Missing Middle"
+
+These are individuals and families with:
+- **Investable assets:** $1M–$10M+
+- **Current situation:** Often with wirehouses (Morgan Stanley, Merrill) or "private wealth" divisions
+- **Sophistication:** Smart enough to know something is wrong; may not know exactly what
+- **Pain points:**
+  - Nagging sense they're overpaying
+  - Portfolio complexity they don't understand
+  - Advisor seems more focused on assets than advice
+  - Conflicted recommendations (proprietary products, high-fee funds)
+  - Curious about index investing but uncertain how to transition
+
+---
+
+## Compliance Considerations
+
+### Required Disclosures
+- ArcVest is a fee-only fiduciary RIA
+- Past performance does not guarantee future results
+- Investment involves risk, including potential loss of principal
+- Specific recommendations require individual evaluation
+
+### What We Avoid
+- Guaranteed returns or performance claims
+- Specific security recommendations in marketing content
+- Anything that could be construed as individual advice in general content
+- Promises about future market behavior
+
+---
+
+## Do's and Don'ts
+
+### DO
+- Lead with insights, not credentials
+- Use specific numbers and cite sources
+- Acknowledge uncertainty where it exists
+- Use first-person plural ("we") when speaking as ArcVest
+- Name specific industry problems
+- Explain the "why" behind recommendations
+- Use analogies that resonate with sophisticated readers
+- Maintain a warm but authoritative tone
+
+### DON'T
+- Use hedge words that undermine our message ("might," "perhaps," "some say")
+- Overuse industry jargon
+- Make absolute predictions about markets
+- Attack competitors by name (address practices, not firms)
+- Promise specific returns or performance
+- Use exclamation points
+- Start sentences with "I think" when stating evidence
+- Pad content with unnecessary qualifiers
+
+---
+
+## Content Guidelines
+
+### Blog Posts
+- 800-1,500 words optimal
+- Strong hook in first paragraph
+- One core insight per post
+- End with clear takeaway
+- Minimal use of headers (prose-forward)
+`;
+
+/**
+ * Key messages & philosophy — only injected for "investor_strategies" articles.
+ * These are the core ArcVest frameworks and advocacy points.
+ */
+export const ARCVEST_KEY_MESSAGES = `
 ## Key Messages & Philosophy
 
 ### 1. Fees Are the Great Wealth Destroyer
@@ -119,65 +193,6 @@ What works for Yale's endowment doesn't work for you. "Institutional-quality" al
 **Core Argument:**
 Complexity is a cost, not a value-add. The industry sells complexity because it justifies fees. But a simple, globally diversified portfolio of low-cost index funds is not a "starter" portfolio—it's the optimal solution for nearly everyone.
 
----
-
-## Target Audience
-
-### Primary Audience: The "Missing Middle"
-
-These are individuals and families with:
-- **Investable assets:** $1M–$10M+
-- **Current situation:** Often with wirehouses (Morgan Stanley, Merrill) or "private wealth" divisions
-- **Sophistication:** Smart enough to know something is wrong; may not know exactly what
-- **Pain points:**
-  - Nagging sense they're overpaying
-  - Portfolio complexity they don't understand
-  - Advisor seems more focused on assets than advice
-  - Conflicted recommendations (proprietary products, high-fee funds)
-  - Curious about index investing but uncertain how to transition
-
----
-
-## Compliance Considerations
-
-### Required Disclosures
-- ArcVest is a fee-only fiduciary RIA
-- Past performance does not guarantee future results
-- Investment involves risk, including potential loss of principal
-- Specific recommendations require individual evaluation
-
-### What We Avoid
-- Guaranteed returns or performance claims
-- Specific security recommendations in marketing content
-- Anything that could be construed as individual advice in general content
-- Promises about future market behavior
-
----
-
-## Do's and Don'ts
-
-### DO ✅
-- Lead with insights, not credentials
-- Use specific numbers and cite sources
-- Acknowledge uncertainty where it exists
-- Use first-person plural ("we") when speaking as ArcVest
-- Name specific industry problems
-- Explain the "why" behind recommendations
-- Use analogies that resonate with sophisticated readers
-- Maintain a warm but authoritative tone
-
-### DON'T ❌
-- Use hedge words that undermine our message ("might," "perhaps," "some say")
-- Overuse industry jargon
-- Make absolute predictions about markets
-- Attack competitors by name (address practices, not firms)
-- Promise specific returns or performance
-- Use exclamation points
-- Start sentences with "I think" when stating evidence
-- Pad content with unnecessary qualifiers
-
----
-
 ## Key Terminology
 
 ### Terms We Use
@@ -188,45 +203,32 @@ These are individuals and families with:
 - **Passive investing** (index-based, low-turnover approach)
 - **The Fee Extraction Machine** (our framework for industry costs)
 
-### Terms We Avoid or Reframe
-- **"Alpha"** (fine technically, but often associated with active management claims)
-- **"Alternative investments"** (when used positively; we use it critically)
-- **"Sophisticated"** (when used to describe complexity; we flip this)
-- **"Beating the market"** (not our goal; we buy the market)
-
----
-
-## Content Guidelines
-
-### Blog Posts
-- 800-1,500 words optimal
-- Strong hook in first paragraph
-- One core insight per post
-- End with clear takeaway
-- Minimal use of headers (prose-forward)
+### Frameworks to Use
+- "The Fee Extraction Machine" (how the industry siphons wealth)
+- "The 2% you never notice" (death by a thousand basis points)
+- "Buying the haystack" vs. "finding the needle" (index vs. active)
+- The casino analogy (active trading as gambling with worse odds)
 `;
 
 /**
- * Condensed version for prompts with token limits
+ * Full combined knowledge base (backward compatible).
+ * Includes both universal base and key messages.
  */
-export const ARCVEST_KNOWLEDGE_CONDENSED = `
+export const ARCVEST_KNOWLEDGE = ARCVEST_KNOWLEDGE_BASE + '\n' + ARCVEST_KEY_MESSAGES;
+
+/**
+ * Condensed universal brand voice (no key messages/philosophy)
+ */
+export const ARCVEST_KNOWLEDGE_BASE_CONDENSED = `
 ## ArcVest Brand Voice (Condensed)
 
 **Who We Are:** ArcVest is a fee-only fiduciary RIA. Tagline: "Passive investing. Active coaching."
-
-**Core Beliefs:**
-1. Fees destroy wealth (1% annually = 25-30% loss over 30 years)
-2. Active management fails (90%+ underperform over 20 years)
-3. Behavioral coaching is where advisors add real value
-4. Alternatives/PE don't work for individual investors
-5. Simplicity is a feature, not a bug
 
 **Voice:** Authoritative but accessible. Evidence-based, not dogmatic. Honest and direct. Empathetic to investor struggles. Sophisticated without condescension.
 
 **Writing Style:**
 - Use active voice, lead with insights
 - Specific numbers over vague claims
-- Use our frameworks: "Fee Extraction Machine," "buying the haystack"
 - Short paragraphs, clear transitions
 - No exclamation points, no hedge words
 
@@ -237,6 +239,23 @@ export const ARCVEST_KNOWLEDGE_CONDENSED = `
 **Do:** Lead with insights, cite sources, acknowledge uncertainty, use "we," name industry problems.
 **Don't:** Hedge words, jargon, absolute predictions, attack competitors by name, promise returns.
 `;
+
+/**
+ * Condensed key messages (only for investor_strategies)
+ */
+export const ARCVEST_KEY_MESSAGES_CONDENSED = `
+**Core Beliefs & Frameworks:**
+1. Fees destroy wealth (1% annually = 25-30% loss over 30 years) — "The Fee Extraction Machine"
+2. Active management fails (90%+ underperform over 20 years) — "Buying the haystack"
+3. Behavioral coaching is where advisors add real value — "The behavior gap"
+4. Alternatives/PE don't work for individual investors
+5. Simplicity is a feature, not a bug
+`;
+
+/**
+ * Condensed version for prompts with token limits (backward compatible — includes key messages)
+ */
+export const ARCVEST_KNOWLEDGE_CONDENSED = ARCVEST_KNOWLEDGE_BASE_CONDENSED + '\n' + ARCVEST_KEY_MESSAGES_CONDENSED;
 
 /**
  * Writing Guidance - How to write clearly and avoid AI-sounding content
@@ -386,4 +405,26 @@ export function getArcVestKnowledge(condensed: boolean = false): string {
  */
 export function getWritingGuidance(condensed: boolean = false): string {
   return condensed ? WRITING_GUIDANCE_CONDENSED : WRITING_GUIDANCE;
+}
+
+/**
+ * Get category-appropriate knowledge base.
+ * Only "investor_strategies" gets the full philosophy injection.
+ * All other categories get brand voice + compliance only.
+ */
+export function getKnowledgeForCategory(category: ContentCategory | null): string {
+  if (category === 'investor_strategies' || !category) {
+    return ARCVEST_KNOWLEDGE; // Full knowledge including key messages
+  }
+  return ARCVEST_KNOWLEDGE_BASE; // Brand voice + compliance only
+}
+
+/**
+ * Get condensed category-appropriate knowledge (for editing passes).
+ */
+export function getCondensedKnowledgeForCategory(category: ContentCategory | null): string {
+  if (category === 'investor_strategies' || !category) {
+    return ARCVEST_KNOWLEDGE_CONDENSED;
+  }
+  return ARCVEST_KNOWLEDGE_BASE_CONDENSED;
 }

@@ -8,7 +8,8 @@
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 import { PIPELINE_CONFIG, type PipelineInput, type PipelineOutput } from './config';
-import { ARCVEST_KNOWLEDGE, ARCVEST_KNOWLEDGE_CONDENSED, WRITING_GUIDANCE, WRITING_GUIDANCE_CONDENSED } from '../arcvest-knowledge';
+import { ARCVEST_KNOWLEDGE, ARCVEST_KNOWLEDGE_CONDENSED, WRITING_GUIDANCE, WRITING_GUIDANCE_CONDENSED, getKnowledgeForCategory, getCondensedKnowledgeForCategory } from '../arcvest-knowledge';
+import { getCategoryVoice, getCategoryToneInstruction } from './category-voice';
 
 /**
  * Pipeline checkpoint data - stores intermediate results
@@ -292,17 +293,25 @@ export class MultiAIPipeline {
     const topicsOfInterest = PIPELINE_CONFIG.TOPICS_OF_INTEREST.join(', ');
     const topicsToAvoid = PIPELINE_CONFIG.TOPICS_TO_AVOID.join(', ');
 
+    // Use category-aware knowledge base
+    const knowledge = getKnowledgeForCategory(input.contentCategory || null);
+    const categoryVoice = input.contentCategory ? getCategoryVoice(input.contentCategory) : null;
+    const categoryInstruction = categoryVoice
+      ? `\n\n## CONTENT CATEGORY: ${categoryVoice.label}\n\n${categoryVoice.instructions}`
+      : '';
+
     const prompt = `You are writing a blog post for ArcVest. Study the brand knowledge base AND the writing guidance carefully.
 
 ## BRAND KNOWLEDGE BASE
 
-${ARCVEST_KNOWLEDGE}
+${knowledge}
 
 ---
 
 ## WRITING GUIDANCE - READ THIS CAREFULLY
 
 ${WRITING_GUIDANCE}
+${categoryInstruction}
 
 ---
 
@@ -320,8 +329,8 @@ TOPICS TO AVOID: ${topicsToAvoid}
 INSTRUCTIONS:
 1. Write a blog post (${PIPELINE_CONFIG.OUTPUT_REQUIREMENTS.target_word_count.min}-${PIPELINE_CONFIG.OUTPUT_REQUIREMENTS.target_word_count.max} words) based on the source content
 2. Write in ArcVest's voice: authoritative but accessible, evidence-based, honest and direct
-3. Lead with the insight, use specific numbers, use our frameworks where relevant
-4. Make it educational and valuable for high-net-worth individuals considering evidence-based investing
+3. Lead with the insight, use specific numbers${input.contentCategory === 'investor_strategies' || !input.contentCategory ? ', use our frameworks where relevant' : ''}
+4. Make it educational and valuable for high-net-worth individuals${input.contentCategory === 'investor_strategies' || !input.contentCategory ? ' considering evidence-based investing' : ''}
 5. Include appropriate disclaimers naturally (don't lead with them)
 6. Do NOT make specific stock recommendations or guarantee returns
 7. Use "we" when speaking as ArcVest
@@ -393,12 +402,17 @@ Respond in JSON format only:
   private async step2ChatGPT(
     draft: string,
     compliance: { passed: boolean; issues: string[]; suggestions: string[] },
-    _input: PipelineInput
+    input: PipelineInput
   ): Promise<{ draft: string; improvements: string[]; tokens: number }> {
+    // Use category-aware condensed knowledge
+    const condensedKnowledge = getCondensedKnowledgeForCategory(input.contentCategory || null);
+    const categoryTone = input.contentCategory ? getCategoryToneInstruction(input.contentCategory) : '';
+
     const prompt = `You are an expert editor improving a blog post for ArcVest. Maintain their voice and eliminate AI-sounding patterns.
 
 ## BRAND VOICE
-${ARCVEST_KNOWLEDGE_CONDENSED}
+${condensedKnowledge}
+${categoryTone ? `\n${categoryTone}` : ''}
 
 ## WRITING QUALITY CHECKLIST - USE THIS TO EDIT
 ${WRITING_GUIDANCE_CONDENSED}
@@ -466,12 +480,17 @@ After the blog post, add a section titled "## IMPROVEMENTS MADE" with a bullet l
    */
   private async step3Gemini(
     draft: string,
-    _input: PipelineInput
+    input: PipelineInput
   ): Promise<{ draft: string; edits: string[]; tokens: number }> {
+    // Use category-aware condensed knowledge
+    const condensedKnowledge = getCondensedKnowledgeForCategory(input.contentCategory || null);
+    const categoryTone = input.contentCategory ? getCategoryToneInstruction(input.contentCategory) : '';
+
     const prompt = `You are a senior editor doing a final review of a blog post for ArcVest. Your job is to catch and eliminate any remaining AI-sounding patterns.
 
 ## BRAND VOICE
-${ARCVEST_KNOWLEDGE_CONDENSED}
+${condensedKnowledge}
+${categoryTone ? `\n${categoryTone}` : ''}
 
 ## FINAL QUALITY CHECK - ELIMINATE THESE PATTERNS
 ${WRITING_GUIDANCE_CONDENSED}

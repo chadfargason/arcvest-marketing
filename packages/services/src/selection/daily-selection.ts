@@ -14,6 +14,7 @@ interface SelectionConfig {
   targetCount: number;      // How many ideas to select (default: 8)
   minScore: number;         // Minimum score threshold (default: 60)
   maxPerSource: number;     // Max ideas from same source (default: 2)
+  maxPerCategory: number;   // Max ideas from same content category (default: 3)
   date?: Date;              // Date to select for (default: today)
 }
 
@@ -49,6 +50,7 @@ export class DailySelectionService {
       targetCount = 8,
       minScore = 60,
       maxPerSource = 2,
+      maxPerCategory = 3,
       date = new Date(),
     } = config || {};
 
@@ -74,7 +76,7 @@ export class DailySelectionService {
       // Fetch scored ideas that haven't been selected yet
       const { data: scoredIdeas, error: fetchError } = await this.supabase
         .from('idea_queue')
-        .select('id, title, source_name, source_id, relevance_score, suggested_angle')
+        .select('id, title, source_name, source_id, relevance_score, suggested_angle, content_category')
         .eq('status', 'scored')
         .gte('relevance_score', minScore)
         .order('relevance_score', { ascending: false })
@@ -100,7 +102,9 @@ export class DailySelectionService {
         };
       }
 
-      // Select with source diversity
+      // Select with source AND category diversity
+      // Pass 1: Pick 1 idea per category (guarantees variety)
+      // Pass 2: Fill remaining slots by score
       const selectedIdeas: Array<{
         id: string;
         title: string;
@@ -109,19 +113,50 @@ export class DailySelectionService {
         rank: number;
       }> = [];
       const sourceCount: Record<string, number> = {};
+      const categoryCount: Record<string, number> = {};
+      const selectedIds = new Set<string>();
 
-      for (const idea of scoredIdeas) {
+      const categories = ['market_commentary', 'macro_capital_flows', 'real_economy', 'investor_strategies'];
+
+      // Pass 1: Pick best idea from each category (if available)
+      for (const cat of categories) {
         if (selectedIdeas.length >= targetCount) break;
 
-        const sourceKey = idea.source_id || idea.source_name;
-        const currentSourceCount = sourceCount[sourceKey] || 0;
+        const bestInCategory = scoredIdeas.find(idea => {
+          if (selectedIds.has(idea.id)) return false;
+          if ((idea.content_category || 'investor_strategies') !== cat) return false;
+          const sourceKey = idea.source_id || idea.source_name;
+          if ((sourceCount[sourceKey] || 0) >= maxPerSource) return false;
+          return true;
+        });
 
-        // Skip if we've already selected maxPerSource from this source
-        if (currentSourceCount >= maxPerSource) {
-          continue;
+        if (bestInCategory) {
+          const sourceKey = bestInCategory.source_id || bestInCategory.source_name;
+          const cat = bestInCategory.content_category || 'investor_strategies';
+          selectedIdeas.push({
+            id: bestInCategory.id,
+            title: bestInCategory.title,
+            sourceName: bestInCategory.source_name,
+            score: bestInCategory.relevance_score || 0,
+            rank: selectedIdeas.length + 1,
+          });
+          selectedIds.add(bestInCategory.id);
+          sourceCount[sourceKey] = (sourceCount[sourceKey] || 0) + 1;
+          categoryCount[cat] = (categoryCount[cat] || 0) + 1;
         }
+      }
 
-        // Select this idea
+      // Pass 2: Fill remaining slots by score, respecting source and category limits
+      for (const idea of scoredIdeas) {
+        if (selectedIdeas.length >= targetCount) break;
+        if (selectedIds.has(idea.id)) continue;
+
+        const sourceKey = idea.source_id || idea.source_name;
+        if ((sourceCount[sourceKey] || 0) >= maxPerSource) continue;
+
+        const cat = idea.content_category || 'investor_strategies';
+        if ((categoryCount[cat] || 0) >= maxPerCategory) continue;
+
         selectedIdeas.push({
           id: idea.id,
           title: idea.title,
@@ -129,11 +164,13 @@ export class DailySelectionService {
           score: idea.relevance_score || 0,
           rank: selectedIdeas.length + 1,
         });
-        sourceCount[sourceKey] = currentSourceCount + 1;
+        selectedIds.add(idea.id);
+        sourceCount[sourceKey] = (sourceCount[sourceKey] || 0) + 1;
+        categoryCount[cat] = (categoryCount[cat] || 0) + 1;
       }
 
       // Update selected ideas in database
-      const selectedIds = selectedIdeas.map(i => i.id);
+      const selectedIdArray = selectedIdeas.map(i => i.id);
       for (const idea of selectedIdeas) {
         await this.supabase
           .from('idea_queue')
@@ -159,8 +196,9 @@ export class DailySelectionService {
         status: 'completed',
         ideas_scored: scoredIdeas.length,
         ideas_selected: selectedIdeas.length,
-        selected_idea_ids: selectedIds,
+        selected_idea_ids: selectedIdArray,
         source_breakdown: sourceCount,
+        category_breakdown: categoryCount,
         score_stats: scoreStats,
         selection_completed_at: new Date().toISOString(),
         summary: `Selected ${selectedIdeas.length} ideas from ${Object.keys(sourceCount).length} sources. Avg score: ${scoreStats.avg}`,

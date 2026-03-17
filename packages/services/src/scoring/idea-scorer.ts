@@ -3,9 +3,11 @@
  *
  * Uses Claude AI to score content ideas on relevance to ArcVest's audience.
  * Scores are 0-100 with breakdown by criteria.
+ * Assigns a content category to each idea.
  */
 
 import { createLogger } from '@arcvest/shared';
+import type { ContentCategory } from '@arcvest/shared';
 import { getSupabase } from '../supabase';
 import Anthropic from '@anthropic-ai/sdk';
 
@@ -15,6 +17,7 @@ interface ScoreResult {
   relevanceScore: number;
   scoreReason: string;
   suggestedAngle: string;
+  contentCategory: ContentCategory;
   scoreBreakdown: {
     relevance: number;
     timeliness: number;
@@ -74,15 +77,16 @@ Content: ${truncatedContent}
 Tags: ${(idea.tags || []).join(', ')}
 URL: ${idea.original_url || 'N/A'}
 
-ArcVest focuses on:
-- Evidence-based investing (index funds, factor investing)
-- Retirement planning and income strategies
-- Tax-efficient investing
-- Financial planning for high-net-worth individuals
-- Market commentary that's educational, not sensational
+ArcVest publishes content across 4 categories:
+1. **Market Commentary** — Conversational observations on stocks, sectors, earnings, bonds, commodities, FX, crypto. "Here's what caught our eye."
+2. **Macro & Capital Flows** — Analytical, data-heavy coverage of passive fund flows, index impact, institutional positioning. Bloomberg/FT feel.
+3. **Real Economy** — Forward-looking coverage of AI investments, jobs data, GDP, corporate profits, and their investor implications.
+4. **Investor Strategies** — Educational content on tax strategies, Roth conversions, retirement planning, fee analysis, RIA industry. Classic ArcVest voice.
 
-Score this idea on these criteria (each 0-25 points, total 0-100):
-1. Relevance (0-25): How relevant is this to ArcVest's audience?
+Score this idea on whether it fits ANY of these 4 categories well (not just investor strategies).
+
+Score criteria (each 0-25 points, total 0-100):
+1. Relevance (0-25): How relevant is this to ArcVest's audience across any category?
 2. Timeliness (0-25): Is this timely? Will it still be relevant next week?
 3. Uniqueness (0-25): Does this offer a unique angle or insight?
 4. Potential (0-25): How much potential does this have for a compelling blog post?
@@ -90,6 +94,7 @@ Score this idea on these criteria (each 0-25 points, total 0-100):
 Respond with JSON only:
 {
   "relevanceScore": <total 0-100>,
+  "contentCategory": "<market_commentary | macro_capital_flows | real_economy | investor_strategies>",
   "scoreBreakdown": {
     "relevance": <0-25>,
     "timeliness": <0-25>,
@@ -114,10 +119,15 @@ Respond with JSON only:
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
+        const validCategories = ['market_commentary', 'macro_capital_flows', 'real_economy', 'investor_strategies'];
+        const category = validCategories.includes(parsed.contentCategory)
+          ? parsed.contentCategory
+          : 'investor_strategies';
         return {
           relevanceScore: parsed.relevanceScore || 0,
           scoreReason: parsed.scoreReason || '',
           suggestedAngle: parsed.suggestedAngle || '',
+          contentCategory: category as ContentCategory,
           scoreBreakdown: parsed.scoreBreakdown || {
             relevance: 0,
             timeliness: 0,
@@ -135,6 +145,7 @@ Respond with JSON only:
         relevanceScore: 0,
         scoreReason: `Error scoring: ${error instanceof Error ? error.message : 'Unknown error'}`,
         suggestedAngle: 'N/A',
+        contentCategory: 'investor_strategies' as ContentCategory,
         scoreBreakdown: { relevance: 0, timeliness: 0, uniqueness: 0, potential: 0 },
       };
     }
@@ -185,6 +196,7 @@ Respond with JSON only:
             score_reason: score.scoreReason,
             suggested_angle: score.suggestedAngle,
             score_breakdown: score.scoreBreakdown,
+            content_category: score.contentCategory,
             status: 'scored',
             updated_at: new Date().toISOString(),
           })

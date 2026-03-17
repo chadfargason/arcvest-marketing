@@ -137,19 +137,52 @@ export const NEWS_SOURCES: NewsSource[] = [
   },
 ];
 
-// Topics that align with ArcVest content strategy
+// Topics that align with ArcVest content strategy (across all 4 content categories)
 export const RELEVANT_TOPICS = [
+  // Market Commentary
   'market news',
   'market commentary',
   'asset class returns',
   'quarterly performance',
   'annual performance',
+  'earnings reports',
+  'sector rotation',
+  'crypto markets',
+  'commodities',
+  'oil prices',
+  'gold',
+  'silver',
+  'foreign exchange',
+  'bond yields',
+  'interest rates',
+  'inflation',
+  'Fed policy',
+  // Macro & Capital Flows
+  'capital flows',
+  'ETF flows',
+  'passive fund flows',
+  'index reconstitution',
+  'institutional positioning',
+  'central bank policy',
+  // Real Economy
+  'economic outlook',
+  'AI investments',
+  'corporate capex',
+  'job market',
+  'GDP',
+  'corporate profits',
+  'consumer spending',
+  'housing market',
+  'trade policy',
+  'reshoring',
+  // Investor Strategies
   'retirement planning',
   'retirement income',
   'Social Security',
   'Medicare',
   'tax law changes',
   'tax planning',
+  'tax strategies',
   'estate planning',
   'investment strategy',
   'portfolio management',
@@ -160,17 +193,14 @@ export const RELEVANT_TOPICS = [
   'RMD',
   'Roth conversion',
   'asset allocation',
-  'bond yields',
-  'interest rates',
-  'inflation',
-  'Fed policy',
-  'economic outlook',
+  'RIA industry',
+  'new investment vehicles',
+  'fee-only advisors',
 ];
 
 // Topics to avoid or deprioritize
 export const TOPICS_TO_AVOID = [
-  'individual stock picks',
-  'crypto',
+  'individual stock recommendations',  // Can discuss stocks, cannot recommend them
   'meme stocks',
   'day trading',
   'options trading',

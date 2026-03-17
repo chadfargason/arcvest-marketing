@@ -3,6 +3,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
+import type { ContentCategory } from '@arcvest/shared';
 import { NewsArticle } from './news-fetcher';
 import { RELEVANT_TOPICS, TOPICS_TO_AVOID } from './news-sources';
 import { ARCVEST_KNOWLEDGE_CONDENSED } from '../arcvest-knowledge';
@@ -12,6 +13,7 @@ export interface ScoredArticle extends NewsArticle {
   relevanceReason: string;
   suggestedAngle?: string;
   suggestedKeywords?: string[];
+  contentCategory?: ContentCategory;
   shouldProcess: boolean;
 }
 
@@ -53,6 +55,14 @@ ${ARCVEST_KNOWLEDGE_CONDENSED}
 
 Review these news articles and score each one for relevance to ArcVest's content strategy.
 
+ArcVest publishes content across 4 categories:
+1. **market_commentary** — Stocks, sectors, earnings, bonds, commodities, FX, crypto observations
+2. **macro_capital_flows** — Passive fund flows, index impact, institutional positioning, capital flows data
+3. **real_economy** — AI investments, jobs data, GDP, corporate profits, economic implications
+4. **investor_strategies** — Tax strategies, Roth conversions, retirement planning, fee analysis
+
+Score each article on whether it fits ANY of these categories well.
+
 ADDITIONAL TOPICS WE COVER:
 ${RELEVANT_TOPICS.join(', ')}
 
@@ -65,8 +75,9 @@ ${articlesSummary}
 For each article, provide:
 1. A relevance score from 0-100 (100 = perfect fit, 0 = not relevant)
 2. A brief reason why
-3. If score >= 60, suggest an angle for an ArcVest blog post
-4. If score >= 60, suggest 3-5 SEO keywords
+3. The best-fit content category
+4. If score >= 60, suggest an angle for an ArcVest blog post
+5. If score >= 60, suggest 3-5 SEO keywords
 
 Respond in JSON format:
 {
@@ -74,13 +85,15 @@ Respond in JSON format:
     {
       "index": 1,
       "score": 85,
-      "reason": "Directly relevant to retirement planning audience",
-      "angle": "How this affects your retirement timeline",
-      "keywords": ["retirement planning", "market impact", "portfolio strategy"]
+      "category": "market_commentary",
+      "reason": "Directly relevant to market commentary",
+      "angle": "What this week's earnings tell us about the consumer",
+      "keywords": ["earnings", "market commentary", "consumer spending"]
     },
     {
       "index": 2,
       "score": 30,
+      "category": "market_commentary",
       "reason": "Too focused on day trading, not our audience"
     }
   ]
@@ -103,6 +116,7 @@ Only include articles in your response. Output valid JSON only.`;
       index: number;
       score: number;
       reason: string;
+      category?: string;
       angle?: string;
       keywords?: string[];
     }> = [];
@@ -118,6 +132,7 @@ Only include articles in your response. Output valid JSON only.`;
     }
 
     // Map scores back to articles
+    const validCategories = ['market_commentary', 'macro_capital_flows', 'real_economy', 'investor_strategies'];
     const scoredArticles: ScoredArticle[] = articles.slice(0, 30).map((article, i) => {
       const scoreData = scores.find(s => s.index === i + 1);
       return {
@@ -126,6 +141,9 @@ Only include articles in your response. Output valid JSON only.`;
         relevanceReason: scoreData?.reason || 'Not scored',
         suggestedAngle: scoreData?.angle,
         suggestedKeywords: scoreData?.keywords,
+        contentCategory: (scoreData?.category && validCategories.includes(scoreData.category)
+          ? scoreData.category
+          : undefined) as ContentCategory | undefined,
         shouldProcess: (scoreData?.score || 0) >= minScore,
       };
     });
@@ -164,18 +182,21 @@ export async function scoreSingleArticle(article: NewsArticle): Promise<ScoredAr
 
 ${ARCVEST_KNOWLEDGE_CONDENSED}
 
-Score this news article for relevance to ArcVest's content strategy:
+ArcVest content categories: market_commentary, macro_capital_flows, real_economy, investor_strategies.
+
+Score this news article for relevance to ArcVest's content strategy across any category:
 
 TITLE: ${article.title}
 SOURCE: ${article.sourceName}
 DESCRIPTION: ${article.description}
 
-ADDITIONAL TOPICS: ${RELEVANT_TOPICS.slice(0, 10).join(', ')}
+ADDITIONAL TOPICS: ${RELEVANT_TOPICS.slice(0, 15).join(', ')}
 TOPICS TO AVOID: ${TOPICS_TO_AVOID.join(', ')}
 
 Respond with JSON only:
 {
   "score": 0-100,
+  "category": "market_commentary | macro_capital_flows | real_economy | investor_strategies",
   "reason": "brief explanation",
   "angle": "suggested blog angle if score >= 60",
   "keywords": ["keyword1", "keyword2"]
@@ -190,7 +211,7 @@ Respond with JSON only:
 
   const responseText = response.content.find(c => c.type === 'text')?.text || '';
 
-  let scoreData = { score: 0, reason: 'Failed to parse', angle: '', keywords: [] as string[] };
+  let scoreData = { score: 0, reason: 'Failed to parse', angle: '', keywords: [] as string[], category: '' };
   try {
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
@@ -200,12 +221,14 @@ Respond with JSON only:
     // Keep default
   }
 
+  const validCats = ['market_commentary', 'macro_capital_flows', 'real_economy', 'investor_strategies'];
   return {
     ...article,
     relevanceScore: scoreData.score,
     relevanceReason: scoreData.reason,
     suggestedAngle: scoreData.angle,
     suggestedKeywords: scoreData.keywords,
+    contentCategory: (validCats.includes(scoreData.category) ? scoreData.category : undefined) as ContentCategory | undefined,
     shouldProcess: scoreData.score >= 60,
   };
 }

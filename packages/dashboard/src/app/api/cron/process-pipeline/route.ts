@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     // Get ONE selected idea for today (process one at a time to avoid timeout)
     const { data: selectedIdeas, error: fetchError } = await supabase
       .from('idea_queue')
-      .select('id, title, source_name, full_content, suggested_angle, relevance_score, selection_rank')
+      .select('id, title, source_name, full_content, suggested_angle, relevance_score, selection_rank, content_category')
       .eq('status', 'selected')
       .eq('selected_for_date', dateStr)
       .order('selection_rank', { ascending: true })
@@ -74,6 +74,7 @@ export async function GET(request: NextRequest) {
           content: inputContent,
           inputType: 'raw_text',
           focusAngle: idea.suggested_angle || undefined,
+          contentCategory: idea.content_category || undefined,
         });
 
         // Extract title
@@ -86,6 +87,7 @@ export async function GET(request: NextRequest) {
           .insert({
             title: finalTitle,
             content_type: 'blog_post',
+            content_category: idea.content_category || null,
             status: 'review',
             topic: idea.title,
             draft: pipelineResult.geminiDraft.content,
@@ -97,6 +99,7 @@ export async function GET(request: NextRequest) {
             metadata: {
               source_name: idea.source_name,
               relevance_score: idea.relevance_score,
+              content_category: idea.content_category || 'investor_strategies',
               pipeline_stats: {
                 processingTimeMs: pipelineResult.metadata.processingTimeMs,
                 totalTokensUsed: pipelineResult.metadata.totalTokensUsed,

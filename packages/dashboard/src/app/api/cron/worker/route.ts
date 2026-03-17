@@ -502,7 +502,7 @@ async function processSelectDaily(payload: Record<string, unknown>, logger: Inst
 
     const { data: selectedIdeas, error: fetchError } = await supabase
       .from('idea_queue')
-      .select('id, title, selection_rank')
+      .select('id, title, selection_rank, content_category')
       .eq('status', 'selected')
       .eq('selected_for_date', dateStr)
       .order('selection_rank', { ascending: true });
@@ -588,7 +588,7 @@ async function processPipeline(
     // Get the idea to process
     let ideaQuery = supabase
       .from('idea_queue')
-      .select('id, title, source_name, full_content, suggested_angle, relevance_score, selection_rank, pipeline_step, pipeline_data');
+      .select('id, title, source_name, full_content, suggested_angle, relevance_score, selection_rank, pipeline_step, pipeline_data, content_category');
 
     if (ideaId) {
       ideaQuery = ideaQuery.eq('id', ideaId);
@@ -665,11 +665,13 @@ async function processPipeline(
     // Run the 4-AI pipeline with checkpointing
     logger.startStep();
     const pipeline = getMultiAIPipeline();
+    const contentCategory = idea.content_category || undefined;
     const pipelineResult = await pipeline.runWithCheckpoints(
       {
         content: inputContent,
         inputType: 'raw_text',
         focusAngle: idea.suggested_angle || undefined,
+        contentCategory,
       },
       existingCheckpoint,
       onCheckpoint
@@ -694,6 +696,7 @@ async function processPipeline(
       .insert({
         title: finalTitle,
         content_type: 'blog_post',
+        content_category: idea.content_category || null,
         status: 'review',
         topic: idea.title,
         draft: pipelineResult.geminiDraft.content,
@@ -705,6 +708,7 @@ async function processPipeline(
         metadata: {
           source_name: idea.source_name,
           relevance_score: idea.relevance_score,
+          content_category: idea.content_category || 'investor_strategies',
           pipeline_stats: {
             processingTimeMs: pipelineResult.metadata?.processingTimeMs,
             totalTokensUsed: pipelineResult.metadata?.totalTokensUsed,

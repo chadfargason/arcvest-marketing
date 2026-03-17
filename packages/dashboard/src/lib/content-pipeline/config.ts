@@ -5,34 +5,64 @@
  * Update these lists to customize content generation.
  */
 
+import type { ContentCategory } from '@arcvest/shared';
+
 export const PIPELINE_CONFIG = {
-  // Topics the pipeline should focus on
+  // Topics the pipeline should focus on (across all 4 content categories)
   TOPICS_OF_INTEREST: [
+    // Market Commentary
     'market news',
     'market commentary',
     'asset class returns',
     'quarterly performance',
     'annual performance',
+    'earnings reports',
+    'sector rotation',
+    'crypto markets',
+    'commodities',
+    'gold',
+    'bond yields',
+    'interest rates',
+    // Macro & Capital Flows
+    'capital flows',
+    'ETF flows',
+    'passive fund flows',
+    'institutional positioning',
+    // Real Economy
+    'AI investments',
+    'job market',
+    'GDP',
+    'corporate profits',
+    'economic outlook',
+    'consumer spending',
+    // Investor Strategies
     'retirement planning',
     'retirement income strategies',
     'Social Security updates',
     'Medicare changes',
     'tax law changes',
+    'tax strategies',
     'estate planning',
     'investment strategy',
     'portfolio management',
     'financial planning',
     'wealth management',
+    'RIA industry',
+    'Roth conversion',
   ],
 
   // Topics to avoid
   TOPICS_TO_AVOID: [
-    'specific stock picks',
+    'individual stock recommendations',
     'buy/sell recommendations for individual stocks',
     'crypto recommendations',
     'get rich quick schemes',
     'market timing predictions',
     'guaranteed returns',
+    'meme stocks',
+    'day trading',
+    'options trading',
+    'penny stocks',
   ],
 
   // ArcVest brand voice guidelines
@@ -79,6 +109,8 @@ export type PipelineInput = {
   focusAngle?: string;
   // Optional: target keywords for SEO
   targetKeywords?: string[];
+  // Optional: content category for tone/voice control
+  contentCategory?: ContentCategory;
 };
 
 export type PipelineOutput = {
