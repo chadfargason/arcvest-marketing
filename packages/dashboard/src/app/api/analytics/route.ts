@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient as createClient } from '@/lib/supabase/server';
 import { getGA4Client } from '@/lib/google/ga4-client';
 import { getGoogleAdsClient } from '@/lib/google/google-ads-client';
 

@@ -155,6 +155,8 @@ async function main() {
       thank_you_page: {
         title: 'Thank You!',
         body: 'Your Retirement Readiness Checklist is on its way. Check your email within the next few minutes.',
+        button_type: 'VIEW_WEBSITE',
+        button_text: 'Visit ArcVest',
       },
       follow_up_action_url: 'https://retire.arcvest.com',
       locale: 'EN_US',

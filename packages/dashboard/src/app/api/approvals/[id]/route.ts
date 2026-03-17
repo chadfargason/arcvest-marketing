@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient as createClient } from '@/lib/supabase/server';
 
 // PUT /api/approvals/[id] - Update approval (approve/reject)
 export async function PUT(

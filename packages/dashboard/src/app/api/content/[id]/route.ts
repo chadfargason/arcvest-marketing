@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient as createClient } from '@/lib/supabase/server';
 
 // GET /api/content/[id] - Get single content item
 export async function GET(

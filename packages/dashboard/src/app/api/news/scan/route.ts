@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { runNewsScan, runQuickScan } from '@/lib/news-sourcer';
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient as createClient } from '@/lib/supabase/server';
 
 /**
  * GET /api/news/scan - Run a news scan and return results

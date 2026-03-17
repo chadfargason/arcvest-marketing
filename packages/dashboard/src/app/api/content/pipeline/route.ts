@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMultiAIPipeline } from '@/lib/content-pipeline';
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient as createClient } from '@/lib/supabase/server';
 
 // POST /api/content/pipeline - Run the full 4-AI content pipeline
 export const runtime = 'nodejs';

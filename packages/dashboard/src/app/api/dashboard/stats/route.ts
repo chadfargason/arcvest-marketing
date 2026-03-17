@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient as createClient } from '@/lib/supabase/server';
 
 // GET /api/dashboard/stats - Get dashboard statistics
 export const runtime = 'nodejs';

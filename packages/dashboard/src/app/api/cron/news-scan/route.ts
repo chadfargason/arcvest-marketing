@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { runNewsScan, fetchAllNews } from '@/lib/news-sourcer';
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient as createClient } from '@/lib/supabase/server';
 import { createHash } from 'crypto';
 
 /**

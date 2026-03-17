@@ -14,7 +14,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient as createClient } from '@/lib/supabase/server';
 import { getMultiAIPipeline, type PipelineCheckpoint, type PipelineStep } from '@/lib/content-pipeline';
 import { getIdeaScorer, getDailySelectionService, getSourceRegistry, initializeAdapters, PipelineLogger } from '@arcvest/services';
 import { runNewsScan, fetchAllNews } from '@/lib/news-sourcer';
