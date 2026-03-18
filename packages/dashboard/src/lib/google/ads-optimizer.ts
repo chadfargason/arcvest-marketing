@@ -5,7 +5,7 @@
  * Applies rule-based optimizations with configurable thresholds.
  */
 
-import { getGoogleAdsClient, type CampaignData } from './google-ads-client';
+import { getGoogleAdsClient } from './google-ads-client';
 import { createClient } from '@supabase/supabase-js';
 
 interface OptimizationRule {
@@ -468,7 +468,7 @@ export class AdsOptimizer {
                   result.newValue = 'ENABLED';
                   break;
                 case 'bid_increase': {
-                  const currentBid = parseInt((kw as any).cpcBidMicros || '0');
+                  const currentBid = parseInt(kw.cpcBidMicros || '0');
                   const increase = rule.action_value || 10;
                   const newBid = Math.round(currentBid * (1 + increase / 100));
                   await this.googleAds.updateKeywordBid(kw.resourceName, String(newBid));
@@ -477,7 +477,7 @@ export class AdsOptimizer {
                   break;
                 }
                 case 'bid_decrease': {
-                  const currentBid = parseInt((kw as any).cpcBidMicros || '0');
+                  const currentBid = parseInt(kw.cpcBidMicros || '0');
                   const decrease = rule.action_value || 10;
                   const newBid = Math.round(currentBid * (1 - decrease / 100));
                   await this.googleAds.updateKeywordBid(kw.resourceName, String(Math.max(newBid, 10000)));
