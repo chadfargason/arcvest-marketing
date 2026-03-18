@@ -220,9 +220,22 @@ export async function GET(request: NextRequest) {
             .update({ status: 'winner' })
             .eq('id', winner.id);
 
+          // Check if winner qualifies for graduation (CTR > 2% and conversions > 0)
+          const { data: winnerData } = await supabase
+            .from('experiment_variations')
+            .select('ctr, conversions')
+            .eq('id', winner.id)
+            .single();
+
+          const qualifiesForGraduation = winnerData
+            && winnerData.ctr > 2
+            && winnerData.conversions > 0;
+
+          const newStatus = qualifiesForGraduation ? 'graduated' : 'completed';
+
           await supabase
             .from('experiments')
-            .update({ status: 'completed', winner_variation_id: winner.id })
+            .update({ status: newStatus, winner_variation_id: winner.id })
             .eq('id', exp.id);
 
           // Pause the campaign
@@ -231,11 +244,16 @@ export async function GET(request: NextRequest) {
 
           await supabase.from('experiment_logs').insert({
             experiment_id: exp.id,
-            action: 'optimizer_declared_winner',
+            action: qualifiesForGraduation ? 'optimizer_graduated' : 'optimizer_declared_winner',
             details: {
               winner_variation_id: winner.id,
               winner_variation_number: winner.variation_number,
-              explanation: `Variation ${winner.variation_number} declared winner — last active variation standing`,
+              ctr: winnerData?.ctr,
+              conversions: winnerData?.conversions,
+              graduated: qualifiesForGraduation,
+              explanation: qualifiesForGraduation
+                ? `Variation ${winner.variation_number} GRADUATED — CTR ${winnerData!.ctr.toFixed(1)}% with ${winnerData!.conversions} conversions. Ready for promotion to full budget.`
+                : `Variation ${winner.variation_number} declared winner — last active variation standing`,
             },
           });
 

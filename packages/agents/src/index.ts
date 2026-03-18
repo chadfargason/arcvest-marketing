@@ -31,6 +31,7 @@ export {
   generateRSABatch,
   type RSAAsset,
   type RSAGenerationResult,
+  type PerformanceContext,
   type BatchGenerationOptions,
   type BatchGenerationResult,
 } from './creative/rsa-pipeline';

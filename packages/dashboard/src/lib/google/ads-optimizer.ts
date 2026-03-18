@@ -64,6 +64,8 @@ interface OptimizationResult {
 export class AdsOptimizer {
   private supabase;
   private googleAds;
+  private dryRun: boolean;
+  private customerId: string;
 
   constructor() {
     this.supabase = createClient(
@@ -71,6 +73,8 @@ export class AdsOptimizer {
       process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
     this.googleAds = getGoogleAdsClient();
+    this.dryRun = process.env.GOOGLE_ADS_OPTIMIZER_DRY_RUN !== 'false'; // default: true (dry run)
+    this.customerId = (process.env.GOOGLE_ADS_CUSTOMER_ID || '').replace(/-/g, '');
   }
 
   /**
@@ -340,17 +344,34 @@ export class AdsOptimizer {
             continue;
           }
 
-          // For actual changes, we would call the Google Ads API here
-          // For now, we log as "applied" - in production, wrap in try/catch
-          // and set status based on actual API response
           try {
-            // TODO: Implement actual bid/status changes via Google Ads API
-            // await this.googleAds.updateBid(campaign.id, newBid);
-            // await this.googleAds.pauseCampaign(campaign.id);
-
-            // For now, mark as applied (would be actual API call)
-            console.log(`[AdsOptimizer] Would apply ${rule.action} to ${campaign.name}`);
-            result.status = 'applied';
+            if (this.dryRun) {
+              console.log(`[AdsOptimizer] DRY RUN: Would apply ${rule.action} to ${campaign.name}`);
+              result.status = 'applied';
+              result.newValue = `[dry-run] ${rule.action}`;
+            } else {
+              const resourceName = `customers/${this.customerId}/campaigns/${campaign.id}`;
+              switch (rule.action) {
+                case 'pause':
+                  await this.googleAds.pauseCampaign(resourceName);
+                  result.newValue = 'PAUSED';
+                  break;
+                case 'enable':
+                  await this.googleAds.enableCampaign(resourceName);
+                  result.newValue = 'ENABLED';
+                  break;
+                case 'bid_increase':
+                case 'bid_decrease':
+                  // Campaign-level bid changes are handled via budget
+                  console.log(`[AdsOptimizer] Campaign bid ${rule.action} logged (apply at keyword level)`);
+                  result.newValue = `${rule.action}: ${rule.action_value}%`;
+                  break;
+                default:
+                  console.log(`[AdsOptimizer] Unhandled action: ${rule.action}`);
+              }
+              console.log(`[AdsOptimizer] Applied ${rule.action} to ${campaign.name}`);
+              result.status = 'applied';
+            }
             applied++;
           } catch (error) {
             result.status = 'failed';
@@ -376,6 +397,113 @@ export class AdsOptimizer {
       failed,
       results,
     };
+  }
+
+  /**
+   * Run keyword-level optimizations for a campaign
+   */
+  async runKeywordOptimizations(campaignId: string): Promise<OptimizationResult[]> {
+    const rules = await this.loadRules();
+    const keywordRules = rules.filter(r => r.entity_type === 'keyword');
+    if (keywordRules.length === 0) return [];
+
+    const results: OptimizationResult[] = [];
+    const endDate = new Date().toISOString().split('T')[0];
+    const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    try {
+      const keywords = await this.googleAds.getKeywordMetrics(campaignId, startDate, endDate);
+
+      for (const kw of keywords) {
+        const metrics: KeywordMetrics = {
+          id: kw.id,
+          resourceName: kw.resourceName,
+          keyword: kw.keyword,
+          matchType: kw.matchType,
+          campaignId: kw.campaignId,
+          adGroupId: kw.adGroupId,
+          impressions: kw.impressions,
+          clicks: kw.clicks,
+          cost: kw.cost,
+          conversions: kw.conversions,
+          ctr: kw.ctr,
+          avgCpc: kw.avgCpc,
+          cpa: kw.conversions > 0 ? kw.cost / kw.conversions : null,
+        };
+
+        for (const rule of keywordRules) {
+          if (await this.isInCooldown(kw.id, rule.name, rule.cooldown_hours)) continue;
+          if (!this.evaluateCondition(rule, metrics)) continue;
+
+          if (rule.max_change_per_day) {
+            const todayChange = await this.getTodayChangePercentage(kw.id);
+            if (todayChange >= rule.max_change_per_day) continue;
+          }
+
+          const result: OptimizationResult = {
+            rule: rule.name,
+            entityType: 'keyword',
+            entityId: kw.id,
+            entityName: kw.keyword,
+            action: rule.action,
+            oldValue: `$${kw.avgCpc.toFixed(2)}`,
+            newValue: null,
+            changePercentage: rule.action_value || null,
+            reason: this.generateReason(rule, metrics),
+            status: 'applied',
+          };
+
+          try {
+            if (this.dryRun) {
+              console.log(`[AdsOptimizer] DRY RUN: Would apply ${rule.action} to keyword "${kw.keyword}"`);
+              result.newValue = `[dry-run] ${rule.action}`;
+            } else {
+              switch (rule.action) {
+                case 'pause':
+                  await this.googleAds.pauseKeyword(kw.resourceName);
+                  result.newValue = 'PAUSED';
+                  break;
+                case 'enable':
+                  await this.googleAds.enableKeyword(kw.resourceName);
+                  result.newValue = 'ENABLED';
+                  break;
+                case 'bid_increase': {
+                  const currentBid = parseInt((kw as any).cpcBidMicros || '0');
+                  const increase = rule.action_value || 10;
+                  const newBid = Math.round(currentBid * (1 + increase / 100));
+                  await this.googleAds.updateKeywordBid(kw.resourceName, String(newBid));
+                  result.oldValue = `$${(currentBid / 1_000_000).toFixed(2)}`;
+                  result.newValue = `$${(newBid / 1_000_000).toFixed(2)}`;
+                  break;
+                }
+                case 'bid_decrease': {
+                  const currentBid = parseInt((kw as any).cpcBidMicros || '0');
+                  const decrease = rule.action_value || 10;
+                  const newBid = Math.round(currentBid * (1 - decrease / 100));
+                  await this.googleAds.updateKeywordBid(kw.resourceName, String(Math.max(newBid, 10000)));
+                  result.oldValue = `$${(currentBid / 1_000_000).toFixed(2)}`;
+                  result.newValue = `$${(Math.max(newBid, 10000) / 1_000_000).toFixed(2)}`;
+                  break;
+                }
+                default:
+                  break;
+              }
+            }
+            result.status = 'applied';
+          } catch (error) {
+            result.status = 'failed';
+            result.error = error instanceof Error ? error.message : 'Unknown error';
+          }
+
+          await this.logOptimization(result, rule, metrics);
+          results.push(result);
+        }
+      }
+    } catch (error) {
+      console.error(`[AdsOptimizer] Keyword optimization error for campaign ${campaignId}:`, error);
+    }
+
+    return results;
   }
 
   /**

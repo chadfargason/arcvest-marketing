@@ -89,6 +89,13 @@ export {
 // Pipeline Logging
 export { PipelineLogger, logPipelineEvent } from './pipeline-logger';
 
+// Ad Performance Learner
+export {
+  AdPerformanceLearner,
+  getAdPerformanceLearner,
+  type PerformanceContext,
+} from './ad-performance-learner';
+
 // Lead Finder
 export {
   GoogleSearchService,

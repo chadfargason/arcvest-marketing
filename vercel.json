@@ -40,6 +40,18 @@
     {
       "path": "/api/cron/experiment-optimizer",
       "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/creative-refresh",
+      "schedule": "0 14 * * 0"
+    },
+    {
+      "path": "/api/cron/experiment-launcher",
+      "schedule": "0 13 * * 1"
+    },
+    {
+      "path": "/api/cron/ads-weekly-report",
+      "schedule": "0 15 * * 1"
     }
   ]
 }

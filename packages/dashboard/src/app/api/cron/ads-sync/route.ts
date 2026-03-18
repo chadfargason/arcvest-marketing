@@ -2,19 +2,21 @@
  * Google Ads Sync Cron
  *
  * Scheduled to run every 4 hours
- * Syncs campaign metrics from Google Ads
+ * Syncs campaign metrics, asset performance, and search terms from Google Ads
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getGoogleAdsClient } from '@/lib/google/google-ads-client';
 import { createClient } from '@supabase/supabase-js';
 
+export const runtime = 'nodejs';
+export const maxDuration = 120; // 2 minutes — more work now
+
 /**
  * GET /api/cron/ads-sync
  * Called by Vercel Cron every 4 hours
  */
 export async function GET(request: NextRequest) {
-  // Verify cron secret (Vercel cron sends x-vercel-cron: 1)
   const authHeader = request.headers.get('authorization');
   const vercelCronHeader = request.headers.get('x-vercel-cron');
   const cronSecret = process.env.CRON_SECRET;
@@ -33,15 +35,13 @@ export async function GET(request: NextRequest) {
       process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
 
-    // Sync last 7 days of data
     const endDate = new Date().toISOString().split('T')[0];
     const startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-    // Fetch campaign performance
+    // ── 1. Sync campaigns & daily metrics (existing) ──
     const campaigns = await googleAds.getCampaignPerformance(startDate, endDate);
     const dailyMetrics = await googleAds.getDailyMetrics(startDate, endDate);
 
-    // Sync campaigns
     let campaignsSynced = 0;
     for (const campaign of campaigns) {
       const { error } = await supabase.from('campaigns').upsert({
@@ -53,11 +53,9 @@ export async function GET(request: NextRequest) {
       }, {
         onConflict: 'google_ads_campaign_id',
       });
-
       if (!error) campaignsSynced++;
     }
 
-    // Sync daily metrics
     let daysSynced = 0;
     for (const metric of dailyMetrics) {
       const { error } = await supabase.from('daily_metrics').upsert({
@@ -68,13 +66,82 @@ export async function GET(request: NextRequest) {
       }, {
         onConflict: 'date',
       });
-
       if (!error) daysSynced++;
     }
 
-    console.log(`[Ads Sync Cron] Complete. Campaigns: ${campaignsSynced}, Days: ${daysSynced}`);
+    // ── 2. Sync asset performance (headlines & descriptions) ──
+    let assetsSynced = 0;
+    try {
+      const assets = await googleAds.getAssetPerformance(startDate, endDate);
+      console.log(`[Ads Sync Cron] Fetched ${assets.length} asset performance records`);
 
-    // Log to activity log
+      for (const asset of assets) {
+        const table = asset.fieldType === 'HEADLINE' ? 'rsa_headlines' : 'rsa_descriptions';
+        const now = new Date().toISOString();
+
+        // Match by text content — update performance data
+        const { error } = await supabase
+          .from(table)
+          .update({
+            performance_label: asset.performanceLabel,
+            impressions: asset.impressions,
+            clicks: asset.clicks,
+            cost: asset.cost,
+            conversions: asset.conversions,
+            ctr: asset.ctr,
+            last_synced_at: now,
+          })
+          .eq('text', asset.assetText);
+
+        if (!error) assetsSynced++;
+      }
+    } catch (assetErr) {
+      console.error('[Ads Sync Cron] Asset performance sync failed:', assetErr);
+    }
+
+    // ── 3. Sync search terms ──
+    let searchTermsSynced = 0;
+    try {
+      const searchTerms = await googleAds.getSearchTermReport(startDate, endDate, 500);
+      console.log(`[Ads Sync Cron] Fetched ${searchTerms.length} search terms`);
+
+      for (const term of searchTerms) {
+        const { error } = await supabase.from('search_terms').upsert({
+          campaign_id: term.campaignId,
+          ad_group_id: term.adGroupId,
+          search_term: term.searchTerm,
+          match_type: term.matchType,
+          impressions: term.impressions,
+          clicks: term.clicks,
+          cost: term.cost,
+          conversions: term.conversions,
+          ctr: term.ctr,
+          last_seen_at: new Date().toISOString(),
+        }, {
+          onConflict: 'campaign_id,ad_group_id,search_term',
+        });
+        if (!error) searchTermsSynced++;
+      }
+    } catch (stErr) {
+      console.error('[Ads Sync Cron] Search terms sync failed:', stErr);
+    }
+
+    // ── 4. Aggregate persona/voice performance (weekly) ──
+    try {
+      // Only aggregate once per day (check current hour — run at the 0:00/4:00/8:00 UTC cycle that's closest to end of day)
+      const currentHour = new Date().getUTCHours();
+      if (currentHour >= 20) {
+        // Dynamic import to avoid circular dependencies
+        const { getAdPerformanceLearner } = await import('@arcvest/services');
+        const learner = getAdPerformanceLearner();
+        await learner.aggregateWeeklyPerformance();
+      }
+    } catch (aggErr) {
+      console.error('[Ads Sync Cron] Persona/voice aggregation failed:', aggErr);
+    }
+
+    console.log(`[Ads Sync Cron] Complete. Campaigns: ${campaignsSynced}, Days: ${daysSynced}, Assets: ${assetsSynced}, Search terms: ${searchTermsSynced}`);
+
     await supabase.from('activity_log').insert({
       actor: 'paid_media_agent',
       action: 'google_ads_sync_complete',
@@ -82,6 +149,8 @@ export async function GET(request: NextRequest) {
       details: {
         campaigns_synced: campaignsSynced,
         days_synced: daysSynced,
+        assets_synced: assetsSynced,
+        search_terms_synced: searchTermsSynced,
         date_range: { startDate, endDate },
       },
     });
@@ -91,10 +160,11 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
       campaignsSynced,
       daysSynced,
+      assetsSynced,
+      searchTermsSynced,
     });
   } catch (error) {
     console.error('[Ads Sync Cron] Failed:', error);
-
     return NextResponse.json(
       {
         success: false,
@@ -104,7 +174,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-
-// Vercel Cron configuration
-export const runtime = 'nodejs';
-export const maxDuration = 60; // 1 minute max

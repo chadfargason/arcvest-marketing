@@ -65,6 +65,47 @@ export interface AdGroupMetrics {
   cpc: number;
 }
 
+export interface AssetPerformance {
+  adGroupAdAsset: string;
+  assetText: string;
+  fieldType: 'HEADLINE' | 'DESCRIPTION';
+  performanceLabel: string;
+  impressions: number;
+  clicks: number;
+  cost: number;
+  conversions: number;
+  ctr: number;
+}
+
+export interface SearchTermData {
+  searchTerm: string;
+  campaignId: string;
+  adGroupId: string;
+  matchType: string;
+  impressions: number;
+  clicks: number;
+  cost: number;
+  conversions: number;
+  ctr: number;
+}
+
+export interface KeywordData {
+  id: string;
+  resourceName: string;
+  keyword: string;
+  matchType: string;
+  campaignId: string;
+  adGroupId: string;
+  status: string;
+  impressions: number;
+  clicks: number;
+  cost: number;
+  conversions: number;
+  ctr: number;
+  avgCpc: number;
+  cpcBidMicros: string;
+}
+
 export class GoogleAdsClient {
   private customerId: string;
   private loginCustomerId: string;
@@ -699,6 +740,291 @@ export class GoogleAdsClient {
         ? Number((totalCost / totalConversions).toFixed(2))
         : null,
     };
+  }
+  /**
+   * Get asset-level performance for RSA headlines and descriptions
+   */
+  async getAssetPerformance(startDate: string, endDate: string): Promise<AssetPerformance[]> {
+    const query = `
+      SELECT
+        ad_group_ad_asset_view.resource_name,
+        asset.text_asset.text,
+        ad_group_ad_asset_view.field_type,
+        ad_group_ad_asset_view.performance_label,
+        metrics.impressions,
+        metrics.clicks,
+        metrics.cost_micros,
+        metrics.conversions
+      FROM ad_group_ad_asset_view
+      WHERE segments.date BETWEEN '${startDate}' AND '${endDate}'
+        AND ad_group_ad_asset_view.field_type IN ('HEADLINE', 'DESCRIPTION')
+    `;
+
+    const response = await this.runQuery(query);
+
+    const assets: AssetPerformance[] = [];
+
+    for (const row of response.results || []) {
+      const rawRow = row as Record<string, unknown>;
+      const assetView = rawRow.adGroupAdAssetView as {
+        resourceName?: string;
+        fieldType?: string;
+        performanceLabel?: string;
+      } | undefined;
+      const asset = rawRow.asset as {
+        textAsset?: { text?: string };
+      } | undefined;
+      const metrics = rawRow.metrics as {
+        impressions?: string;
+        clicks?: string;
+        costMicros?: string;
+        conversions?: number;
+      } | undefined;
+
+      const impressions = parseInt(metrics?.impressions || '0');
+      const clicks = parseInt(metrics?.clicks || '0');
+      const costMicros = parseInt(metrics?.costMicros || '0');
+
+      assets.push({
+        adGroupAdAsset: assetView?.resourceName || '',
+        assetText: asset?.textAsset?.text || '',
+        fieldType: (assetView?.fieldType || 'HEADLINE') as 'HEADLINE' | 'DESCRIPTION',
+        performanceLabel: assetView?.performanceLabel || 'UNSPECIFIED',
+        impressions,
+        clicks,
+        cost: costMicros / 1_000_000,
+        conversions: metrics?.conversions || 0,
+        ctr: impressions > 0
+          ? Number(((clicks / impressions) * 100).toFixed(2))
+          : 0,
+      });
+    }
+
+    console.log('[GoogleAdsClient] Fetched', assets.length, 'asset performance rows');
+    return assets;
+  }
+
+  /**
+   * Get search term report showing what users actually searched
+   */
+  async getSearchTermReport(startDate: string, endDate: string, limit: number = 500): Promise<SearchTermData[]> {
+    const query = `
+      SELECT
+        search_term_view.search_term,
+        campaign.id,
+        ad_group.id,
+        search_term_view.status,
+        metrics.impressions,
+        metrics.clicks,
+        metrics.cost_micros,
+        metrics.conversions
+      FROM search_term_view
+      WHERE segments.date BETWEEN '${startDate}' AND '${endDate}'
+        AND metrics.impressions > 0
+      ORDER BY metrics.impressions DESC
+      LIMIT ${limit}
+    `;
+
+    const response = await this.runQuery(query);
+
+    const terms: SearchTermData[] = [];
+
+    for (const row of response.results || []) {
+      const rawRow = row as Record<string, unknown>;
+      const searchTermView = rawRow.searchTermView as {
+        searchTerm?: string;
+        status?: string;
+      } | undefined;
+      const campaign = rawRow.campaign as { id?: string } | undefined;
+      const adGroup = rawRow.adGroup as { id?: string } | undefined;
+      const metrics = rawRow.metrics as {
+        impressions?: string;
+        clicks?: string;
+        costMicros?: string;
+        conversions?: number;
+      } | undefined;
+
+      const impressions = parseInt(metrics?.impressions || '0');
+      const clicks = parseInt(metrics?.clicks || '0');
+      const costMicros = parseInt(metrics?.costMicros || '0');
+
+      terms.push({
+        searchTerm: searchTermView?.searchTerm || '',
+        campaignId: campaign?.id || '',
+        adGroupId: adGroup?.id || '',
+        matchType: searchTermView?.status || 'UNSPECIFIED',
+        impressions,
+        clicks,
+        cost: costMicros / 1_000_000,
+        conversions: metrics?.conversions || 0,
+        ctr: impressions > 0
+          ? Number(((clicks / impressions) * 100).toFixed(2))
+          : 0,
+      });
+    }
+
+    console.log('[GoogleAdsClient] Fetched', terms.length, 'search terms');
+    return terms;
+  }
+
+  /**
+   * Get keyword-level metrics for a campaign
+   */
+  async getKeywordMetrics(campaignId: string, startDate: string, endDate: string): Promise<KeywordData[]> {
+    const query = `
+      SELECT
+        ad_group_criterion.criterion_id,
+        ad_group_criterion.resource_name,
+        ad_group_criterion.keyword.text,
+        ad_group_criterion.keyword.match_type,
+        ad_group_criterion.status,
+        ad_group_criterion.effective_cpc_bid_micros,
+        campaign.id,
+        ad_group.id,
+        metrics.impressions,
+        metrics.clicks,
+        metrics.cost_micros,
+        metrics.conversions,
+        metrics.ctr,
+        metrics.average_cpc
+      FROM keyword_view
+      WHERE campaign.id = ${campaignId}
+        AND segments.date BETWEEN '${startDate}' AND '${endDate}'
+        AND ad_group_criterion.status != 'REMOVED'
+    `;
+
+    const response = await this.runQuery(query);
+
+    const keywordMap = new Map<string, KeywordData>();
+
+    for (const row of response.results || []) {
+      const rawRow = row as Record<string, unknown>;
+      const criterion = rawRow.adGroupCriterion as {
+        criterionId?: string;
+        resourceName?: string;
+        keyword?: { text?: string; matchType?: string };
+        status?: string;
+        effectiveCpcBidMicros?: string;
+      } | undefined;
+      const campaign = rawRow.campaign as { id?: string } | undefined;
+      const adGroup = rawRow.adGroup as { id?: string } | undefined;
+      const metrics = rawRow.metrics as {
+        impressions?: string;
+        clicks?: string;
+        costMicros?: string;
+        conversions?: number;
+        ctr?: number;
+        averageCpc?: string;
+      } | undefined;
+
+      const criterionId = criterion?.criterionId || '';
+      const existing = keywordMap.get(criterionId);
+
+      const impressions = parseInt(metrics?.impressions || '0');
+      const clicks = parseInt(metrics?.clicks || '0');
+      const costMicros = parseInt(metrics?.costMicros || '0');
+      const conversions = metrics?.conversions || 0;
+
+      if (existing) {
+        existing.impressions += impressions;
+        existing.clicks += clicks;
+        existing.cost += costMicros / 1_000_000;
+        existing.conversions += conversions;
+      } else {
+        keywordMap.set(criterionId, {
+          id: criterionId,
+          resourceName: criterion?.resourceName || '',
+          keyword: criterion?.keyword?.text || '',
+          matchType: criterion?.keyword?.matchType || 'UNSPECIFIED',
+          campaignId: campaign?.id || '',
+          adGroupId: adGroup?.id || '',
+          status: criterion?.status || 'UNKNOWN',
+          impressions,
+          clicks,
+          cost: costMicros / 1_000_000,
+          conversions,
+          ctr: 0,
+          avgCpc: 0,
+          cpcBidMicros: criterion?.effectiveCpcBidMicros || '0',
+        });
+      }
+    }
+
+    console.log('[GoogleAdsClient] Fetched', keywordMap.size, 'keywords for campaign', campaignId);
+
+    return Array.from(keywordMap.values()).map((kw) => ({
+      ...kw,
+      ctr: kw.impressions > 0
+        ? Number(((kw.clicks / kw.impressions) * 100).toFixed(2))
+        : 0,
+      avgCpc: kw.clicks > 0
+        ? Number((kw.cost / kw.clicks).toFixed(2))
+        : 0,
+    }));
+  }
+
+  /**
+   * Update the CPC bid for a keyword
+   */
+  async updateKeywordBid(keywordResourceName: string, newCpcBidMicros: string): Promise<void> {
+    await this.runMutate('adGroupCriteria', [
+      {
+        update: {
+          resourceName: keywordResourceName,
+          cpcBidMicros: newCpcBidMicros,
+        },
+        updateMask: 'cpcBidMicros',
+      },
+    ]);
+    console.log('[GoogleAdsClient] Updated keyword bid:', keywordResourceName, 'to', newCpcBidMicros);
+  }
+
+  /**
+   * Pause a keyword
+   */
+  async pauseKeyword(keywordResourceName: string): Promise<void> {
+    await this.runMutate('adGroupCriteria', [
+      {
+        update: {
+          resourceName: keywordResourceName,
+          status: 'PAUSED',
+        },
+        updateMask: 'status',
+      },
+    ]);
+    console.log('[GoogleAdsClient] Paused keyword:', keywordResourceName);
+  }
+
+  /**
+   * Enable a keyword
+   */
+  async enableKeyword(keywordResourceName: string): Promise<void> {
+    await this.runMutate('adGroupCriteria', [
+      {
+        update: {
+          resourceName: keywordResourceName,
+          status: 'ENABLED',
+        },
+        updateMask: 'status',
+      },
+    ]);
+    console.log('[GoogleAdsClient] Enabled keyword:', keywordResourceName);
+  }
+
+  /**
+   * Update a campaign budget amount
+   */
+  async updateCampaignBudget(budgetResourceName: string, newAmountMicros: number): Promise<void> {
+    await this.runMutate('campaignBudgets', [
+      {
+        update: {
+          resourceName: budgetResourceName,
+          amountMicros: String(newAmountMicros),
+        },
+        updateMask: 'amountMicros',
+      },
+    ]);
+    console.log('[GoogleAdsClient] Updated campaign budget:', budgetResourceName, 'to', newAmountMicros);
   }
 }
 

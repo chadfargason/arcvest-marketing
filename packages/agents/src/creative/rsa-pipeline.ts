@@ -26,6 +26,16 @@ import {
   type ComplianceCheckResult,
 } from './ad-knowledge';
 
+export interface PerformanceContext {
+  topHeadlines: Array<{ text: string; type: string; performanceLabel: string; ctr: number }>;
+  lowHeadlines: Array<{ text: string; type: string; performanceLabel: string; ctr: number }>;
+  topDescriptions: Array<{ text: string; performanceLabel: string; ctr: number }>;
+  lowDescriptions: Array<{ text: string; performanceLabel: string; ctr: number }>;
+  topSearchTerms: Array<{ term: string; clicks: number; ctr: number }>;
+  benchmarks: { avgCtr: number; avgCpc: number };
+  personaVoiceInsights: Array<{ personaId: string; voiceId: string; ctr: number; trend: string }>;
+}
+
 // ============================================
 // TYPES
 // ============================================
@@ -108,7 +118,8 @@ export class RSAPipeline {
   async generate(
     personaId: string,
     voiceId: string,
-    variationCount: number = 10
+    variationCount: number = 10,
+    performanceContext?: PerformanceContext
   ): Promise<RSAGenerationResult> {
     const startTime = Date.now();
     let totalTokens = 0;
@@ -123,7 +134,7 @@ export class RSAPipeline {
 
     // Step 1: Claude - Initial RSA draft + compliance
     console.log('[RSA Pipeline] Step 1: Claude initial draft...');
-    const step1 = await this.step1Claude(persona, voice);
+    const step1 = await this.step1Claude(persona, voice, performanceContext);
     totalTokens += step1.tokens;
 
     // Step 2: ChatGPT - Improve and tighten
@@ -168,7 +179,8 @@ export class RSAPipeline {
    */
   private async step1Claude(
     persona: AudiencePersona,
-    voice: VoiceProfile
+    voice: VoiceProfile,
+    performanceContext?: PerformanceContext
   ): Promise<PipelineStep1Result> {
     const prompt = `You are creating Google Responsive Search Ads (RSAs) for ArcVest.
 
@@ -193,7 +205,26 @@ ${voice.headlinePatterns.map(p => `- ${p}`).join('\n')}
 
 Description patterns to consider:
 ${voice.descriptionPatterns.map(p => `- ${p}`).join('\n')}
+${performanceContext ? `
+---
 
+PERFORMANCE DATA — LEARN FROM REAL RESULTS:
+
+TOP PERFORMING HEADLINES (replicate these patterns):
+${performanceContext.topHeadlines.slice(0, 10).map(h => `- "${h.text}" (${h.type}, CTR: ${h.ctr.toFixed(1)}%)`).join('\n')}
+
+LOW PERFORMING HEADLINES (avoid these patterns):
+${performanceContext.lowHeadlines.slice(0, 5).map(h => `- "${h.text}" (${h.type}, CTR: ${h.ctr.toFixed(1)}%)`).join('\n')}
+
+TOP SEARCH TERMS (incorporate these themes):
+${performanceContext.topSearchTerms.slice(0, 10).map(s => `- "${s.term}" (${s.clicks} clicks, CTR: ${s.ctr.toFixed(1)}%)`).join('\n')}
+
+ACCOUNT BENCHMARKS:
+- Average CTR: ${performanceContext.benchmarks.avgCtr.toFixed(2)}%
+- Average CPC: $${performanceContext.benchmarks.avgCpc.toFixed(2)}
+
+Use the winning patterns above as inspiration. Avoid the losing patterns. Incorporate search term themes where natural.
+` : ''}
 ---
 
 RSA SPECIFICATIONS:
