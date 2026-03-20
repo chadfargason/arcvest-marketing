@@ -44,6 +44,7 @@ export async function GET(request: NextRequest) {
 
     // Define evening jobs
     const jobs = [
+      { job_type: 'daily_market_blog', payload: {}, priority: 11 }, // Run first — market synthesis after close
       { job_type: 'email_scan', payload: { sources: 'all' }, priority: 10 },
       { job_type: 'score_ideas', payload: { limit: 30 }, priority: 8 },
       { job_type: 'select_daily', payload: { count: 2 }, priority: 7 },

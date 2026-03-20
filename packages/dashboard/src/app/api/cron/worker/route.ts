@@ -41,7 +41,7 @@ interface FetchResult {
 }
 
 // Job types and their handlers
-type JobType = 'news_scan' | 'email_scan' | 'bloomberg_scan' | 'score_ideas' | 'select_daily' | 'process_pipeline';
+type JobType = 'news_scan' | 'email_scan' | 'bloomberg_scan' | 'score_ideas' | 'select_daily' | 'process_pipeline' | 'daily_market_blog';
 
 interface Job {
   id: string;
@@ -239,6 +239,10 @@ async function processJob(supabase: ReturnType<typeof createClient> extends Prom
 
       case 'process_pipeline':
         result = await processPipeline(supabase, job.payload, logger);
+        break;
+
+      case 'daily_market_blog':
+        result = await processDailyMarketBlog(supabase, logger);
         break;
 
       default:
@@ -861,4 +865,126 @@ async function cleanupStuckJobs(supabase: ReturnType<typeof createClient> extend
     .lt('updated_at', cutoff);
 
   return stuckJobs.length;
+}
+
+// ============================================
+// DAILY MARKET BLOG (Web Search + Claude)
+// ============================================
+
+/**
+ * Generate 1-2 daily market synthesis blog posts using Claude with web search.
+ * Uses the Anthropic API directly with the web_search tool to pull live market data
+ * and write polished blog posts in a single call.
+ */
+async function processDailyMarketBlog(
+  supabase: ReturnType<typeof createClient> extends Promise<infer T> ? T : never,
+  logger: InstanceType<typeof PipelineLogger>
+): Promise<JobResult> {
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  if (!anthropicKey) {
+    return { success: false, error: 'ANTHROPIC_API_KEY not configured' };
+  }
+
+  const today = new Date();
+  const dateStr = today.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+  logger.info('Starting daily market blog generation', 'start', { date: dateStr });
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': anthropicKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6-20250514',
+        max_tokens: 4000,
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+        system: `You are a writer for ArcVest, a fee-only fiduciary RIA. Your job is to synthesize the day's financial markets and news into one or two short blog posts. These are not market recaps. They are synthesis pieces that identify the thread connecting the day's data points and pull it tight. Voice: direct, confident, plainspoken. Write like a smart friend who happens to manage money, not like a financial journalist or an AI. Short paragraphs. Mix punchy sentences with longer ones that develop a thought. No throat-clearing. No filler. No certainly, moreover, notably, it is worth noting, or remains to be seen. Never start with In today's session or Markets moved. Start with the insight. Use contractions. Be conversational but substantive. You are writing for an audience of successful professionals who are not finance people - they are busy, skeptical of Wall Street, and allergic to jargon. If you must use a financial term, make sure context makes it self-explanatory. Output rules: Write in clean markdown suitable for direct paste into WordPress. Use ## for the title only. No other headers, no bold, no bullet points. Just flowing prose paragraphs. Use standard ASCII characters only - regular hyphens, straight apostrophes, no em dashes, no smart quotes. Structure: If the day's news naturally clusters around one big theme, write one post of roughly 600-800 words. If there are two distinct threads worth pulling, write two posts of 400-600 words each, separated by a single line containing only ---. Each post needs a punchy title as an H2. Each post should follow this arc: (1) Open with the synthesis - the one thing that connects the dots today. State the thesis in the first two sentences. (2) Build the case using the day's actual data - equity moves, rates, commodities, global markets, business headlines - but only the data points that support or complicate your thesis. Do not exhaustively list every market. If the Nikkei is irrelevant to your point, skip it. (3) Close with the ArcVest angle - what this means for real people building long-term wealth. This should feel like the author's own conviction, informed by ArcVest's published thinking on passive investing, behavioral coaching, fee transparency, and evidence-based allocation. Not a sales pitch. Just perspective. Each post must end with this verbatim disclaimer as its own paragraph: This post is for informational and educational purposes only. Nothing discussed should be construed as investment advice. ArcVest is a registered investment adviser. Past performance is not indicative of future results. Do not output search results, citations, tool calls, or intermediate steps. Output only the final blog post or posts.`,
+        messages: [{
+          role: 'user',
+          content: `Search the web for today's financial news and write the ArcVest daily blog. Find current data on: S&P 500, Nasdaq, Dow levels and key movers. 10-year Treasury yield and Fed commentary. Private credit and private equity headlines. European and Asian markets. US Dollar Index. WTI crude oil, gold, and notable commodity moves. Top 2-3 business and technology headlines relevant to investors. Also search ArcVest.com/articles for any recent articles or insights published by ArcVest and weave relevant perspectives or themes from those articles naturally into the ArcVest angle of the post. This should feel like the author drawing on their own firm's published thinking, not citing an external source. Today's date is ${dateStr}. Use only standard ASCII characters. After searching, output only the final blog post or posts in clean markdown. No search results, no citations, no intermediate steps. Start immediately with the first title.`,
+        }],
+      }),
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      logger.error(`Anthropic API error: ${errText}`, 'api_error');
+      return { success: false, error: `Anthropic API error: ${response.status}` };
+    }
+
+    const data = await response.json();
+
+    // Extract text content from response
+    const textBlocks = (data.content || []).filter((b: { type: string }) => b.type === 'text');
+    const fullText = textBlocks.map((b: { text: string }) => b.text).join('\n\n');
+
+    if (!fullText || fullText.length < 100) {
+      logger.error('Generated content too short or empty', 'validation');
+      return { success: false, error: 'Generated content too short' };
+    }
+
+    // Split into individual posts if separated by ---
+    const posts = fullText.split(/\n---\n/).map((p: string) => p.trim()).filter((p: string) => p.length > 50);
+
+    logger.info(`Generated ${posts.length} blog post(s)`, 'generated', {
+      totalLength: fullText.length,
+      tokensUsed: data.usage?.output_tokens,
+    });
+
+    // Save each post to content_calendar
+    let savedCount = 0;
+    for (const post of posts) {
+      // Extract title from ## heading
+      const titleMatch = post.match(/^## (.+)/m);
+      const title = titleMatch ? titleMatch[1].trim() : `ArcVest Daily - ${dateStr}`;
+
+      // Generate excerpt (first paragraph after title, trimmed to ~50 words)
+      const bodyStart = post.replace(/^## .+\n+/, '');
+      const firstPara = bodyStart.split('\n\n')[0] || '';
+      const excerpt = firstPara.split(/\s+/).slice(0, 50).join(' ') + '...';
+
+      const { error: insertError } = await supabase.from('content_calendar').insert({
+        title,
+        content_type: 'blog_post',
+        content_category: 'market_commentary',
+        status: 'review',
+        draft: post,
+        final_content: post,
+        meta_description: excerpt,
+        keywords: 'market commentary, daily markets, investing, ArcVest',
+        generation_method: 'automated',
+        metadata: {
+          source: 'daily_market_blog',
+          generated_at: new Date().toISOString(),
+          model: 'claude-sonnet-4-6',
+          tokens_used: data.usage?.output_tokens,
+          web_search_used: true,
+        },
+      });
+
+      if (insertError) {
+        logger.error(`Failed to save post "${title}": ${insertError.message}`, 'save_error');
+      } else {
+        savedCount++;
+        logger.info(`Saved: "${title}"`, 'saved');
+      }
+    }
+
+    return {
+      success: true,
+      data: {
+        posts_generated: posts.length,
+        posts_saved: savedCount,
+        date: dateStr,
+      },
+    };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`Daily market blog failed: ${msg}`, 'error');
+    return { success: false, error: msg };
+  }
 }
