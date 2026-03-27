@@ -18,6 +18,7 @@ import {
   Target,
   Share2,
   FlaskConical,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -29,6 +30,7 @@ const navigation = [
   { name: 'Pipeline', href: '/dashboard/pipeline', icon: BarChart3 },
   { name: 'Campaigns', href: '/dashboard/campaigns', icon: Megaphone },
   { name: 'Meta Ads', href: '/dashboard/meta-ads', icon: Share2 },
+  { name: 'Ad Optimizer', href: '/dashboard/ad-optimizer', icon: SlidersHorizontal },
   { name: 'Ad Performance', href: '/dashboard/ad-performance', icon: BarChart2 },
   { name: 'Experiments', href: '/dashboard/experiments', icon: FlaskConical },
   { name: 'Content', href: '/dashboard/content', icon: FileText },

@@ -44,6 +44,9 @@ export {
   type MetaAdsConfig,
   type MetaSyncResult,
   type MetaPerformanceSummary,
+  type MetaCampaignRaw,
+  type MetaAdSetRaw,
+  type MetaInsightRaw,
 } from './meta-ads-service';
 export {
   WordPressService,

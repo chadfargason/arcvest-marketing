@@ -24,7 +24,7 @@ interface MetaGraphResponse<T> {
   error?: { message: string; type: string; code: number; fbtrace_id: string };
 }
 
-interface MetaCampaignRaw {
+export interface MetaCampaignRaw {
   id: string;
   name: string;
   status: string;
@@ -35,7 +35,7 @@ interface MetaCampaignRaw {
   stop_time?: string;
 }
 
-interface MetaAdSetRaw {
+export interface MetaAdSetRaw {
   id: string;
   name: string;
   status: string;
@@ -58,7 +58,7 @@ interface MetaAdRaw {
   creative?: { id: string };
 }
 
-interface MetaInsightRaw {
+export interface MetaInsightRaw {
   campaign_id?: string;
   campaign_name?: string;
   adset_id?: string;
@@ -1118,6 +1118,115 @@ export class MetaAdsService {
     }
 
     return data || [];
+  }
+
+  // -----------------------------------------------------------------------
+  // Write methods — Budget & Status Updates
+  // -----------------------------------------------------------------------
+
+  /**
+   * Update a campaign's daily budget (amount in dollars, converted to cents for Meta API).
+   */
+  async updateCampaignBudget(
+    campaignId: string,
+    dailyBudgetDollars: number,
+  ): Promise<{ success: boolean }> {
+    return this.graphPost<{ success: boolean }>(
+      `/${campaignId}`,
+      { daily_budget: Math.round(dailyBudgetDollars * 100) },
+    );
+  }
+
+  /**
+   * Update an ad set's daily budget (amount in dollars, converted to cents for Meta API).
+   */
+  async updateAdSetBudget(
+    adSetId: string,
+    dailyBudgetDollars: number,
+  ): Promise<{ success: boolean }> {
+    return this.graphPost<{ success: boolean }>(
+      `/${adSetId}`,
+      { daily_budget: Math.round(dailyBudgetDollars * 100) },
+    );
+  }
+
+  /**
+   * Update a campaign's status (ACTIVE, PAUSED, DELETED).
+   */
+  async updateCampaignStatus(
+    campaignId: string,
+    status: 'ACTIVE' | 'PAUSED' | 'DELETED',
+  ): Promise<{ success: boolean }> {
+    return this.graphPost<{ success: boolean }>(
+      `/${campaignId}`,
+      { status },
+    );
+  }
+
+  /**
+   * Update an ad set's status (ACTIVE, PAUSED, DELETED).
+   */
+  async updateAdSetStatus(
+    adSetId: string,
+    status: 'ACTIVE' | 'PAUSED' | 'DELETED',
+  ): Promise<{ success: boolean }> {
+    return this.graphPost<{ success: boolean }>(
+      `/${adSetId}`,
+      { status },
+    );
+  }
+
+  /**
+   * Get live campaign data with insights directly from Meta API (not from Supabase).
+   * Returns campaigns enriched with performance metrics for the specified date range.
+   */
+  async getLiveCampaignPerformance(
+    daysSince: number = 30,
+  ): Promise<Array<{
+    campaign: MetaCampaignRaw;
+    insights: MetaInsightRaw | null;
+    adSets: MetaAdSetRaw[];
+  }>> {
+    if (!this.config) {
+      throw new Error('MetaAdsService not configured. Call initialize() first.');
+    }
+
+    const endDate = new Date().toISOString().split('T')[0];
+    const startDate = new Date(Date.now() - daysSince * 86400000).toISOString().split('T')[0];
+
+    // Fetch campaigns, insights, and ad sets in parallel
+    const [campaigns, adSets] = await Promise.all([
+      this.getCampaigns(),
+      this.getAdSets(),
+    ]);
+
+    // Fetch aggregated insights per campaign (not daily)
+    const insightsRaw = await this.graphGetAll<MetaInsightRaw>(
+      `/${this.config.adAccountId}/insights`,
+      {
+        fields: 'campaign_id,campaign_name,impressions,clicks,spend,reach,cpc,ctr,cpm,actions,cost_per_action_type',
+        time_range: JSON.stringify({ since: startDate, until: endDate }),
+        level: 'campaign',
+      },
+    );
+
+    const insightsByCampaign = new Map<string, MetaInsightRaw>();
+    for (const ins of insightsRaw) {
+      if (ins.campaign_id) insightsByCampaign.set(ins.campaign_id, ins);
+    }
+
+    const adSetsByCampaign = new Map<string, MetaAdSetRaw[]>();
+    for (const as of adSets) {
+      const list = adSetsByCampaign.get(as.campaign_id) || [];
+      list.push(as);
+      adSetsByCampaign.set(as.campaign_id, list);
+    }
+
+    return campaigns.map((c) => ({
+      campaign: c,
+      insights: insightsByCampaign.get(c.id) || null,
+      adSets: adSetsByCampaign.get(c.id) || [],
+    }));
   }
 }
 
