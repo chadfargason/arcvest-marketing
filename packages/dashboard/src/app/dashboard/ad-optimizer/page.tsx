@@ -20,6 +20,8 @@ import {
   AlertTriangle,
   Zap,
   Shield,
+  Users,
+  Minus,
 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
@@ -66,6 +68,23 @@ interface PerformanceData {
     projectedMonthlySpend: number;
   };
   days: number;
+}
+
+interface YouTubeStats {
+  hasData: boolean;
+  latest?: {
+    date: string;
+    subscriberCount: number;
+    videoCount: number | null;
+    viewCount: number | null;
+  };
+  delta7: number | null;
+  delta30: number | null;
+  dailyAvgLast7: number | null;
+  dailyAvgLast30: number | null;
+  sparkline: Array<{ date: string; subs: number }>;
+  snapshotsAvailable: number;
+  message?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -148,6 +167,7 @@ function truncateName(name: string, maxLen = 50): string {
 
 export default function AdOptimizerPage() {
   const [data, setData] = useState<PerformanceData | null>(null);
+  const [youtube, setYoutube] = useState<YouTubeStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [days, setDays] = useState(30);
@@ -165,10 +185,17 @@ export default function AdOptimizerPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/meta-ads/live-performance?days=${days}`);
-      if (!res.ok) throw new Error(await res.text());
-      const json = await res.json();
-      setData(json);
+      const [adsRes, ytRes] = await Promise.all([
+        fetch(`/api/meta-ads/live-performance?days=${days}`),
+        fetch('/api/youtube/stats'),
+      ]);
+      if (!adsRes.ok) throw new Error(await adsRes.text());
+      const adsJson = await adsRes.json();
+      setData(adsJson);
+      if (ytRes.ok) {
+        const ytJson = await ytRes.json();
+        setYoutube(ytJson);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load');
     } finally {
@@ -328,6 +355,8 @@ export default function AdOptimizerPage() {
             </div>
           </div>
         )}
+
+        {youtube && <SubscribersPanel stats={youtube} />}
 
         {data && (
           <>
@@ -801,6 +830,126 @@ export default function AdOptimizerPage() {
 // ---------------------------------------------------------------------------
 // Sub-components
 // ---------------------------------------------------------------------------
+
+function SubscribersPanel({ stats }: { stats: YouTubeStats }) {
+  if (!stats.hasData || !stats.latest) {
+    return (
+      <Card className="mb-6 border-zinc-200">
+        <CardContent className="py-4 px-5 flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-zinc-50 text-zinc-400">
+            <Users className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-zinc-700">
+              YouTube Subscribers
+            </p>
+            <p className="text-xs text-zinc-500 mt-0.5">
+              {stats.message || 'No snapshots yet. Run the daily cron to seed.'}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const { latest, delta7, delta30, dailyAvgLast7, sparkline } = stats;
+
+  const max = Math.max(...sparkline.map((p) => p.subs));
+  const min = Math.min(...sparkline.map((p) => p.subs));
+  const range = Math.max(max - min, 1);
+  const sparkPoints = sparkline
+    .map((p, i) => {
+      const x = (i / Math.max(sparkline.length - 1, 1)) * 100;
+      const y = 100 - ((p.subs - min) / range) * 100;
+      return `${x},${y}`;
+    })
+    .join(' ');
+
+  const DeltaBadge = ({ value, label }: { value: number | null; label: string }) => {
+    if (value === null) {
+      return (
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-zinc-400 uppercase tracking-wider">{label}</span>
+          <span className="text-sm text-zinc-400">—</span>
+        </div>
+      );
+    }
+    const isUp = value > 0;
+    const isFlat = value === 0;
+    const Icon = isFlat ? Minus : isUp ? TrendingUp : TrendingDown;
+    const color = isFlat
+      ? 'text-zinc-500'
+      : isUp
+        ? 'text-emerald-600'
+        : 'text-red-600';
+    return (
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-zinc-500 uppercase tracking-wider">{label}</span>
+        <span className={`inline-flex items-center gap-1 text-sm font-semibold ${color}`}>
+          <Icon className="h-3.5 w-3.5" />
+          {value > 0 ? '+' : ''}
+          {value}
+        </span>
+      </div>
+    );
+  };
+
+  return (
+    <Card className="mb-6 border-zinc-200">
+      <CardContent className="py-4 px-5">
+        <div className="flex items-center gap-6">
+          <div className="p-2 rounded-lg bg-red-50 text-red-600">
+            <Users className="h-5 w-5" />
+          </div>
+          <div className="flex-shrink-0">
+            <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
+              YouTube Subscribers
+            </p>
+            <p className="text-2xl font-bold text-zinc-900 mt-0.5">
+              {latest.subscriberCount.toLocaleString()}
+            </p>
+            <p className="text-[11px] text-zinc-400 mt-0.5">
+              as of {latest.date}
+            </p>
+          </div>
+          <div className="flex items-center gap-6 flex-1">
+            <DeltaBadge value={delta7} label="7d" />
+            <DeltaBadge value={delta30} label="30d" />
+            {dailyAvgLast7 !== null && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-zinc-500 uppercase tracking-wider">
+                  Avg/day
+                </span>
+                <span className="text-sm font-semibold text-zinc-700">
+                  {dailyAvgLast7.toFixed(1)}
+                </span>
+              </div>
+            )}
+          </div>
+          {sparkline.length > 1 && (
+            <div className="w-40 h-12 flex-shrink-0">
+              <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full">
+                <polyline
+                  points={sparkPoints}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  className="text-sky-500"
+                  vectorEffect="non-scaling-stroke"
+                />
+              </svg>
+            </div>
+          )}
+        </div>
+        {stats.snapshotsAvailable < 7 && (
+          <p className="text-[11px] text-amber-600 mt-2">
+            Only {stats.snapshotsAvailable} snapshot{stats.snapshotsAvailable === 1 ? '' : 's'} available. Deltas will become reliable after 7 daily runs.
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 function KpiCard({
   label,
