@@ -1,0 +1,30 @@
+{
+  "name": "@arcvest/video",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "vo": "tsx scripts/generate-vo.ts",
+    "preview": "remotion studio src/Root.tsx",
+    "render": "remotion render src/Root.tsx FeeDrag out/fee-drag-30s-16x9.mp4",
+    "build": "npm run vo && npm run render",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo 'Lint: @arcvest/video (no eslint configured)'"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "^4.0.250",
+    "@remotion/cli": "^4.0.250",
+    "@remotion/bundler": "^4.0.250",
+    "@remotion/renderer": "^4.0.250"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
