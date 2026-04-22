@@ -9,19 +9,21 @@ export const CaptionsOverlay: React.FC = () => {
     <AbsoluteFill style={{ pointerEvents: 'none' }}>
       {captions.map((c, i) => (
         <Sequence key={i} from={c.fromFrame} durationInFrames={c.durationFrames}>
-          <AbsoluteFill style={{ justifyContent: 'flex-end', alignItems: 'center', paddingBottom: 80 }}>
+          <AbsoluteFill style={{ justifyContent: 'flex-end', alignItems: 'center', paddingBottom: 70 }}>
             <div
               style={{
                 fontFamily: fonts.sans,
-                fontSize: 40,
+                fontSize: 38,
                 fontWeight: fontWeights.semibold,
                 color: colors.textPrimary,
-                background: 'rgba(10, 14, 20, 0.85)',
-                padding: '14px 28px',
-                borderRadius: 8,
-                maxWidth: 1400,
+                background: colors.captionPill,
+                border: `1px solid ${colors.captionPillBorder}`,
+                padding: '14px 30px',
+                borderRadius: 10,
+                maxWidth: 1500,
                 textAlign: 'center',
                 lineHeight: 1.3,
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.06)',
               }}
             >
               {c.text}

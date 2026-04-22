@@ -7,6 +7,7 @@ export interface YearlyBalances {
   endA: number;
   endB: number;
   gap: number;
+  extraYears: number;
 }
 
 export function computeYearlyBalances(cfg: FeeDragConfig): YearlyBalances {
@@ -33,7 +34,9 @@ export function computeYearlyBalances(cfg: FeeDragConfig): YearlyBalances {
 
   const endA = advA[advA.length - 1];
   const endB = advB[advB.length - 1];
-  return { years, advA, advB, endA, endB, gap: endB - endA };
+  const gap = endB - endA;
+  const extraYears = gap / cfg.retirementSpending;
+  return { years, advA, advB, endA, endB, gap, extraYears };
 }
 
 export function formatMillions(value: number): string {
@@ -41,5 +44,9 @@ export function formatMillions(value: number): string {
 }
 
 export function formatCurrency(value: number): string {
+  return `$${Math.round(value).toLocaleString('en-US')}`;
+}
+
+export function formatLongDollars(value: number): string {
   return `$${Math.round(value).toLocaleString('en-US')}`;
 }

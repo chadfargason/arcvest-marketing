@@ -1,26 +1,22 @@
 import React from 'react';
-import { AbsoluteFill, useCurrentFrame, useVideoConfig, spring, interpolate } from 'remotion';
+import { AbsoluteFill, useCurrentFrame, interpolate } from 'remotion';
 import { colors } from '../../brand/colors';
 import { fonts, fontWeights } from '../../brand/fonts';
 
+// Digit-by-digit build of "$1.17M".
+// Each glyph reveals on a fixed frame schedule, then the whole number sits.
+const GLYPHS = ['$', '1', '.', '1', '7', 'M'];
+const FIRST_GLYPH_FRAME = 18;
+const FRAMES_PER_GLYPH = 14;
+
 export const HookNumber: React.FC = () => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-
-  const slam = spring({ frame, fps, config: { damping: 12, stiffness: 120, mass: 1 } });
-  const scale = interpolate(slam, [0, 1], [1.8, 1]);
-  const opacity = interpolate(frame, [0, 10], [0, 1], { extrapolateRight: 'clamp' });
-
-  const subtitleOpacity = interpolate(frame, [30, 45], [0, 1], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-  });
 
   return (
     <AbsoluteFill
       style={{
-        background: `radial-gradient(ellipse at center, ${colors.bg} 0%, ${colors.bgVignette} 100%)`,
-        fontFamily: fonts.sans,
+        background: colors.bg,
+        fontFamily: fonts.tabular,
         color: colors.textPrimary,
         justifyContent: 'center',
         alignItems: 'center',
@@ -28,28 +24,30 @@ export const HookNumber: React.FC = () => {
     >
       <div
         style={{
-          fontSize: 280,
+          fontSize: 320,
           fontWeight: fontWeights.black,
-          fontFamily: fonts.tabular,
-          letterSpacing: -8,
-          transform: `scale(${scale})`,
-          opacity,
+          letterSpacing: -10,
+          display: 'flex',
+          gap: 0,
+          lineHeight: 1,
         }}
       >
-        $1.17M
-      </div>
-      <div
-        style={{
-          marginTop: 24,
-          fontSize: 44,
-          fontWeight: fontWeights.medium,
-          color: colors.textSecondary,
-          letterSpacing: 2,
-          textTransform: 'uppercase',
-          opacity: subtitleOpacity,
-        }}
-      >
-        the cost of 1% in fees
+        {GLYPHS.map((g, i) => {
+          const start = FIRST_GLYPH_FRAME + i * FRAMES_PER_GLYPH;
+          const opacity = interpolate(frame, [start, start + 6], [0, 1], {
+            extrapolateLeft: 'clamp',
+            extrapolateRight: 'clamp',
+          });
+          const translateY = interpolate(frame, [start, start + 10], [-20, 0], {
+            extrapolateLeft: 'clamp',
+            extrapolateRight: 'clamp',
+          });
+          return (
+            <span key={i} style={{ opacity, transform: `translateY(${translateY}px)`, display: 'inline-block' }}>
+              {g}
+            </span>
+          );
+        })}
       </div>
     </AbsoluteFill>
   );

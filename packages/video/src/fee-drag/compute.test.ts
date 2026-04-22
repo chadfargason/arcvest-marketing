@@ -33,6 +33,25 @@ describe('computeYearlyBalances', () => {
     expect(result.gap).toBeLessThan(1_164_250);
   });
 
+  it('Year 10 balances: A ~ $1.18M, B ~ $1.28M', () => {
+    expect(result.advA[10]).toBeGreaterThan(1_170_000);
+    expect(result.advA[10]).toBeLessThan(1_185_000);
+    expect(result.advB[10]).toBeGreaterThan(1_270_000);
+    expect(result.advB[10]).toBeLessThan(1_285_000);
+  });
+
+  it('Year 20 balances: A ~ $2.33M, B ~ $2.73M', () => {
+    expect(result.advA[20]).toBeGreaterThan(2_320_000);
+    expect(result.advA[20]).toBeLessThan(2_340_000);
+    expect(result.advB[20]).toBeGreaterThan(2_725_000);
+    expect(result.advB[20]).toBeLessThan(2_745_000);
+  });
+
+  it('extraYears ≈ 3.88 (gap / $300K spending)', () => {
+    expect(result.extraYears).toBeGreaterThan(3.85);
+    expect(result.extraYears).toBeLessThan(3.92);
+  });
+
   it('ArcVest always beats Advisor A after year 0', () => {
     for (let i = 1; i < result.years.length; i++) {
       expect(result.advB[i]).toBeGreaterThan(result.advA[i]);

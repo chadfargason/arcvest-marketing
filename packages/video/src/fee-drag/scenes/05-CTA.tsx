@@ -9,11 +9,11 @@ export const CTA: React.FC = () => {
   const { fps } = useVideoConfig();
 
   const logo = spring({ frame, fps, config: { damping: 14, stiffness: 110 } });
-  const logoScale = interpolate(logo, [0, 1], [0.8, 1]);
+  const logoScale = interpolate(logo, [0, 1], [0.85, 1]);
   const logoOpacity = interpolate(logo, [0, 1], [0, 1]);
 
-  const urlOpacity = interpolate(frame, [20, 35], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
-  const disclaimerOpacity = interpolate(frame, [40, 65], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+  const urlOpacity = interpolate(frame, [22, 38], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+  const disclaimerOpacity = interpolate(frame, [50, 80], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
 
   return (
     <AbsoluteFill
@@ -27,10 +27,10 @@ export const CTA: React.FC = () => {
     >
       <div
         style={{
-          fontSize: 160,
+          fontSize: 180,
           fontWeight: fontWeights.black,
           color: colors.arcvest,
-          letterSpacing: -4,
+          letterSpacing: -5,
           transform: `scale(${logoScale})`,
           opacity: logoOpacity,
         }}
@@ -40,7 +40,7 @@ export const CTA: React.FC = () => {
       <div
         style={{
           marginTop: 40,
-          fontSize: 52,
+          fontSize: 56,
           fontWeight: fontWeights.semibold,
           color: colors.textPrimary,
           opacity: urlOpacity,
@@ -52,14 +52,14 @@ export const CTA: React.FC = () => {
       <div
         style={{
           position: 'absolute',
-          bottom: 60,
+          bottom: 50,
           left: 120,
           right: 120,
-          fontSize: 18,
+          fontSize: 17,
           fontWeight: fontWeights.regular,
           color: colors.textMuted,
           opacity: disclaimerOpacity,
-          lineHeight: 1.5,
+          lineHeight: 1.55,
           textAlign: 'center',
         }}
       >

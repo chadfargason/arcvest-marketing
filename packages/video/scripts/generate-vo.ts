@@ -1,32 +1,24 @@
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
+import { join, dirname, basename, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
 
-const SCRIPT_PATH = join(ROOT, 'src', 'fee-drag', 'script.txt');
-const OUTPUT_PATH = join(ROOT, 'public', 'vo.mp3');
+const SCRIPTS_DIR = join(ROOT, 'src', 'fee-drag', 'scripts');
+const OUTPUT_DIR = join(ROOT, 'public');
 const VOICE_ID = '61kW7oMrRBiu4tK5QgOP'; // Chad Fargason clone
 const MODEL_ID = 'eleven_turbo_v2_5';
 const PRONUNCIATION_DICT_ID = 'jWwlxS9aX39dEcZGev01';
 const PRONUNCIATION_VERSION_ID = 'v9C2pHW1bvzVAdPIcTKd';
 
-async function main(): Promise<void> {
-  const apiKey = process.env.ELEVENLABS_API_KEY;
-  if (!apiKey) {
-    console.error('ERROR: ELEVENLABS_API_KEY is not set. See memory reference_elevenlabs.md for the key.');
-    process.exit(1);
+async function generateOne(scriptPath: string, outPath: string, apiKey: string): Promise<void> {
+  const text = readFileSync(scriptPath, 'utf8').trim();
+  if (!text) {
+    console.log(`Skip ${basename(scriptPath)}: empty`);
+    return;
   }
-
-  if (!existsSync(SCRIPT_PATH)) {
-    console.error(`ERROR: Script not found at ${SCRIPT_PATH}`);
-    process.exit(1);
-  }
-
-  const text = readFileSync(SCRIPT_PATH, 'utf8').trim();
-  console.log(`Script: ${text.length} chars`);
-  console.log(`Voice: Chad clone (${VOICE_ID}), model ${MODEL_ID}`);
+  console.log(`  ${basename(scriptPath)}: ${text.length} chars → ${basename(outPath)}`);
 
   const body = JSON.stringify({
     text,
@@ -54,18 +46,46 @@ async function main(): Promise<void> {
 
   if (!response.ok) {
     const errText = await response.text();
-    console.error(`ERROR: ElevenLabs API returned ${response.status}: ${errText}`);
-    process.exit(1);
+    throw new Error(`ElevenLabs API ${response.status} for ${basename(scriptPath)}: ${errText}`);
   }
 
   const audio = Buffer.from(await response.arrayBuffer());
-  mkdirSync(dirname(OUTPUT_PATH), { recursive: true });
-  writeFileSync(OUTPUT_PATH, audio);
+  writeFileSync(outPath, audio);
   const sizeKB = (audio.length / 1024).toFixed(1);
-  console.log(`OK — wrote ${OUTPUT_PATH} (${sizeKB} KB)`);
+  console.log(`    OK (${sizeKB} KB)`);
+}
+
+async function main(): Promise<void> {
+  const apiKey = process.env.ELEVENLABS_API_KEY;
+  if (!apiKey) {
+    console.error('ERROR: ELEVENLABS_API_KEY is not set. See memory reference_elevenlabs.md.');
+    process.exit(1);
+  }
+
+  mkdirSync(OUTPUT_DIR, { recursive: true });
+
+  const scripts = readdirSync(SCRIPTS_DIR)
+    .filter((f) => f.endsWith('.txt'))
+    .sort();
+
+  if (scripts.length === 0) {
+    console.error(`ERROR: No script files found in ${SCRIPTS_DIR}`);
+    process.exit(1);
+  }
+
+  console.log(`Voice: Chad clone (${VOICE_ID}), model ${MODEL_ID}`);
+  console.log(`Generating ${scripts.length} VO segments:\n`);
+
+  for (const script of scripts) {
+    const stem = basename(script, extname(script));
+    const outPath = join(OUTPUT_DIR, `vo-${stem}.mp3`);
+    await generateOne(join(SCRIPTS_DIR, script), outPath, apiKey);
+  }
+
+  console.log(`\nDone. Outputs in ${OUTPUT_DIR}`);
 }
 
 main().catch((err) => {
-  console.error('Unexpected error:', err);
+  console.error('Unexpected error:', err.message ?? err);
   process.exit(1);
 });
