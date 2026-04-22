@@ -26,20 +26,20 @@ function findPhrase(a: Alignment, phrase: string): { start: number; end: number 
 function dumpFile(file: string, phrases: string[]): void {
   const a: Alignment = JSON.parse(readFileSync(join(TIMING, file), 'utf8'));
   const totalDur = a.character_end_times_seconds.at(-1) ?? 0;
-  console.log(`\n${file}  (total ${totalDur.toFixed(2)}s, ${a.characters.length} chars)`);
-  console.log(`  full text: "${a.characters.join('').slice(0, 90)}${a.characters.length > 90 ? '...' : ''}"`);
+  console.log(`\n${file}  (total ${totalDur.toFixed(2)}s = ${Math.round(totalDur * 30)} frames)`);
+  console.log(`  full text: "${a.characters.join('').slice(0, 100)}${a.characters.length > 100 ? '...' : ''}"`);
   for (const phrase of phrases) {
     const t = findPhrase(a, phrase);
     if (t) {
-      console.log(`  "${phrase}"   start=${t.start.toFixed(3)}s   end=${t.end.toFixed(3)}s`);
+      console.log(`  "${phrase}"   start=${t.start.toFixed(3)}s (f${Math.round(t.start * 30)})   end=${t.end.toFixed(3)}s (f${Math.round(t.end * 30)})`);
     } else {
       console.log(`  "${phrase}"   NOT FOUND`);
     }
   }
 }
 
-dumpFile('vo-1-hook.json', ['one million']);
+dumpFile('vo-1-hook.json', ['today', 'over a lifetime', 'one million']);
 dumpFile('vo-2-setup.json', ['half a million', 'seven percent', 'twenty-five thousand', 'one-point-five', 'point-five percent']);
-dumpFile('vo-3-divergence.json', ['year ten', 'year twenty', 'year thirty', 'five-point-four-seven', 'four-point-three']);
+dumpFile('vo-3-divergence.json', ['year ten', 'year twenty', 'year thirty', 'gap is huge', 'five-point-four-seven', 'four-point-three']);
 dumpFile('vo-4-reveal.json', ['one-point-one-seven', 'four percent rule', 'beach house']);
 dumpFile('vo-5-cta.json', ['arcvest dot com', 'pay less, keep more']);

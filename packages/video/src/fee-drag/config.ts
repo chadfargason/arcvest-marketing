@@ -19,15 +19,16 @@ export const feeDragConfig = {
     width: 1920,
     height: 1080,
     fps: 30,
-    durationSeconds: 60,
-    durationFrames: 1800,
+    durationSeconds: 63.3,
+    durationFrames: 1900,
   },
+  // Merged "divergence" scene hosts both VO 3 (chart) and VO 4 (reveal)
+  // with a chart-shrink-to-left transition in between — no hard cut.
   scenes: {
-    hook: { from: 0, duration: 135 },
-    splitScreen: { from: 135, duration: 495 },
-    divergence: { from: 630, duration: 600 },
-    reveal: { from: 1230, duration: 380 },
-    cta: { from: 1610, duration: 190 },
+    hook: { from: 0, duration: 240 },
+    splitScreen: { from: 240, duration: 460 },
+    divergence: { from: 700, duration: 986 },
+    cta: { from: 1686, duration: 214 },
   },
   // Locked literal: must match the figure spoken in VO 4 ("one-point-one-seven million").
   // If portfolio inputs change, update BOTH the VO script and this literal together.

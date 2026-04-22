@@ -112,22 +112,23 @@ export const SplitScreen: React.FC = () => {
   const pct = (v: number) => `${(v * 100).toFixed(1)}%`;
 
   // Timing locked to VO ("vo-2-setup") word-level alignments:
-  //   "half a million"          → 2.98s (frame 90)
-  //   "seven percent"           → 5.03s (frame 151)
-  //   "twenty-five thousand"    → 7.50s (frame 225)
-  //   "one-point-five percent"  → 9.78s (frame 293)
-  //   "point-five percent"      → 10.09s (frame 303)
+  //   "half a million"         → 2.97s (frame 89)
+  //   "seven percent"          → 4.59s (frame 138)
+  //   "twenty-five thousand"   → 6.91s (frame 207)
+  //   "one-point-five percent" → 9.31s (frame 279)
+  //   "point-five percent"     → 9.64s (frame 289)
+  // Rows appear ~10 frames BEFORE the word so they're already visible when spoken.
   const aRows: StatRow[] = [
-    { label: 'Starting balance', value: fmt(feeDragConfig.startingBalance), appearAt: 90 },
-    { label: 'Annual return', value: pct(feeDragConfig.grossReturn), appearAt: 151 },
-    { label: 'Added per year', value: fmt(feeDragConfig.annualContribution), appearAt: 225 },
-    { label: 'All-in fees', value: pct(advisorA.totalFee), appearAt: 293, highlightFee: true },
+    { label: 'Starting balance', value: fmt(feeDragConfig.startingBalance), appearAt: 80 },
+    { label: 'Annual return', value: pct(feeDragConfig.grossReturn), appearAt: 128 },
+    { label: 'Added per year', value: fmt(feeDragConfig.annualContribution), appearAt: 197 },
+    { label: 'All-in fees', value: pct(advisorA.totalFee), appearAt: 269, highlightFee: true },
   ];
   const bRows: StatRow[] = [
-    { label: 'Starting balance', value: fmt(feeDragConfig.startingBalance), appearAt: 90 },
-    { label: 'Annual return', value: pct(feeDragConfig.grossReturn), appearAt: 151 },
-    { label: 'Added per year', value: fmt(feeDragConfig.annualContribution), appearAt: 225 },
-    { label: 'All-in fees', value: pct(advisorB.totalFee), appearAt: 303, highlightFee: true },
+    { label: 'Starting balance', value: fmt(feeDragConfig.startingBalance), appearAt: 80 },
+    { label: 'Annual return', value: pct(feeDragConfig.grossReturn), appearAt: 128 },
+    { label: 'Added per year', value: fmt(feeDragConfig.annualContribution), appearAt: 197 },
+    { label: 'All-in fees', value: pct(advisorB.totalFee), appearAt: 279, highlightFee: true },
   ];
 
   return (
