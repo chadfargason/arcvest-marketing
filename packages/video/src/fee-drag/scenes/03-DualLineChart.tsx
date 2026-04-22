@@ -12,9 +12,29 @@ const CHART = {
   height: 660,
 };
 
-// Drawing window (in frames within scene): year 0 at frame 0, year 30 at frame 540 (18s).
-// Final 6s (frames 540–720) hold the static chart while VO finishes.
-const DRAW_END_FRAME = 540;
+// Piecewise anchors locking chart progress to VO mentions of "year ten/twenty/thirty"
+// from vo-3-divergence.json. Scene-relative frames.
+// VO starts at scene-frame 0. "year ten" @ 3.76s, "year twenty" @ 7.31s, "year thirty" @ 10.89s.
+const YEAR_ANCHORS: ReadonlyArray<readonly [number, number]> = [
+  [0, 0],
+  [113, 10],
+  [219, 20],
+  [327, 30],
+];
+
+// Post-30 callout frames — ArcVest ending ($5.47M) and Advisor A ending ($4.30M)
+const CALLOUT_ARCVEST_FRAME = 401;
+const CALLOUT_ADVISOR_A_FRAME = 528;
+
+function chartYearAtFrame(frame: number): number {
+  if (frame >= YEAR_ANCHORS[YEAR_ANCHORS.length - 1][0]) return 30;
+  for (let i = 1; i < YEAR_ANCHORS.length; i++) {
+    const [f0, y0] = YEAR_ANCHORS[i - 1];
+    const [f1, y1] = YEAR_ANCHORS[i];
+    if (frame <= f1) return y0 + ((frame - f0) / (f1 - f0)) * (y1 - y0);
+  }
+  return 30;
+}
 
 function pointsPath(values: number[], yMax: number, progressYears: number): string {
   const n = values.length - 1;
@@ -52,7 +72,6 @@ function gapAreaPath(advA: number[], advB: number[], yMax: number, progressYears
     const x = CHART.x + (CHART.width * (wholeYears + frac)) / n;
     pts.push({ x, y: CHART.y + CHART.height - (CHART.height * vB) / yMax });
   }
-  // Walk back along Advisor A
   const ptsBack: { x: number; y: number }[] = [];
   if (wholeYears < n && frac > 0) {
     const vA = advA[wholeYears] + (advA[wholeYears + 1] - advA[wholeYears]) * frac;
@@ -84,7 +103,6 @@ const YearLabel: React.FC<{
     config: { damping: 14, stiffness: 110 },
   });
   const opacity = interpolate(enter, [0, 1], [0, 1]);
-  const translateY = interpolate(enter, [0, 1], [-15, 0]);
 
   const n = feeDragConfig.horizonYears;
   const xLine = CHART.x + (CHART.width * year) / n;
@@ -93,7 +111,7 @@ const YearLabel: React.FC<{
   const labelY = Math.min(yA, yB) - 20;
 
   return (
-    <g style={{ opacity, transform: `translateY(${translateY}px)`, transformBox: 'fill-box' }}>
+    <g style={{ opacity }}>
       <line x1={xLine} x2={xLine} y1={yA} y2={CHART.y + CHART.height} stroke={colors.divider} strokeWidth={1} strokeDasharray="4,4" />
       <rect x={xLine - 110} y={labelY - 60} width={220} height={56} rx={8} fill={colors.bgCard} stroke={colors.divider} strokeWidth={1} />
       <text x={xLine} y={labelY - 35} textAnchor="middle" fill={colors.textMuted} fontSize={18} fontFamily={fonts.sans} fontWeight={fontWeights.medium} letterSpacing={2}>
@@ -106,16 +124,46 @@ const YearLabel: React.FC<{
   );
 };
 
-export const DualLineChart: React.FC = () => {
+const EndpointCallout: React.FC<{
+  cx: number;
+  cy: number;
+  text: string;
+  color: string;
+  appearAtFrame: number;
+  anchor: 'above' | 'below';
+}> = ({ cx, cy, text, color, appearAtFrame, anchor }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const { advA, advB, years } = computeYearlyBalances(feeDragConfig);
-  const yMax = Math.max(...advB) * 1.05;
-
-  const progressYears = interpolate(frame, [0, DRAW_END_FRAME], [0, years.length - 1], {
+  const enter = spring({
+    frame: frame - appearAtFrame,
+    fps,
+    config: { damping: 11, stiffness: 130 },
+  });
+  const scale = interpolate(enter, [0, 1], [0.6, 1]);
+  const opacity = interpolate(frame, [appearAtFrame, appearAtFrame + 12], [0, 1], {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp',
   });
+  const labelY = anchor === 'above' ? cy - 60 : cy + 70;
+
+  return (
+    <g style={{ opacity, transform: `scale(${scale})`, transformOrigin: `${cx}px ${cy}px` }}>
+      <circle cx={cx} cy={cy} r={11} fill={color} stroke={colors.bgCard} strokeWidth={3} />
+      <rect x={cx - 110} y={labelY - 30} width={220} height={52} rx={10} fill={color} />
+      <text x={cx} y={labelY + 5} textAnchor="middle" fill={colors.bgCard} fontSize={30} fontFamily={fonts.tabular} fontWeight={fontWeights.black}>
+        {text}
+      </text>
+    </g>
+  );
+};
+
+export const DualLineChart: React.FC = () => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const { advA, advB } = computeYearlyBalances(feeDragConfig);
+  const yMax = Math.max(...advB) * 1.05;
+
+  const progressYears = chartYearAtFrame(frame);
   const currentYear = Math.min(Math.floor(progressYears), 30);
 
   const yTicks = 5;
@@ -127,6 +175,11 @@ export const DualLineChart: React.FC = () => {
     config: { damping: 18, stiffness: 200 },
   });
   const counterScale = interpolate(counterPulse, [0, 1], [1.15, 1]);
+
+  // Endpoint (year 30) coordinates
+  const xEnd = CHART.x + CHART.width;
+  const yEndB = CHART.y + CHART.height - (CHART.height * advB[30]) / yMax;
+  const yEndA = CHART.y + CHART.height - (CHART.height * advA[30]) / yMax;
 
   return (
     <AbsoluteFill style={{ background: colors.bg, fontFamily: fonts.sans, color: colors.textPrimary }}>
@@ -163,13 +216,20 @@ export const DualLineChart: React.FC = () => {
         <path d={pointsPath(advB, yMax, progressYears)} stroke={colors.arcvest} strokeWidth={6} fill="none" strokeLinecap="round" strokeLinejoin="round" />
 
         {progressYears >= 10 && (
-          <YearLabel year={10} values={{ advA: advA[10], advB: advB[10] }} yMax={yMax} appearAtFrame={Math.floor((10 / 30) * DRAW_END_FRAME)} />
+          <YearLabel year={10} values={{ advA: advA[10], advB: advB[10] }} yMax={yMax} appearAtFrame={113} />
         )}
         {progressYears >= 20 && (
-          <YearLabel year={20} values={{ advA: advA[20], advB: advB[20] }} yMax={yMax} appearAtFrame={Math.floor((20 / 30) * DRAW_END_FRAME)} />
+          <YearLabel year={20} values={{ advA: advA[20], advB: advB[20] }} yMax={yMax} appearAtFrame={219} />
         )}
         {progressYears >= 30 && (
-          <YearLabel year={30} values={{ advA: advA[30], advB: advB[30] }} yMax={yMax} appearAtFrame={DRAW_END_FRAME} />
+          <YearLabel year={30} values={{ advA: advA[30], advB: advB[30] }} yMax={yMax} appearAtFrame={327} />
+        )}
+
+        {frame >= CALLOUT_ARCVEST_FRAME && (
+          <EndpointCallout cx={xEnd} cy={yEndB} text="$5.47M" color={colors.arcvest} appearAtFrame={CALLOUT_ARCVEST_FRAME} anchor="above" />
+        )}
+        {frame >= CALLOUT_ADVISOR_A_FRAME && (
+          <EndpointCallout cx={xEnd} cy={yEndA} text="$4.30M" color={colors.advisorA} appearAtFrame={CALLOUT_ADVISOR_A_FRAME} anchor="below" />
         )}
 
         <g>

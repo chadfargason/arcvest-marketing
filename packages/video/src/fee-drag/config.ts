@@ -3,7 +3,6 @@ export const feeDragConfig = {
   annualContribution: 25_000,
   grossReturn: 0.07,
   horizonYears: 30,
-  retirementSpending: 300_000, // for "extra years" translation in scene 4
   advisorA: {
     label: 'Advisor A',
     advisoryFee: 0.010,
@@ -24,18 +23,23 @@ export const feeDragConfig = {
     durationFrames: 1800,
   },
   scenes: {
-    hook: { from: 0, duration: 180 },
-    splitScreen: { from: 180, duration: 360 },
-    divergence: { from: 540, duration: 720 },
-    reveal: { from: 1260, duration: 360 },
-    cta: { from: 1620, duration: 180 },
+    hook: { from: 0, duration: 135 },
+    splitScreen: { from: 135, duration: 495 },
+    divergence: { from: 630, duration: 600 },
+    reveal: { from: 1230, duration: 380 },
+    cta: { from: 1610, duration: 190 },
   },
+  // Locked literal: must match the figure spoken in VO 4 ("one-point-one-seven million").
+  // If portfolio inputs change, update BOTH the VO script and this literal together.
+  // Actual computed gap ≈ $1,163,750; we display the clean tenth-of-a-million rounding.
+  heroGapDisplay: '$1,170,000',
   cta: {
     url: 'arcvest.com/retirement-guide',
     displayUrl: 'arcvest.com/retirement-guide',
+    tagline: 'Pay Less. Keep More.',
   },
   disclaimer:
-    'Hypothetical illustration. 7% assumed gross annual return, constant. Retirement spending of $300,000/year used for the "extra years" translation. Not a forecast or guarantee. Past performance does not guarantee future results. All-in fees include advisory plus weighted product expense ratios. Competitor figures are industry-typical, not specific to any firm.',
+    'Hypothetical illustration. 7% assumed gross annual return, constant. Not a forecast or guarantee. Past performance does not guarantee future results. All-in fees include advisory plus weighted product expense ratios. The 4% rule and beach-house comparisons are illustrative.',
 } as const;
 
 export type FeeDragConfig = typeof feeDragConfig;

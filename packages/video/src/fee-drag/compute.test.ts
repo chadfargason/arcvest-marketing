@@ -47,11 +47,6 @@ describe('computeYearlyBalances', () => {
     expect(result.advB[20]).toBeLessThan(2_745_000);
   });
 
-  it('extraYears ≈ 3.88 (gap / $300K spending)', () => {
-    expect(result.extraYears).toBeGreaterThan(3.85);
-    expect(result.extraYears).toBeLessThan(3.92);
-  });
-
   it('ArcVest always beats Advisor A after year 0', () => {
     for (let i = 1; i < result.years.length; i++) {
       expect(result.advB[i]).toBeGreaterThan(result.advA[i]);

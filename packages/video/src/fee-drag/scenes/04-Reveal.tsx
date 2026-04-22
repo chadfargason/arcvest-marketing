@@ -3,38 +3,31 @@ import { AbsoluteFill, useCurrentFrame, useVideoConfig, interpolate, spring } fr
 import { colors } from '../../brand/colors';
 import { fonts, fontWeights } from '../../brand/fonts';
 import { feeDragConfig } from '../config';
-import { computeYearlyBalances, formatLongDollars } from '../compute';
 
-// Long-form digit reveal of "$1,170,000" — the payoff number.
-// Box morphs in (echoing the chart's gap fill), then digits cascade.
+// VO alignments (vo-4-reveal.json), scene-relative:
+//   "one-point-one-seven" begins at 0.43s   → frame 13  (digits cascade start)
+//   "four percent rule"   begins at 10.18s  → frame 305
+//   "beach house"         begins at 11.78s  → frame 353
+const DIGITS_START_FRAME = 13;
+const FRAMES_PER_GLYPH = 6;
+
+// Rotating subtitles below the hero number, timed to VO beats
+const SUBTITLES: ReadonlyArray<{ from: number; until: number; text: string; emphasis?: boolean }> = [
+  { from: 60, until: 180, text: "Going to your advisor's retirement — not yours" },
+  { from: 185, until: 348, text: '≈ 5 years of retirement income at the 4% rule' },
+  { from: 350, until: 380, text: 'Or a beach house.', emphasis: true },
+];
+
 export const Reveal: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const { gap, extraYears } = computeYearlyBalances(feeDragConfig);
-  // Round the gap to the cleanest hero number ($1,170,000)
-  const heroValue = Math.round(gap / 10_000) * 10_000;
-  const text = formatLongDollars(heroValue);
+  const text = feeDragConfig.heroGapDisplay; // "$1,170,000" — locked literal
 
-  const boxEnter = spring({ frame: frame - 8, fps, config: { damping: 12, stiffness: 90 } });
-  const boxScale = interpolate(boxEnter, [0, 1], [0.6, 1]);
+  const boxEnter = spring({ frame: frame - 0, fps, config: { damping: 12, stiffness: 90 } });
+  const boxScale = interpolate(boxEnter, [0, 1], [0.55, 1]);
   const boxOpacity = interpolate(frame, [0, 18], [0, 1], { extrapolateRight: 'clamp' });
 
-  const FIRST_GLYPH_FRAME = 35;
-  const FRAMES_PER_GLYPH = 9;
-  const yearsRounded = Math.round(extraYears);
-
-  const translationOpacity = interpolate(
-    frame,
-    [FIRST_GLYPH_FRAME + text.length * FRAMES_PER_GLYPH + 20, FIRST_GLYPH_FRAME + text.length * FRAMES_PER_GLYPH + 50],
-    [0, 1],
-    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
-  );
-  const goneOpacity = interpolate(
-    frame,
-    [FIRST_GLYPH_FRAME + text.length * FRAMES_PER_GLYPH + 80, FIRST_GLYPH_FRAME + text.length * FRAMES_PER_GLYPH + 110],
-    [0, 1],
-    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
-  );
+  const activeSubtitle = SUBTITLES.find((s) => frame >= s.from && frame < s.until);
 
   return (
     <AbsoluteFill
@@ -47,7 +40,7 @@ export const Reveal: React.FC = () => {
     >
       <div
         style={{
-          padding: '70px 120px',
+          padding: '60px 120px',
           background: colors.gapFillStrong,
           border: `4px solid ${colors.gap}`,
           borderRadius: 24,
@@ -69,12 +62,12 @@ export const Reveal: React.FC = () => {
           }}
         >
           {text.split('').map((g, i) => {
-            const start = FIRST_GLYPH_FRAME + i * FRAMES_PER_GLYPH;
-            const op = interpolate(frame, [start, start + 6], [0, 1], {
+            const start = DIGITS_START_FRAME + i * FRAMES_PER_GLYPH;
+            const op = interpolate(frame, [start, start + 5], [0, 1], {
               extrapolateLeft: 'clamp',
               extrapolateRight: 'clamp',
             });
-            const ty = interpolate(frame, [start, start + 12], [-20, 0], {
+            const ty = interpolate(frame, [start, start + 10], [-18, 0], {
               extrapolateLeft: 'clamp',
               extrapolateRight: 'clamp',
             });
@@ -86,30 +79,39 @@ export const Reveal: React.FC = () => {
           })}
         </div>
       </div>
-      <div
-        style={{
-          marginTop: 50,
-          fontSize: 44,
-          color: colors.textSecondary,
-          opacity: translationOpacity,
-          textAlign: 'center',
-        }}
-      >
-        about <span style={{ color: colors.textPrimary, fontWeight: fontWeights.bold }}>{yearsRounded} extra years</span> of retirement at $300K/year
-      </div>
-      <div
-        style={{
-          marginTop: 26,
-          fontSize: 38,
-          fontWeight: fontWeights.semibold,
-          color: colors.gap,
-          opacity: goneOpacity,
-          letterSpacing: 4,
-          textTransform: 'uppercase',
-        }}
-      >
-        Gone — to fees
-      </div>
+
+      {activeSubtitle && (
+        <Subtitle key={activeSubtitle.from} from={activeSubtitle.from} text={activeSubtitle.text} emphasis={activeSubtitle.emphasis ?? false} />
+      )}
     </AbsoluteFill>
+  );
+};
+
+const Subtitle: React.FC<{ from: number; text: string; emphasis: boolean }> = ({ from, text, emphasis }) => {
+  const frame = useCurrentFrame();
+  const opacity = interpolate(frame, [from, from + 12], [0, 1], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+  });
+  const translateY = interpolate(frame, [from, from + 18], [14, 0], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+  });
+
+  return (
+    <div
+      style={{
+        marginTop: 55,
+        fontSize: emphasis ? 62 : 44,
+        fontWeight: emphasis ? fontWeights.black : fontWeights.medium,
+        color: emphasis ? colors.gap : colors.textSecondary,
+        opacity,
+        transform: `translateY(${translateY}px)`,
+        textAlign: 'center',
+        letterSpacing: emphasis ? 1 : 0,
+      }}
+    >
+      {text}
+    </div>
   );
 };

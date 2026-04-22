@@ -10,17 +10,6 @@ import { feeDragConfig } from './config';
 
 const { hook, splitScreen, divergence, reveal, cta } = feeDragConfig.scenes;
 
-// Per-scene VO offsets, in frames. Within scene 3, three sub-clips at named year cues.
-const VO_OFFSETS = {
-  hook: hook.from,
-  setup: splitScreen.from,
-  year10: divergence.from + 150,
-  year20: divergence.from + 330,
-  year30: divergence.from + 540,
-  reveal: reveal.from + 35,
-  cta: cta.from,
-} as const;
-
 export const FeeDragVideo: React.FC = () => {
   return (
     <AbsoluteFill>
@@ -42,25 +31,19 @@ export const FeeDragVideo: React.FC = () => {
 
       <CaptionsOverlay />
 
-      <Sequence from={VO_OFFSETS.hook}>
+      <Sequence from={hook.from}>
         <Audio src={staticFile('vo-1-hook.mp3')} />
       </Sequence>
-      <Sequence from={VO_OFFSETS.setup}>
+      <Sequence from={splitScreen.from}>
         <Audio src={staticFile('vo-2-setup.mp3')} />
       </Sequence>
-      <Sequence from={VO_OFFSETS.year10}>
-        <Audio src={staticFile('vo-3a-year10.mp3')} />
+      <Sequence from={divergence.from}>
+        <Audio src={staticFile('vo-3-divergence.mp3')} />
       </Sequence>
-      <Sequence from={VO_OFFSETS.year20}>
-        <Audio src={staticFile('vo-3b-year20.mp3')} />
-      </Sequence>
-      <Sequence from={VO_OFFSETS.year30}>
-        <Audio src={staticFile('vo-3c-year30.mp3')} />
-      </Sequence>
-      <Sequence from={VO_OFFSETS.reveal}>
+      <Sequence from={reveal.from}>
         <Audio src={staticFile('vo-4-reveal.mp3')} />
       </Sequence>
-      <Sequence from={VO_OFFSETS.cta}>
+      <Sequence from={cta.from}>
         <Audio src={staticFile('vo-5-cta.mp3')} />
       </Sequence>
     </AbsoluteFill>

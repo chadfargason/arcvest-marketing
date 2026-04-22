@@ -111,18 +111,23 @@ export const SplitScreen: React.FC = () => {
   const fmt = (v: number) => `$${v.toLocaleString('en-US')}`;
   const pct = (v: number) => `${(v * 100).toFixed(1)}%`;
 
-  // Timing: title at 0, stats stack 30 frames apart, fees emphasized last.
+  // Timing locked to VO ("vo-2-setup") word-level alignments:
+  //   "half a million"          → 2.98s (frame 90)
+  //   "seven percent"           → 5.03s (frame 151)
+  //   "twenty-five thousand"    → 7.50s (frame 225)
+  //   "one-point-five percent"  → 9.78s (frame 293)
+  //   "point-five percent"      → 10.09s (frame 303)
   const aRows: StatRow[] = [
-    { label: 'Starting balance', value: fmt(feeDragConfig.startingBalance), appearAt: 30 },
-    { label: 'Annual return', value: pct(feeDragConfig.grossReturn), appearAt: 60 },
-    { label: 'Added per year', value: fmt(feeDragConfig.annualContribution), appearAt: 90 },
-    { label: 'All-in fees', value: pct(advisorA.totalFee), appearAt: 165, highlightFee: true },
+    { label: 'Starting balance', value: fmt(feeDragConfig.startingBalance), appearAt: 90 },
+    { label: 'Annual return', value: pct(feeDragConfig.grossReturn), appearAt: 151 },
+    { label: 'Added per year', value: fmt(feeDragConfig.annualContribution), appearAt: 225 },
+    { label: 'All-in fees', value: pct(advisorA.totalFee), appearAt: 293, highlightFee: true },
   ];
   const bRows: StatRow[] = [
-    { label: 'Starting balance', value: fmt(feeDragConfig.startingBalance), appearAt: 30 },
-    { label: 'Annual return', value: pct(feeDragConfig.grossReturn), appearAt: 60 },
-    { label: 'Added per year', value: fmt(feeDragConfig.annualContribution), appearAt: 90 },
-    { label: 'All-in fees', value: pct(advisorB.totalFee), appearAt: 165, highlightFee: true },
+    { label: 'Starting balance', value: fmt(feeDragConfig.startingBalance), appearAt: 90 },
+    { label: 'Annual return', value: pct(feeDragConfig.grossReturn), appearAt: 151 },
+    { label: 'Added per year', value: fmt(feeDragConfig.annualContribution), appearAt: 225 },
+    { label: 'All-in fees', value: pct(advisorB.totalFee), appearAt: 303, highlightFee: true },
   ];
 
   return (

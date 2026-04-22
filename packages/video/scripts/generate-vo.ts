@@ -7,18 +7,25 @@ const ROOT = join(__dirname, '..');
 
 const SCRIPTS_DIR = join(ROOT, 'src', 'fee-drag', 'scripts');
 const OUTPUT_DIR = join(ROOT, 'public');
+const TIMING_DIR = join(ROOT, 'public', 'timing');
 const VOICE_ID = '61kW7oMrRBiu4tK5QgOP'; // Chad Fargason clone
 const MODEL_ID = 'eleven_turbo_v2_5';
 const PRONUNCIATION_DICT_ID = 'jWwlxS9aX39dEcZGev01';
 const PRONUNCIATION_VERSION_ID = 'v9C2pHW1bvzVAdPIcTKd';
 
-async function generateOne(scriptPath: string, outPath: string, apiKey: string): Promise<void> {
+interface Alignment {
+  characters: string[];
+  character_start_times_seconds: number[];
+  character_end_times_seconds: number[];
+}
+
+async function generateOne(scriptPath: string, mp3Path: string, jsonPath: string, apiKey: string): Promise<void> {
   const text = readFileSync(scriptPath, 'utf8').trim();
   if (!text) {
     console.log(`Skip ${basename(scriptPath)}: empty`);
     return;
   }
-  console.log(`  ${basename(scriptPath)}: ${text.length} chars → ${basename(outPath)}`);
+  console.log(`  ${basename(scriptPath)}: ${text.length} chars`);
 
   const body = JSON.stringify({
     text,
@@ -34,12 +41,11 @@ async function generateOne(scriptPath: string, outPath: string, apiKey: string):
     ],
   });
 
-  const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`, {
+  const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}/with-timestamps`, {
     method: 'POST',
     headers: {
       'xi-api-key': apiKey,
       'Content-Type': 'application/json',
-      'Accept': 'audio/mpeg',
     },
     body,
   });
@@ -49,10 +55,13 @@ async function generateOne(scriptPath: string, outPath: string, apiKey: string):
     throw new Error(`ElevenLabs API ${response.status} for ${basename(scriptPath)}: ${errText}`);
   }
 
-  const audio = Buffer.from(await response.arrayBuffer());
-  writeFileSync(outPath, audio);
+  const json = (await response.json()) as { audio_base64: string; alignment: Alignment };
+  const audio = Buffer.from(json.audio_base64, 'base64');
+  writeFileSync(mp3Path, audio);
+  writeFileSync(jsonPath, JSON.stringify(json.alignment, null, 2));
   const sizeKB = (audio.length / 1024).toFixed(1);
-  console.log(`    OK (${sizeKB} KB)`);
+  const dur = json.alignment.character_end_times_seconds.at(-1) ?? 0;
+  console.log(`    OK  mp3=${sizeKB}KB  duration=${dur.toFixed(2)}s`);
 }
 
 async function main(): Promise<void> {
@@ -63,6 +72,7 @@ async function main(): Promise<void> {
   }
 
   mkdirSync(OUTPUT_DIR, { recursive: true });
+  mkdirSync(TIMING_DIR, { recursive: true });
 
   const scripts = readdirSync(SCRIPTS_DIR)
     .filter((f) => f.endsWith('.txt'))
@@ -74,15 +84,16 @@ async function main(): Promise<void> {
   }
 
   console.log(`Voice: Chad clone (${VOICE_ID}), model ${MODEL_ID}`);
-  console.log(`Generating ${scripts.length} VO segments:\n`);
+  console.log(`Generating ${scripts.length} VO segments with character-level alignment:\n`);
 
   for (const script of scripts) {
     const stem = basename(script, extname(script));
-    const outPath = join(OUTPUT_DIR, `vo-${stem}.mp3`);
-    await generateOne(join(SCRIPTS_DIR, script), outPath, apiKey);
+    const mp3Path = join(OUTPUT_DIR, `vo-${stem}.mp3`);
+    const jsonPath = join(TIMING_DIR, `vo-${stem}.json`);
+    await generateOne(join(SCRIPTS_DIR, script), mp3Path, jsonPath, apiKey);
   }
 
-  console.log(`\nDone. Outputs in ${OUTPUT_DIR}`);
+  console.log(`\nDone. MP3s in ${OUTPUT_DIR}, alignments in ${TIMING_DIR}`);
 }
 
 main().catch((err) => {

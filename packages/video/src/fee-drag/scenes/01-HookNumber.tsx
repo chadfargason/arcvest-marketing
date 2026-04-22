@@ -6,8 +6,8 @@ import { fonts, fontWeights } from '../../brand/fonts';
 // Digit-by-digit build of "$1.17M".
 // Each glyph reveals on a fixed frame schedule, then the whole number sits.
 const GLYPHS = ['$', '1', '.', '1', '7', 'M'];
-const FIRST_GLYPH_FRAME = 18;
-const FRAMES_PER_GLYPH = 14;
+const FIRST_GLYPH_FRAME = 10;
+const FRAMES_PER_GLYPH = 8;
 
 export const HookNumber: React.FC = () => {
   const frame = useCurrentFrame();
