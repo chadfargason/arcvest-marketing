@@ -6,7 +6,8 @@
     "vo": "tsx scripts/generate-vo.ts",
     "preview": "remotion studio src/Root.tsx",
     "render": "remotion render src/Root.tsx FeeDrag out/fee-drag-30s-16x9.mp4",
-    "build": "npm run vo && npm run render",
+    "produce": "npm run vo && npm run render",
+    "build": "echo 'Video package: build is a no-op. Use `npm run produce` locally to generate vo.mp3 + render MP4.'",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "lint": "echo 'Lint: @arcvest/video (no eslint configured)'"
