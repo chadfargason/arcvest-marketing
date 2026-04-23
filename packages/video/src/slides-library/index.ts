@@ -8,3 +8,5 @@ export { ChecklistSlide } from './ChecklistSlide';
 export { QuoteSlide } from './QuoteSlide';
 export { ConceptSlide } from './ConceptSlide';
 export { OutroSlide } from './OutroSlide';
+export { PrimerSlide } from './PrimerSlide';
+export { SlideWithPip } from './SlideWithPip';

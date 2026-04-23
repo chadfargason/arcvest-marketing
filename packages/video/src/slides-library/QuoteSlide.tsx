@@ -30,19 +30,7 @@ export const QuoteSlide: React.FC<Props> = ({ quote, attribution }) => {
     >
       <div
         style={{
-          fontSize: 120,
-          fontWeight: fontWeights.black,
-          color: colors.arcvest,
-          lineHeight: 1,
-          marginBottom: 30,
-          opacity,
-        }}
-      >
-        "
-      </div>
-      <div
-        style={{
-          fontSize: 64,
+          fontSize: 72,
           fontWeight: fontWeights.medium,
           color: colors.textPrimary,
           letterSpacing: -0.5,

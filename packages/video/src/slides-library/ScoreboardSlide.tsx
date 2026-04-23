@@ -68,7 +68,11 @@ export const ScoreboardSlide: React.FC<Props> = ({ heading, subheading, rows, fr
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 20, opacity }}>
               <div
                 style={{
-                  width: 240,
+                  width: 320,
+                  minWidth: 320,
+                  maxWidth: 320,
+                  flexShrink: 0,
+                  flexGrow: 0,
                   fontSize: 38,
                   fontWeight: fontWeights.semibold,
                   color: colors.textPrimary,
@@ -84,6 +88,7 @@ export const ScoreboardSlide: React.FC<Props> = ({ heading, subheading, rows, fr
                     width: barWidth,
                     background: barColor,
                     borderRadius: 6,
+                    flexShrink: 0,
                   }}
                 />
                 <div

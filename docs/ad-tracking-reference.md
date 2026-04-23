@@ -1,6 +1,6 @@
 # ArcVest Ad & Tracking Reference
 
-**Last Updated:** April 15, 2026
+**Last Updated:** April 23, 2026
 
 This document maps all account IDs, tags, measurement IDs, and how they connect across Google Ads, Meta Ads, GA4, GoHighLevel, and the website.
 
@@ -30,7 +30,11 @@ This document maps all account IDs, tags, measurement IDs, and how they connect 
 - **Page ID:** stored in `.env.local` as `META_PAGE_ID`
 - **Business ID:** stored in `.env.local` as `META_BUSINESS_ID`
 - **API Version:** v21.0
-- **Access Token:** stored in `.env.local` as `META_ACCESS_TOKEN`
+- **Access Token:** stored in `.env.local` as `META_ACCESS_TOKEN` (expired Apr 21, 2026 — renew when Meta ads resume)
+
+### Instagram
+- **ArcVest Wealth Account ID:** `863992382676453`
+- **Platform:** Instagram (linked to Meta/Facebook business)
 
 ### GoHighLevel (Website Platform)
 - **Platform:** GoHighLevel (leadconnector/msgsndr)
