@@ -1,4 +1,6 @@
 node_modules/
 out/
 public/vo*.mp3
+public/source/**/*.mp4
+public/source/**/*.mp3
 .turbo/

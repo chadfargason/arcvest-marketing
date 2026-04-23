@@ -6,6 +6,8 @@
     "vo": "tsx scripts/generate-vo.ts",
     "preview": "remotion studio src/Root.tsx",
     "render": "remotion render src/Root.tsx FeeDrag out/fee-drag-16x9.mp4",
+    "render:no-free-lunch": "remotion render src/Root.tsx NoFreeLunch out/episode-2026-04-13-no-free-lunch.mp4",
+    "transcribe:no-free-lunch": "tsx scripts/transcribe.ts public/source/episode-2026-04-13-no-free-lunch-audio.mp3 src/episodes/2026-04-13-no-free-lunch/transcript.json && tsx scripts/transcript-to-md.ts src/episodes/2026-04-13-no-free-lunch/transcript.json src/episodes/2026-04-13-no-free-lunch/transcript.md",
     "produce": "npm run vo && npm run render",
     "build": "echo 'Video package: build is a no-op. Use `npm run produce` locally to generate vo.mp3 + render MP4.'",
     "test": "vitest run",

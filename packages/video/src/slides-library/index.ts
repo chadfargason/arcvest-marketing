@@ -1,0 +1,10 @@
+export { TitleSlide } from './TitleSlide';
+export { ChapterSlide } from './ChapterSlide';
+export { TimelineSlide } from './TimelineSlide';
+export { DualLineChartSlide } from './DualLineChartSlide';
+export { ScoreboardSlide } from './ScoreboardSlide';
+export { StatSlide } from './StatSlide';
+export { ChecklistSlide } from './ChecklistSlide';
+export { QuoteSlide } from './QuoteSlide';
+export { ConceptSlide } from './ConceptSlide';
+export { OutroSlide } from './OutroSlide';
