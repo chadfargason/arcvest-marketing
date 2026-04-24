@@ -29,7 +29,7 @@ export const ScoreboardSlide: React.FC<Props> = ({ heading, subheading, rows, fr
   const subheadingOpacity = interpolate(frame, [10, 28], [0, 1], { extrapolateRight: 'clamp' });
 
   return (
-    <AbsoluteFill style={{ background: colors.bg, fontFamily: fonts.sans, padding: '90px 140px' }}>
+    <AbsoluteFill style={{ background: colors.bg, fontFamily: fonts.sans, padding: '90px 140px 180px 140px' }}>
       <div
         style={{
           fontSize: 56,

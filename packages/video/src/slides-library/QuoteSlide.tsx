@@ -25,7 +25,7 @@ export const QuoteSlide: React.FC<Props> = ({ quote, attribution }) => {
         fontFamily: fonts.sans,
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 140,
+        padding: '140px 140px 180px 140px',
       }}
     >
       <div

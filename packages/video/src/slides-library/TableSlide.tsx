@@ -119,7 +119,8 @@ export const TableSlide: React.FC<Props> = ({
       style={{
         background: colors.bg,
         fontFamily: fonts.sans,
-        padding: '70px 140px',
+        // bottom 160px reserved for caption pill — footer text MUST sit above it
+        padding: '70px 140px 160px 140px',
         display: 'flex',
         flexDirection: 'column',
       }}

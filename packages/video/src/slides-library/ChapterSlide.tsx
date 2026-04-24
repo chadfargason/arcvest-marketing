@@ -24,7 +24,7 @@ export const ChapterSlide: React.FC<Props> = ({ kicker, title }) => {
         fontFamily: fonts.sans,
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 120,
+        padding: '120px 120px 180px 120px',
       }}
     >
       <div

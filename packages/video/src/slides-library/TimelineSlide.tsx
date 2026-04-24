@@ -27,7 +27,7 @@ export const TimelineSlide: React.FC<Props> = ({ heading, events, framesBetween 
       style={{
         background: colors.bg,
         fontFamily: fonts.sans,
-        padding: '100px 160px',
+        padding: '100px 160px 180px 160px',
       }}
     >
       <div

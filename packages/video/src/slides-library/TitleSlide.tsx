@@ -28,7 +28,7 @@ export const TitleSlide: React.FC<Props> = ({ showTitle, episodeTitle, hosts, da
         fontFamily: fonts.sans,
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 120,
+        padding: '120px 120px 180px 120px',
       }}
     >
       <div

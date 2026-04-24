@@ -104,7 +104,8 @@ export const PrimerSlide: React.FC<Props> = ({ heading, kicker, items, layout = 
       style={{
         background: colors.bg,
         fontFamily: fonts.sans,
-        padding: '80px 120px',
+        // bottom 160px reserved for caption pill
+        padding: '80px 120px 160px 120px',
         display: 'flex',
         flexDirection: 'column',
       }}

@@ -148,7 +148,7 @@ export const DualLineChartSlide: React.FC<Props> = ({
         <div
           style={{
             position: 'absolute',
-            bottom: 160,
+            bottom: 200,                  // raised from 160 — keeps caveat above the caption pill
             left: 240,
             right: 240,
             textAlign: 'center',

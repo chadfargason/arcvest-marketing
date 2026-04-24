@@ -114,7 +114,8 @@ export const WorkedExampleSlide: React.FC<Props> = ({
       style={{
         background: colors.bg,
         fontFamily: fonts.sans,
-        padding: '70px 140px',
+        // bottom 160px reserved for caption pill — outcome row MUST sit above it
+        padding: '70px 140px 160px 140px',
         display: 'flex',
         flexDirection: 'column',
       }}

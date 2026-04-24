@@ -31,8 +31,9 @@ export const GuardrailsDiagram: React.FC<Props> = ({
   const yToPercent = (rate: number): number =>
     ((rate - yMin) / (yMax - yMin)) * 100;
 
-  // Layout
-  const CHART = { x: 200, y: 230, width: 900, height: 660 };
+  // Layout — keep chart compact + high so it stays clear of the caption zone
+  // (bottom ~150px is reserved for the caption pill).
+  const CHART = { x: 200, y: 80, width: 900, height: 480 };
   const yPos = (rate: number): number =>
     CHART.y + CHART.height - (CHART.height * (rate - yMin)) / (yMax - yMin);
 
@@ -56,7 +57,8 @@ export const GuardrailsDiagram: React.FC<Props> = ({
       style={{
         background: colors.bg,
         fontFamily: fonts.sans,
-        padding: '60px 100px',
+        // top + sides + 160px bottom reserved for caption pill
+        padding: '40px 100px 160px 100px',
       }}
     >
       <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -90,7 +92,7 @@ export const GuardrailsDiagram: React.FC<Props> = ({
 
       <div style={{ display: 'flex', flex: 1, alignItems: 'flex-start' }}>
         {/* Left: thermometer SVG */}
-        <svg width={1100} height={760} style={{ display: 'block' }}>
+        <svg width={1100} height={620} style={{ display: 'block' }}>
           {/* Chart frame */}
           <rect
             x={CHART.x}
@@ -238,7 +240,7 @@ export const GuardrailsDiagram: React.FC<Props> = ({
             flexDirection: 'column',
             gap: 22,
             paddingLeft: 50,
-            paddingTop: 80,
+            paddingTop: 30,
           }}
         >
           {notes.map((note, i) => {

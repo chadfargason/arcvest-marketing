@@ -27,7 +27,8 @@ export const ConceptSlide: React.FC<Props> = ({ headline, subline, footer }) => 
         fontFamily: fonts.sans,
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 140,
+        // bottom 160px reserved for caption pill (vs uniform 140 prior)
+        padding: '140px 140px 200px 140px',
       }}
     >
       <div

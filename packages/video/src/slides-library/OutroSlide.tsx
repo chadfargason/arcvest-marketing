@@ -31,7 +31,7 @@ export const OutroSlide: React.FC<Props> = ({ url, tagline, disclaimer }) => {
           top: 0,
           left: 0,
           right: 0,
-          height: '70%',
+          height: '58%',                // shrunk from 70% to make room for disclaimer above caption zone
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
@@ -82,10 +82,10 @@ export const OutroSlide: React.FC<Props> = ({ url, tagline, disclaimer }) => {
       <div
         style={{
           position: 'absolute',
-          top: '72%',
+          top: '60%',                  // moved up from 72% so disclaimer ends well above caption pill
           left: 100,
           right: 100,
-          bottom: 30,
+          bottom: 170,                  // ends ~170px above frame bottom (above caption zone)
           fontSize: 15,
           fontWeight: fontWeights.regular,
           color: colors.textMuted,
