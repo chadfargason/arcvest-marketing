@@ -28,7 +28,7 @@ export const CaptionsOverlay: React.FC<Props> = ({ suppressedFrameRanges }) => {
     <AbsoluteFill style={{ pointerEvents: 'none' }}>
       {visible.map((c, i) => (
         <Sequence key={i} from={c.fromFrame} durationInFrames={c.durationFrames}>
-          <AbsoluteFill style={{ justifyContent: 'flex-end', alignItems: 'center', paddingBottom: 22 }}>
+          <AbsoluteFill style={{ justifyContent: 'flex-end', alignItems: 'center', paddingBottom: 34 }}>
             <div
               style={{
                 fontFamily: fonts.sans,
@@ -38,8 +38,8 @@ export const CaptionsOverlay: React.FC<Props> = ({ suppressedFrameRanges }) => {
                 background: '#0A0E14',             // 100% opaque — covers Riverside burnt-in
                 padding: '22px 50px',
                 borderRadius: 12,
-                minWidth: 860,                      // wide enough to cover source caption
-                maxWidth: 1760,
+                width: 1760,                        // fixed ~92% width — guaranteed coverage regardless of caption length
+                boxSizing: 'border-box',
                 textAlign: 'center',
                 lineHeight: 1.26,
                 letterSpacing: 0.3,
