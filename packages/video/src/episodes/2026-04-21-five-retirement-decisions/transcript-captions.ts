@@ -25,6 +25,10 @@ const REPLACEMENTS: Array<[RegExp, string]> = [
   [/\bBingham\b/g, 'Bengen'],
   [/\bIrma\b/g, 'IRMAA'],
   [/\bIRMA\b/g, 'IRMAA'],
+  [/\bshirp\s*plan\b/gi, 'sherpaplan'],
+  [/\bshirplan\b/gi, 'sherpaplan'],
+  [/\bsherpaplan\s*\.?\s*com\b/gi, 'sherpaplan.com'],
+  [/\bshurp\s*plan\b/gi, 'sherpaplan'],
 ];
 
 function fixTranscription(text: string): string {

@@ -1,0 +1,354 @@
+Show Notes - Summary
+
+ content  type
+
+Interview
+
+
+ primary  goal
+
+Educational
+
+
+ summary
+
+This episode covers the five key decisions that influence your retirement success, focusing on practical strategies like the 4% rule, social security timing, Roth conversions, account sequencing, and fee management. Hosted by Erik and Chad, it offers a comprehensive framework for retirement planning, emphasizing actionable insights and nuanced considerations.
+
+
+ keywords
+
+retirement planning, 4% rule, social security, Roth conversions, account sequencing, investment fees, financial advice, retirement strategies
+
+
+ key  topics
+
+The 4% rule and its updates
+Timing of social security claims
+Roth conversions and tax implications
+Account sequencing for tax efficiency
+The impact of fees on retirement wealth
+
+
+ takeaways
+
+The 4% rule has been updated to allow for slightly higher initial withdrawals.
+Delaying social security benefits can significantly increase lifetime income.
+Roth conversions are most effective when done in low-income years to minimize taxes.
+Strategic account sequencing can save thousands in taxes over retirement.
+Lower fees mean more money stays invested and compounds over time.
+
+
+ guest  name
+
+Chad Fargason
+
+
+Titles
+
+Mastering Retirement: 5 Critical Decisions for Financial Success
+The Retirement Blueprint: 5 Key Choices You Must Make
+
+
+ sound bites
+
+"The 4% rule is a safe maximum withdrawal."
+"Watch out for IRMA and Medicare surcharges."
+"Lower fees mean more money in your pocket."
+
+
+Chapters
+
+00:00 Introduction to Retirement Planning
+03:13 Understanding the 4% Rule
+08:29 Claiming Social Security: Timing Matters
+12:20 Roth Conversions: When and Why?
+15:33 Navigating Account Sequencing
+20:34 The Importance of Managing Fees
+24:17 Recap and Final Thoughts
+
+ resources
+
+SherpaPlan.com - https://sherpaplan.com
+ArcVest Daily Markets Podcast - https://arcvest.com/podcasts
+ArcVest Daily Retirement Podcast - https://arcvest.com/retirement
+
+
+FULL TRANSCRIPT
+
+Erik - ArcVest (00:01.927)
+You can't control the market, but the five decisions that actually determine whether your retirement works, every one of them is in your hands. We've been doing the ArcVest daily retirement podcast, ticking these through one by one, but today we're going to put them in one beautiful pod. Chad, how are you? And are you ready to be the retirement expert of the day?
+
+Chad Fargason (00:23.7)
+Hey, Eric, doing well down here in Houston. And yes, I'm excited to talk retirement. We'll talk the money piece of retirement today. We're not going to spend a lot of time on health care and activities and other things people want to talk about today. We're going to focus on the money decisions that you make as you're entering retirement.
+
+Erik - ArcVest (00:42.547)
+That's great. I appreciate you spending time with us today. You know, we talked to a lot of clients and prospects as they were in and or approaching retirement and people, you know, they spend a lifetime saving, investing, contributing to 401k, but as the time approaches, they go, whoa, there's a whole new series of questions and issues that I did not realize might come up and they bubble up and they bubble up. So in the spirit of answering all these questions, kind of comprehensively, we're putting them together in one pod because
+
+These things can be overwhelming. So we just want to kind of tick through these one by one to give a broad overview of like, hey, are you three to five years out retirement or did you retire last week? And you're like, I haven't given this too much thought. So this is meant to be the pod to say, hey, here's a framework. Here's a way to think about it. Here's the problem and here's how you approach it. So Chad, why don't we jump in? Tell me what we're going to tick through today.
+
+Chad Fargason (01:29.954)
+That's right.
+
+Chad Fargason (01:39.148)
+Yeah, so we're going to say just overall, let's talk about what we're going to talk about here is you've got a level of spending. We're not going to talk about how you decide what that is. It's going to set that aside. Suppose you know what you expect to spend, let's say in your first year, your second year of retirement. We're going to talk to you. There's a there's a guaranteed income aspect of that social security. Maybe you have a pension if you're lucky. And then there's the withdrawal from your portfolio. So as you kind of put these pieces together, turns out there are five decisions that help
+
+you think about exactly what that's going to look like over the next few years. Those decisions are automated. Once we're going to talk about them as five decisions that you'll make in your retirement across a number of years about your money. And so let's quickly tick them off. First, how much is your base withdrawal from your portfolio? You've got a portfolio, you've saved your whole life. About how much should you be withdrawing this year and how would that go over time? Second, a lot of people talk about leaving Social Security.
+
+claiming to later in life. When do I claim social security? Very big topic for folks. Third, Roth conversions. When and how would I do a Roth conversion? We'll talk about that. Fourth, account sequencing. I've got some taxable account money. I've got some pre-tax money in an IRA or 401k. I've got a Roth that I already have. How do I blend? When do I pull from which? And five,
+
+If you do this with any level of advisory, you'll end up paying somebody to help you manage your money. You'll end up paying some level of advisor fees. And of course you want to minimize those fees as much as you can. Making those five decisions right goes a long way to setting yourself up for great success in retirement.
+
+Erik - ArcVest (03:21.405)
+Great. That's a wonderful framing. So let's jump back to number one, which is the base withdrawal. Lots of people in the audience may have heard this, the 4 % rule. Chad, what is the 4 % rule and how do we actually use it?
+
+Chad Fargason (03:36.152)
+So the 4 % rule comes from about 20 years ago, a guy named William Bingham. He goes and does the work. He says, look, across the last 80, 90 years, if I had retired in any given quarter or any given year, what could I have pulled off my portfolio in terms of a fixed percentage that would have left me with a successful retirement? So he does it a certain way. He picks a certain mix of stocks and bonds. And he comes out and he says, look, it's about 4%.
+
+He calls that safe max. That's the safe maximum amount that we pull off. And what does it mean? It means you take your retirement with your retirement portfolio. Let's say it's a million dollars. You multiply it by 4%. That's $40,000. And in your first year, you can take 40,000 out of your portfolio. And then every year thereafter, you simply adjust that up for inflation. Inflation was 3%. The next year it's $40,000 plus 3%. So 41,200.
+
+And that keeps going across your entire retirement. So that's the work he did. That's the 4 % rule. Now, Eric, since then, we've had updates to that rule. You can look at what people have done since then. And as a matter of fact, the same guy went back and revised it about 20, 30 years, I should say, after his original work, just last year. And he said, it turns out you can probably pull more like 4.5 to 4.8 % off your portfolio to begin with. You adjust that up for inflation.
+
+And then finally, there's been some very good work done that says, you know, but in a really down market, what would you do? It's kind of obvious, but the academics, they get excited about these new things. They say, well, we're going to put guardrails on your portfolio. And they say when the market goes down a lot, you withdraw a little less. That's kind of obvious, of course. But it does make sense that you would say, withdraw a little more when the market's up a lot, and you can withdraw a little less when the market's down a lot.
+
+Erik - ArcVest (05:12.617)
+Hmm.
+
+Erik - ArcVest (05:19.977)
+you
+
+Erik - ArcVest (05:26.729)
+It's interesting. He came up with a scenario, you said 20 years ago, it's closer to 30 years ago. I think a little more. Yeah. So this does actually have a long track record of working. think it's something, I know he updated and even revised up the amount you could spend, but I think at some point during, it might've been COVID, they were like, are you still spending 4 %? I think it was the guy who made it. And he was like, I'm not spending 4%. So again, this is kind of a guideline. Cause I think at that point he was nervous and everyone was like guided down. So to the point is like,
+
+Chad Fargason (05:31.406)
+30 years ago.
+
+Chad Fargason (05:40.835)
+Mm-hmm.
+
+Chad Fargason (05:54.741)
+Uh-huh.
+
+Erik - ArcVest (05:56.668)
+If we do have a pullback, you don't have to spend 4%. You don't have to take the money out, but this is a rough guideline saying your portfolio will last you 30 plus years at a 4 % ish, 4.5, pick your number. But look, I'm more conservative or said another way, anxious, nervous, whatever about money. So my mental model is like three, three and a half percent. That's how I model my future pulley of money out. Will I probably die with too much money?
+
+Probably, that's a problem, I'm okay. I don't feel like I'm depriving myself. But just from a, know I'm going to live a long time. I'll start at three and three and a half percent. And if I realize, hey, the market's doing great, portfolios are returning massively, AI is like helping everybody. Great, all right, I'll take out 5 % one year, you know? But, so this is a framework to think about and you can revise it up or down. And in a down market, yeah, revise it down. That's okay.
+
+Chad Fargason (06:27.747)
+Ha ha.
+
+Chad Fargason (06:53.614)
+That's right. Well, and let's do a couple of the things to talk about here. You know, people look at this number, and it's using 4 % rule very simplistically, and they think of that as like it's a rule for kind of all people, all times. So there are some folks that look at that and say, okay, I'm 50 and I'm retiring this year. I guess I can use the 4 % rule. And you know, it turns out there's some nuances here, right? If you're 50 and retiring and you're expecting to live to 95, your money's gotta last you 45 years or more, you may wanna...
+
+ratchet that back just a little, right? Because suddenly, you know, the original rule was created for effectively a 30 year retirement. I'm 65 and retire, I expect to live to 95, roughly what should I be doing? That's when the original rule came in. On the other hand, you know, I've got parents that are still working right now in their seventies, right? And then they look at that and they say, well, I guess, you know, I guess we should only spend 4%. And I'm like, well, you know, unless you're live to 120, you're probably okay to go for a little higher.
+
+Erik - ArcVest (07:48.201)
+Yeah. Yup.
+
+Chad Fargason (07:52.182)
+So the nuances do matter.
+
+Erik - ArcVest (07:55.338)
+Well, maybe we're all going to be Brian Johnson, don't die. And we're all going to live forever. We might all live to 150. Maybe healthcare is getting so much better. Maybe AI unlocks, you know, all cancer research and we stop suffering from diseases. I'm not that optimistic, but it is make sense to plan. And if, but you're already in your seventies. Yeah. Spend six, seven, 8%. You're probably going to be fine.
+
+Chad Fargason (08:17.038)
+That's right. That's right. Well, let's move on to maybe the second decision, which is when to claim social security. And this one is one that has, know, people have done all sorts of different, you know, talking on this. It's pretty simple. In social security, very generically, you can claim it as early as 63, and you can claim it effectively as late as 70. You can go later than 70, but it doesn't really do you any good.
+
+So that's your window 63 to 70 is your effective age at which to claim Social Security for the vast majority of folks, you know, retire now or in the future, your full retirement age is 67. So the way to think about this is a kind of a generic thought is that for retirement age, if you've had a pretty productive working career, your claim might be, I'm just going to pick a number here. Three thousand dollars a month is what you would receive at full retirement age Social Security. If you claim early,
+
+If you try to go claim back at, you know, kind of at the first window you can, you're going to have a 30 % discount to that. So instead of getting 3000 a month, you're going to receive 2100 a month. If you claim as late as you can, push 67, nope, 68, 69, 70, three years out, you're going to get 24 % more. So that 3000, you get an extra 24 % out of the $720. So 3720. So that's the range.
+
+We talked about this in great depth on the podcast. We don't have to go into all the detail, but just suffice it to say, most folks, when you actually sit down and work this out, especially married folks, recognize that the higher earner, in many cases the man, but by no means necessarily, and also a lot of times a standard typical couple out in America, the man would have been a little bit of a higher earner and would also be a little bit older than his wife.
+
+the higher honor delaying social security until 70 is usually the right answer. It is, you're gaining 8 % a year in a kind of a guaranteed way. You have at that point better, we'll call it longevity insurance. You happen to live to 100. That's fantastic, right? You've totally paid for it by doing that. The break even point on moving from 67 to 70 depends on how good investment returns are, of course, in the future. If you expect that investment returns are gonna be
+
+Chad Fargason (10:39.958)
+You know, 2 % real, 3 % real. That breakeven point pushes into the late 80s for you. But keep in mind, as the older and higher earner, even if you as the man say you pass away at 90 and you think, gosh, I kind of just barely broke even on my social security choice, your wife would then continue to get that benefit. She'll probably live longer. Women are smarter. They happen to live longer than men.
+
+Erik - ArcVest (11:06.439)
+Hahaha
+
+Chad Fargason (11:06.766)
+She'll get that longer into her late years. And it also steps up from whatever her benefit was to yours. If you're the higher earner, the second spouse, their benefit steps up to yours. So that's the simple sort of explanation.
+
+Erik - ArcVest (11:20.809)
+So yeah, that's good. And their assumptions is like longevity risk, how healthy are you? Like, like it takes, it's worth taking 20 or 30 minutes to do the break even analysis. And if you're not going to Excel, call us at ArcVest. We also have a tool sherpaplan.com who can help you think through some of these things. They'll do some analysis for you, but take 20 or 30 minutes and figure out what your break even analysis and you, we don't know the future.
+
+Chad Fargason (11:27.182)
+Yeah.
+
+Chad Fargason (11:44.686)
+That's right.
+
+Erik - ArcVest (11:50.74)
+But there are a few assumptions you can make. You can look at some actuary tales like, I'm probably going to live to 78 or pick a number, right? And then you can kind of back into what that break even is. Or if you need the money, just take the money. Don't starve yourself trying to wait a few more years for a couple extra bucks. Like it's there for a reason. But it's worth taking a few minutes to spend time to understand where you're going to be financially better off with social security.
+
+Chad Fargason (11:58.072)
+Mm-hmm.
+
+Chad Fargason (12:10.51)
+That's right.
+
+Chad Fargason (12:19.596)
+Agreed. as you pointed out, we can just say it again, if folks want, there's a free thing out there, Sherpa plan, Sherpa plan.com. It's it's kind of a free retirement calculator that we put out there. We're help you make this decision. If you don't know how to make it on your own and there, cause you pointed out, you reach out to us, right? We talk to folks about this all the time.
+
+Erik - ArcVest (12:41.491)
+Great. All right, so let's move on to number three, Roth conversions. Everyone loves these Roth conversions, but they are a little tricky. There's some nuance, right? So walk me through a Roth conversion. When does it make sense? Is this just free money? I don't think so. How does this work Chad?
+
+Chad Fargason (12:51.301)
+yes.
+
+Chad Fargason (12:58.678)
+So yeah, so there are a lot of nuances to the Roth conversions, right? So we won't say that this is just a simple, straightforward story, but let's talk about what this is. There is a lot of times for a lot of folks, there will be a window between retirement and age 70. If you retire at age 65, you decide not to claim social security till age 70, and you're gonna live on your portfolio for several years in there.
+
+your income can actually look relatively low for a few years. In those low income years, it can really behoove you to take and convert some of your pre-tax IRA or 401k dollars into a post-tax Roth IRA. The trick here, the reason why this can work is you can take money,
+
+you convert it, when you do that, you pull it out of your IRA, it lands in your taxable income. But because you don't have as much other income during that time, your total tax bill on that withdrawal will be relatively low. It'll be in that 10 or 12 % bracket. And then as you convert it to Roth, you've paid that 10 or 12%. Once converted to Roth, you never pay tax again.
+
+The way to think about this very simply is if you do that at age, let's say, 67, 68, you're paying 10 or 12 percent on that money as taxes. If you wait and you do the exact same thing at age 73, 74, 75, and you've got a required minimum distribution coming out, you're getting paid full Social Security, you can push yourself into a place where your Social Security also gets taxed. So suddenly, unfortunately, the exact same withdrawal
+
+causes you to have a 22 to 25 % tax rate. So it's very simple math. I can take it out now, 67, 68, pay 12%, never pay tax again, or I can wait a few years, exact same money comes out paying 25%. I'm basically paying double tax that I should. That's the simple way to describe the Roth conversions and why they make sense, usually in your late 70s before claiming social security.
+
+Erik - ArcVest (15:13.555)
+So there's interesting concept, there's some gap years, right? Like where your income is almost artificially low and that's when you should be taking advantage of this conversion, right? But if you're a high earning working professional who was making money, like this probably doesn't make sense. I feel like the financial media has gotten us a little confused, like, everyone should be doing Roth conversions. Like, no, not really. That's not quite how it works. And there's a lot of nuance on it. Maybe, maybe if you're unemployed for a year, you're in between jobs, it could make sense.
+
+Chad Fargason (15:17.059)
+Yeah.
+
+Chad Fargason (15:23.182)
+That's right.
+
+Chad Fargason (15:35.212)
+Yeah.
+
+Erik - ArcVest (15:42.846)
+But in a lot of instances, it doesn't make sense where it's literally a high earning professionals asking me like, should I do this? like, no, you should not. You can, but it doesn't make sense from a tax standpoint right now. And that's the whole play, right? So make sure you understand all the nuances around it. Why don't you talk through our friend Irma. Barely knew her, Chad. Who's Irma?
+
+Chad Fargason (15:42.999)
+Mm-hmm.
+
+Chad Fargason (15:49.752)
+Like, no.
+
+Chad Fargason (15:56.003)
+That's right.
+
+Chad Fargason (16:03.278)
+So yes, Irma is this extra payments that you might have to make for Medicare. And so it turns out that if you have a higher income, the government says, look, you're a high earner. You need to pay more for Medicare. So your Medicare monthly payments are going to go up. And this effectively can cost you several thousand dollars a year extra.
+
+is sort of the net effect of what can happen. So that's what Irma is. Irma is you kind of got caught because you ended up with a lot of income in your retirement. Irma looks back over your income for the last couple of years says, whoa, you had a lot higher income than expected. Boy, you got to pay more for your Medicare premiums. So there are some things to watch out for just a little gotchas out there if you're not paying attention in your tax planning.
+
+Erik - ArcVest (17:00.381)
+Yeah, and IRMA is I-R-M-A-A, which I think is income related monthly account adjustment. So just be aware of that. There's wrinkles everywhere. All right, let's move on to the next one, Chad. Account sequencing. So this is just in what order, what is the order of operations from which I should be deducting or claiming money out of my account. So why don't you walk us through account sequencing? What's the most tax efficient way to do it and why?
+
+Chad Fargason (17:30.156)
+That's right. Well, so there's conventional wisdom and it's very straightforward. It says you should leave all of your tax deferred monies to be tax deferred as long as possible. So you would take first from your taxable account, then from your traditional IRA 401k and then from your Roth. And that's that's it. That's what you should do. That is the conventional wisdom. And it's roughly right, but specifically can be a little bit wrong. And so just to kind of hit on this again, it takes some detail.
+
+Erik - ArcVest (17:57.034)
+Okay. What is the wrong nuance? But to be fair, that is generally speaking taxable, traditional 401k IRA, then Roth. Standard, pretty good advice, but we're to get into a couple of nuances. Yeah.
+
+Chad Fargason (18:03.662)
+Mm-hmm.
+
+Chad Fargason (18:09.018)
+That's That's it. It's pretty good advice. That's pretty good advice. And so then the only thing to note is that there are usually, if I just would pick a kind of a typical household that might have spending needs of 80 or 90,000 a year, might have a million dollars of income, it will usually be the case that a blended withdrawal, some from the taxable account and some from the IRA,
+
+Erik - ArcVest (18:14.652)
+Okay.
+
+Chad Fargason (18:34.306)
+will actually save you money over time. And that's because as you're pulling out of your taxable account, you're getting some gains at long-term capital gains rates. And that is much lower than if you're pulling everything out of that traditional IRA. If you pull it out of your traditional IRA, everything lands in regular income. And so the trade-off here is you can pull
+
+a few fewer dollars out of the traditional IRA or lack of dollars of traditional IRA, put them, pull them from the taxable. But if you pull them all from the taxable, then it turns out you are, you know, net effect, leaving more dollars to pull from that, that IRA later with no extra benefits of the long-term capital gains. You're blending these long-term capital gains rates and these, these income rates. And so some mix of traditional and taxable in your
+
+know, Avis 65 to 73 is often a slightly better way to go. And you can play with the calculator and see the map.
+
+Erik - ArcVest (19:35.56)
+I wanna.
+
+Yep. And I also want to take a step back. So this is for retirees, but you should be thinking about retirement in your twenties, thirties and forties. So I just want to make the point here is it makes sense to contribute to multiple types of accounts. You can contribute to your 401k depending on income limits or you're in between jobs, whatever. You can contribute to a Roth. You can contribute to a regular taxable brokerage account and you should be doing all of those things. So now if in a, you know, a parallel universe where tax rates never change.
+
+Chad Fargason (19:42.68)
+Mm-hmm.
+
+Erik - ArcVest (20:08.169)
+None of this actually matters, right? Like you're, let's say the tax rates were just flat. These are all a little bit of a bet on what your tax rate are now versus what they're going to be in the future. What you think future administrations are going to do. Are we ever going to address a deficit or taxes going up? So all of these things are basically kind of a bet of future tax rates of where you might be. At some point, the government's going to get their money from your income. But having diversified approach to types of accounts and when you are paying those taxes,
+
+makes good sense, even if you're 30 years old, to kind of give this a little bit of thought early on.
+
+Chad Fargason (20:43.246)
+That's right. No, that's exactly right. So this is one that is, there's a rough answer that's mostly right. But then it turns out you can save many tens of thousands of dollars, right? A retired couple with a million dollar portfolio can easily make a $50,000 improvement in their overall outcome across retirement just by optimizing the taxable versus IRA versus Roth IRA. So it does matter, it turns out. And then maybe the final.
+
+Erik - ArcVest (21:10.055)
+Yep. Great. All right. Next top. sorry. Go ahead.
+
+Chad Fargason (21:13.974)
+As you can say, final topic is fees, right? For,
+
+Erik - ArcVest (21:16.861)
+Fees, this is where we pound the drum at Arkvest. Lower your fees, lower your fees. Chad, why should people care about fees?
+
+Chad Fargason (21:26.798)
+I tell you what, it turns out fees matter a lot and people find it hard to believe this matters as much as it does. But, you know, keeping it really simple, right, we at ARCFest, we charge 0.4 % to manage portfolio for somebody. A lot of advisors out there will charge 1 % or more. In addition, charge you 1%, they'll put you into products which also cost you more, you know, so that difference.
+
+You know, it sounds, it doesn't sound big, does it? 0.4 versus one, sounds small. It turns out, that's right, that's right. You know, but simply put, right, you're retiring, you've got a million dollar portfolio, that is, you know, that's charging your whole portfolio. So 1 % is $10,000 a year, not crazy to pay for good advice, of course, but 0.4 % is $4,000 a year, also good to pay for good advice.
+
+Erik - ArcVest (22:01.545)
+What's a percent? Nothing.
+
+Chad Fargason (22:23.278)
+And so that $6,000 difference, right? Again, you're like, well, okay, does it really matter that much? Well, it turns out of course that $6,000 difference compounded over the years, right? And again, it's not just that it's 6,000 one year, 6,000 the next, is that if I have 6,000 more this year, I leave that invested. If I leave that invested, that six is gonna become 12 in eight, nine, 10 years, depending on how good returns are. It'll become 24 in another eight, nine, or 10 years.
+
+And so when you do that math compounded over time, if you just do the very simple, I'm going to look at expected returns, I'm going to do everything the same except for fees. You can be talking to half million dollars of difference at say age 95. If you if you just have a lower fee, it's a meaningful difference in your end state of how much money you have in retirement. And of course, that means a meaningful difference in how much you can either.
+
+give to somebody else or spend yourself during retirement.
+
+Erik - ArcVest (23:23.369)
+That's right. And sometimes I get pushback, well, why would I pay you the 0.4 %? And the answer is you don't have to, you can do it on your own, but you actually want good advice. You want someone who's structuring your investments, who's doing the right thing, who's holding your hand through down markets, who's keeping the charlatans at bay, who's helping you avoid high fee product and making bad decisions. So yeah, you can do this on your own. If you're a Bogle head and you're steeped in this religion of low fees, and I'm just going to contribute no matter what.
+
+Chad Fargason (23:34.606)
+That's right.
+
+Erik - ArcVest (23:53.108)
+And I never look at my portfolio. God bless you. That's fine too. But if you are going to work with a knowledgeable advisor who is going to charge some reasonable fee, you should be finding folks who are charging a low reasonable fee. So more of your money can compound over time. So don't interrupt compounding. We talk about all the time. We work very hard to find the lowest fee products that we can use. So Chad, you mentioned it. It's like, yeah, other advisors are charging 1%, which is more than double our base rate. We're using products that are
+
+call it five basis points or 0.05 % where they're using products that could be another 50 basis points or a half percent, or even up to another percent. You might be paying 2 % total and you don't even know it because it's all kind of hidden within the product, right? So you just want to be very careful. Have a fiduciary who's on your side, fighting a battle with you out in the world of finance, right? Trying to grow your portfolio. All right. I will stop pounding that low fee drum there, but you know, that's my favorite one to pound there.
+
+Chad Fargason (24:37.998)
+That's right.
+
+Chad Fargason (24:50.67)
+That's right. Look, I think you said it well, right? You get that fiduciary at a low fee. Doesn't have to be us, right? We would obviously be the kind of people who can do that, but find somebody and make sure that it's very low fee. And then.
+
+Erik - ArcVest (25:06.217)
+Great. All right. So how do all these different things come together? How do they add up? Why don't you walk us through kind of a recap and summary of everything we just talked about.
+
+Chad Fargason (25:15.266)
+That's right. And so as you pull this all together, right, you can look at, know, what should you be thinking to do, right? You can delay Social Security a little bit or one of the two, you're a couple, delays Social Security. You will, over time, you can plan to have a slightly lower withdrawal rate. All of that will give you more portfolio growth now and in the future. You can, as you're thinking about how to manage your accounts,
+
+pull out more in those lower income first few years where the actual income you're earning is lower. That converts from a traditional to a Roth IRA, saves lots of future taxes, right? So you see you pay a little tax now to save lots of taxes in the future. And that all goes together, right? And then net these lower fees we just talked about give you more growth. And then that's just ultimately, you know, higher portfolio. So these things, these decisions, these five decisions, they all wind together.
+
+They're a little complicated, so it's worth taking the time. Find a good retirement calculator, do it on your own. Find a good retirement planner to help you, and make sure you've worked through those five positions.
+
+Erik - ArcVest (26:26.473)
+I think that's great. Again, none of this means being a whiz kid outperforming the market. This is just all in the name of thoughtful planning that can have significant impact to your quality of life and retirement. Whether it's five years from now, you're in it or 25 years from now. So it makes sense doing several hours of work. I know it's tedious, it's boring, it's in the weeds, but it can pay such a financial benefit that we think it's really important that you do it.
+
+Chad Fargason (26:31.65)
+Mm-hmm
+
+Erik - ArcVest (26:54.301)
+And again, we will plug sherpaplan.com, a free tool to kind of go use to do a lot of this planning, a plug and play, fill out some of your information. It'll walk you through. It'll do a Monte Carlo analysis, which just as a fancy way of saying an Excel calculation that's run thousands of times to kind of give you some scenarios that might happen in the future. would also use this as the wealth strategy podcast. Check out our ARKFest daily feed.
+
+Chad Fargason (27:03.47)
+Mm-hmm.
+
+Erik - ArcVest (27:21.043)
+which would do ArcVest Daily Markets and ArcVest Daily Retirement, which gets into the weeds on all this. Is there anything else you want to leave the audience with, Chad?
+
+Chad Fargason (27:29.795)
+I think that's it. I think that's well said.
+
+Erik - ArcVest (27:32.467)
+All right, thanks and we'll see you next time. Thanks for your time today.
+
+Chad Fargason (27:35.502)
+All right, thanks, Eric.

@@ -34,17 +34,10 @@ export type SlideKind =
   | 'worked-example'
   | 'table';
 
-// Slide kinds where captions would visually compete with on-screen copy.
-export const CAPTION_SUPPRESSING_KINDS: ReadonlySet<SlideKind> = new Set([
-  'title',
-  'chapter',
-  'concept',
-  'quote',
-  'primer',
-  'outro',
-  'worked-example',
-  'table',
-]);
+// New convention (ep2+): captions play over both video AND slides, so we no
+// longer suppress them on any slide kind. Slides are designed with bottom
+// ~130px as caption territory. Kept as an empty set for future flexibility.
+export const CAPTION_SUPPRESSING_KINDS: ReadonlySet<SlideKind> = new Set([]);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface Segment {
@@ -132,8 +125,8 @@ export const slidePlan: Segment[] = [
   { startSec: 215, endSec: 238, kind: 'video' },
 
   {
-    startSec: 238,
-    endSec: 265,
+    startSec: 235,
+    endSec: 260,
     kind: 'slide',
     slide: 'primer',
     props: {
@@ -160,11 +153,9 @@ export const slidePlan: Segment[] = [
     },
   },
 
-  { startSec: 265, endSec: 278, kind: 'video' },
-
   {
-    startSec: 278,
-    endSec: 316,
+    startSec: 260,
+    endSec: 295,
     kind: 'slide',
     slide: 'worked-example',
     props: {
@@ -175,7 +166,7 @@ export const slidePlan: Segment[] = [
         { label: 'Year 1: $1,000,000 × 4%', value: '$40,000' },
         { label: 'Year 2: $40,000 × 1.03 inflation', value: '$41,200' },
         { label: 'Year 3: $41,200 × 1.03 inflation', value: '$42,436' },
-        { label: 'Year 10 (compounded 3% inflation)', value: '$52,192' },
+        { label: 'Year 10 (compounded)', value: '$52,192' },
         { label: 'Year 30 (still going)', value: '$94,262' },
       ],
       outcome: {
@@ -185,7 +176,7 @@ export const slidePlan: Segment[] = [
     },
   },
 
-  { startSec: 316, endSec: 345, kind: 'video' },
+  { startSec: 295, endSec: 345, kind: 'video' },
 
   {
     startSec: 345,
@@ -536,11 +527,12 @@ export const slidePlan: Segment[] = [
     },
   },
 
-  { startSec: 1098, endSec: 1125, kind: 'video' },
+  { startSec: 1098, endSec: 1106, kind: 'video' },
 
+  // Chad's timing: Blended primer at 18:26
   {
-    startSec: 1125,
-    endSec: 1160,
+    startSec: 1106,
+    endSec: 1150,
     kind: 'slide',
     slide: 'primer',
     props: {
@@ -567,9 +559,26 @@ export const slidePlan: Segment[] = [
     },
   },
 
+  // Chad's timing: "In your 20s-40s" checklist at 19:10
   {
-    startSec: 1160,
-    endSec: 1200,
+    startSec: 1150,
+    endSec: 1205,
+    kind: 'slide',
+    slide: 'checklist',
+    props: {
+      heading: 'In your 20s–40s, contribute to all three',
+      items: [
+        { title: 'Pre-tax: 401(k) / Traditional IRA', detail: 'Deduction today. Ordinary income in retirement.' },
+        { title: 'Post-tax: Roth IRA / Roth 401(k)', detail: 'No deduction today. Tax-free forever.' },
+        { title: 'Flexible: Taxable brokerage', detail: 'No tax benefits. Long-term cap-gains rates.' },
+      ],
+    },
+  },
+
+  // Chad's timing: "Blended vs Pure" worked example at 20:05
+  {
+    startSec: 1205,
+    endSec: 1230,
     kind: 'slide',
     slide: 'worked-example',
     props: {
@@ -588,38 +597,23 @@ export const slidePlan: Segment[] = [
     },
   },
 
-  { startSec: 1200, endSec: 1223, kind: 'video' },
-
-  {
-    startSec: 1223,
-    endSec: 1240,
-    kind: 'slide',
-    slide: 'checklist',
-    props: {
-      heading: 'In your 20s–40s, contribute to all three',
-      items: [
-        { title: 'Pre-tax: 401(k) / Traditional IRA', detail: 'Deduction today. Ordinary income in retirement.' },
-        { title: 'Post-tax: Roth IRA / Roth 401(k)', detail: 'No deduction today. Tax-free forever.' },
-        { title: 'Flexible: Taxable brokerage', detail: 'No tax benefits. Long-term cap-gains rates.' },
-      ],
-    },
-  },
-
   // ========== PART 6 — Fees (20:22 – 24:17) ==========
 
+  // Chad's timing: Fees chapter at 20:30, short window
   {
-    startSec: 1240,
-    endSec: 1258,
+    startSec: 1230,
+    endSec: 1240,
     kind: 'slide',
     slide: 'chapter',
     props: { kicker: 'Decision 5', title: 'Fees' },
   },
 
-  { startSec: 1258, endSec: 1280, kind: 'video' },
+  { startSec: 1240, endSec: 1269, kind: 'video' },
 
+  // Chad's timing: fee structure table at 21:09
   {
-    startSec: 1280,
-    endSec: 1306,
+    startSec: 1269,
+    endSec: 1300,
     kind: 'slide',
     slide: 'table',
     props: {
@@ -628,18 +622,19 @@ export const slidePlan: Segment[] = [
       columns: ['Fee layer', 'Typical advisor', 'ArcVest'],
       rows: [
         { cells: ['Advisory fee', '1.00%', '0.40%'] },
-        { cells: ['Product costs', '0.50 – 1.00%', '0.10%'] },
-        { cells: ['All-in total', '1.50 – 2.00%', '0.50%'], emphasis: true },
+        { cells: ['Product costs (ETFs)', '0.50 – 1.00%', '0.03 – 0.10%'] },
+        { cells: ['All-in total', '1.50 – 2.00%', '0.43 – 0.50%'], emphasis: true },
       ],
       footer: 'The gap is where your compounding goes — to your advisor, or to you.',
     },
   },
 
-  { startSec: 1306, endSec: 1330, kind: 'video' },
+  { startSec: 1300, endSec: 1315, kind: 'video' },
 
+  // Chad's timing: $1M worked example at 21:55
   {
-    startSec: 1330,
-    endSec: 1360,
+    startSec: 1315,
+    endSec: 1345,
     kind: 'slide',
     slide: 'worked-example',
     props: {
@@ -658,9 +653,12 @@ export const slidePlan: Segment[] = [
     },
   },
 
+  { startSec: 1345, endSec: 1365, kind: 'video' },
+
+  // Chad's timing: chart at ~22:45, tight 20-second window
   {
-    startSec: 1360,
-    endSec: 1415,
+    startSec: 1365,
+    endSec: 1385,
     kind: 'slide',
     slide: 'dual-line',
     props: {
@@ -677,9 +675,10 @@ export const slidePlan: Segment[] = [
     },
   },
 
+  // Immediately after chart: the $1.63M stat (Chad: no more than 20s after chart)
   {
-    startSec: 1415,
-    endSec: 1440,
+    startSec: 1385,
+    endSec: 1410,
     kind: 'slide',
     slide: 'stat',
     props: {
@@ -690,7 +689,26 @@ export const slidePlan: Segment[] = [
     },
   },
 
-  { startSec: 1440, endSec: 1457, kind: 'video' },
+  // Chad's request: bring the fee-structure table back at 23:30–23:50
+  {
+    startSec: 1410,
+    endSec: 1430,
+    kind: 'slide',
+    slide: 'table',
+    props: {
+      kicker: 'The bottom line',
+      heading: 'Where your fees actually go',
+      columns: ['Fee layer', 'Typical advisor', 'ArcVest'],
+      rows: [
+        { cells: ['Advisory fee', '1.00%', '0.40%'] },
+        { cells: ['Product costs (ETFs)', '0.50 – 1.00%', '0.03 – 0.10%'] },
+        { cells: ['All-in total', '1.50 – 2.00%', '0.43 – 0.50%'], emphasis: true },
+      ],
+      footer: 'Same market. Same advisor quality. Half the all-in fee.',
+    },
+  },
+
+  { startSec: 1430, endSec: 1457, kind: 'video' },
 
   // ========== PART 7 — Recap & Outro (24:17 – 26:26) ==========
 
