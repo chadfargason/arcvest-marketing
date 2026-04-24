@@ -125,7 +125,7 @@ export const slidePlan: Segment[] = [
   { startSec: 215, endSec: 238, kind: 'video' },
 
   {
-    startSec: 235,
+    startSec: 238,
     endSec: 260,
     kind: 'slide',
     slide: 'primer',
