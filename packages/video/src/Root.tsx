@@ -6,6 +6,8 @@ import { EpisodeVideo as NoFreeLunchVideo } from './episodes/2026-04-13-no-free-
 import { episodeConfig as noFreeLunchConfig } from './episodes/2026-04-13-no-free-lunch/config';
 import { EpisodeVideo as FiveDecisionsVideo } from './episodes/2026-04-21-five-retirement-decisions/EpisodeVideo';
 import { episodeConfig as fiveDecisionsConfig } from './episodes/2026-04-21-five-retirement-decisions/config';
+import { EpisodeVideo as HowMuchVideo } from './episodes/2026-04-17-daily-retirement/EpisodeVideo';
+import { episodeConfig as howMuchConfig } from './episodes/2026-04-17-daily-retirement/config';
 
 const RemotionRoot: React.FC = () => {
   return (
@@ -33,6 +35,14 @@ const RemotionRoot: React.FC = () => {
         fps={fiveDecisionsConfig.fps}
         width={fiveDecisionsConfig.widthPx}
         height={fiveDecisionsConfig.heightPx}
+      />
+      <Composition
+        id="HowMuchCanYouWithdraw"
+        component={HowMuchVideo}
+        durationInFrames={Math.round(howMuchConfig.durationSec * howMuchConfig.fps)}
+        fps={howMuchConfig.fps}
+        width={howMuchConfig.widthPx}
+        height={howMuchConfig.heightPx}
       />
     </>
   );

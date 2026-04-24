@@ -12,3 +12,4 @@ export { PrimerSlide } from './PrimerSlide';
 export { SlideWithPip } from './SlideWithPip';
 export { WorkedExampleSlide } from './WorkedExampleSlide';
 export { TableSlide } from './TableSlide';
+export { GuardrailsDiagram } from './GuardrailsDiagram';
