@@ -10,3 +10,5 @@ export { ConceptSlide } from './ConceptSlide';
 export { OutroSlide } from './OutroSlide';
 export { PrimerSlide } from './PrimerSlide';
 export { SlideWithPip } from './SlideWithPip';
+export { WorkedExampleSlide } from './WorkedExampleSlide';
+export { TableSlide } from './TableSlide';
