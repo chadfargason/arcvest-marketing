@@ -162,7 +162,7 @@ Write the complete newsletter in markdown format with clear section headings.`;
           return NextResponse.json({ error: 'Content is required for compliance check' }, { status: 400 });
         }
         const checkResponse = await client.messages.create({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 1024,
           temperature: 0.3,
           system: 'You are a compliance reviewer specializing in SEC Marketing Rule and FINRA regulations for investment advisers.',
@@ -224,7 +224,7 @@ If the content passes compliance review, issues and suggestions can be empty arr
 
     // Generate content
     const response = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: maxTokens,
       temperature: 0.7,
       system: COMPLIANCE_SYSTEM_PROMPT,

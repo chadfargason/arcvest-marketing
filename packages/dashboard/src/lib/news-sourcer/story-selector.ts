@@ -103,7 +103,7 @@ Only include articles in your response. Output valid JSON only.`;
 
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514', // Use Sonnet for scoring (faster/cheaper)
+      model: 'claude-sonnet-4-6', // Use Sonnet for scoring (faster/cheaper)
       max_tokens: 4096,
       temperature: 0.3,
       messages: [{ role: 'user', content: prompt }],
@@ -203,7 +203,7 @@ Respond with JSON only:
 }`;
 
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-4-6',
     max_tokens: 500,
     temperature: 0.3,
     messages: [{ role: 'user', content: prompt }],

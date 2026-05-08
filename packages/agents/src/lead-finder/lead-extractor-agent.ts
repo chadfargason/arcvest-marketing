@@ -77,7 +77,7 @@ Rules:
 
 export class LeadExtractorAgent {
   private client: Anthropic;
-  private model = 'claude-sonnet-4-20250514';
+  private model = 'claude-sonnet-4-6';
 
   constructor() {
     this.client = new Anthropic({

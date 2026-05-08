@@ -186,7 +186,7 @@ This ensures fresh leads on every manual run.
 
 **Purpose**: Uses Claude Sonnet 4 to extract structured candidate data from unstructured web content.
 
-**Model**: `claude-sonnet-4-20250514`
+**Model**: `claude-sonnet-4-6`
 
 **Key Prompt**:
 ```
@@ -233,7 +233,7 @@ Return a JSON array with this structure:
 
 **Purpose**: Creates personalized outreach emails with multiple tone options.
 
-**Model**: `claude-sonnet-4-20250514`
+**Model**: `claude-sonnet-4-6`
 
 **Tone Options**:
 1. **Congratulatory**: Celebrate their achievement
@@ -275,7 +275,7 @@ Return JSON:
 
 **Purpose**: Predicts likely email addresses using AI reasoning.
 
-**Model**: `claude-sonnet-4-20250514`
+**Model**: `claude-sonnet-4-6`
 
 **Key Prompt**:
 ```
@@ -408,20 +408,18 @@ async checkDuplicates(personKeys: string[], cooldownDays = 0): Promise<Set<strin
 
 ### Model Selection
 
-**Primary Model**: `claude-sonnet-4-20250514` (Sonnet 4)
-- Most powerful Sonnet model available via API
+**Primary Model**: `claude-sonnet-4-6` (Sonnet 4.6)
+- Current stable Sonnet model with adaptive thinking and 1M context (GA)
 - Excellent at reasoning, extraction, and generation
 - Consistent output with temperature 0.3
 
 **Model Usage Across System**:
 | Component | Model | Temperature | Purpose |
 |-----------|-------|-------------|---------|
-| Lead Extractor | `claude-sonnet-4-20250514` | 0.7 | Extract candidates from pages |
-| Email Generator | `claude-sonnet-4-20250514` | 0.3 | Generate personalized emails |
-| Email Predictor | `claude-sonnet-4-20250514` | 0.3 | Predict email addresses |
-| Circle Enrichment | `claude-sonnet-4-20250514` | 0.7 | Find colleague mentions |
-
-**Note**: The model identifier `claude-sonnet-4-5-20251022` does NOT exist in the Anthropic API. The web interface may show "Sonnet 4.5" as a marketing name, but the API uses `claude-sonnet-4-20250514`.
+| Lead Extractor | `claude-sonnet-4-6` | 0.7 | Extract candidates from pages |
+| Email Generator | `claude-sonnet-4-6` | 0.3 | Generate personalized emails |
+| Email Predictor | `claude-sonnet-4-6` | 0.3 | Predict email addresses |
+| Circle Enrichment | `claude-sonnet-4-6` | 0.7 | Find colleague mentions |
 
 ### Prompt Engineering Best Practices
 
