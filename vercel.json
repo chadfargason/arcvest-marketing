@@ -3,55 +3,5 @@
   "buildCommand": "turbo run build --filter=@arcvest/dashboard...  --force",
   "outputDirectory": "packages/dashboard/.next",
   "installCommand": "npm install",
-  "framework": "nextjs",
-  "crons": [
-    {
-      "path": "/api/cron/enqueue/morning-batch",
-      "schedule": "30 12 * * *"
-    },
-    {
-      "path": "/api/cron/enqueue/evening-batch",
-      "schedule": "30 23 * * *"
-    },
-    {
-      "path": "/api/cron/worker",
-      "schedule": "*/5 * * * *"
-    },
-    {
-      "path": "/api/cron/analytics-sync",
-      "schedule": "0 8 * * *"
-    },
-    {
-      "path": "/api/cron/ads-sync",
-      "schedule": "0 */4 * * *"
-    },
-    {
-      "path": "/api/cron/meta-ads-sync",
-      "schedule": "30 */4 * * *"
-    },
-    {
-      "path": "/api/cron/ads-optimize",
-      "schedule": "0 12 * * *"
-    },
-    {
-      "path": "/api/cron/lead-finder",
-      "schedule": "30 18 * * *"
-    },
-    {
-      "path": "/api/cron/experiment-optimizer",
-      "schedule": "0 */6 * * *"
-    },
-    {
-      "path": "/api/cron/creative-refresh",
-      "schedule": "0 14 * * 0"
-    },
-    {
-      "path": "/api/cron/experiment-launcher",
-      "schedule": "0 13 * * 1"
-    },
-    {
-      "path": "/api/cron/ads-weekly-report",
-      "schedule": "0 15 * * 1"
-    }
-  ]
+  "framework": "nextjs"
 }
